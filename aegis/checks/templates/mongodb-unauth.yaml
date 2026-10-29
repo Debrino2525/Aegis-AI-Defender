@@ -1,0 +1,20 @@
+id: AEGIS-TMPL-002
+name: MongoDB Unauthenticated Access
+description: >
+  MongoDB is accessible without authentication. An attacker can dump all databases,
+  collections, and documents without credentials, leading to full data exfiltration.
+severity: CRITICAL
+cvss: 9.8
+epss: 0.88
+tags: [mongodb, database, unauthenticated, data-exposure]
+checks:
+  - type: tcp_banner
+    port: 27017
+    contains: "MongoDB"
+    evidence: "MongoDB banner detected on port 27017 without authentication"
+remediation: >
+  1. Enable MongoDB authentication: set security.authorization = enabled in mongod.conf.
+  2. Create admin user accounts before enabling auth.
+  3. Bind to localhost or use VPN/firewall to restrict access.
+references:
+  - https://www.mongodb.com/docs/manual/security/

@@ -1,0 +1,23 @@
+id: AEGIS-TMPL-004
+name: Anonymous FTP Login Allowed
+description: >
+  The FTP server accepts anonymous logins. Attackers can browse and potentially
+  download files without credentials. In misconfigured servers, anonymous write
+  access can enable malware hosting or further exploitation.
+severity: HIGH
+cvss: 7.5
+epss: 0.55
+tags: [ftp, anonymous, unauthenticated]
+checks:
+  - type: tcp_banner
+    port: 21
+    send: "USER anonymous"
+    contains: "331"
+    evidence: "FTP server responded to anonymous USER with 331 (password required) — anonymous login accepted"
+remediation: >
+  1. Disable anonymous FTP access in your FTP server configuration.
+  2. For vsftpd: set anonymous_enable=NO in vsftpd.conf.
+  3. For ProFTPD: remove <Anonymous> block from proftpd.conf.
+  4. Consider replacing FTP with SFTP (SSH File Transfer Protocol).
+references:
+  - https://nvd.nist.gov/vuln/detail/CVE-1999-0497

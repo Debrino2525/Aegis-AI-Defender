@@ -1,0 +1,26 @@
+id: AEGIS-TMPL-006
+name: Docker API Remote Unauthenticated Access
+description: >
+  The Docker daemon remote API is exposed and accessible without authentication.
+  This allows full container management including spawning privileged containers
+  that can mount the host filesystem and escape to full root access on the host.
+severity: CRITICAL
+cvss: 10.0
+epss: 0.97
+tags: [docker, container, unauthenticated, rce, privilege-escalation]
+checks:
+  - type: http_response
+    port: 2375
+    path: /version
+    method: GET
+    status: [200]
+    contains: "ApiVersion"
+    evidence: "Docker Remote API /version responded 200 without authentication on port 2375"
+remediation: >
+  1. Never expose Docker daemon socket remotely without TLS mutual authentication.
+  2. Use --tlsverify with client certificates for all remote API access.
+  3. Use a firewall to block external access to port 2375 and 2376.
+  4. Consider using Docker rootless mode to reduce attack surface.
+references:
+  - https://docs.docker.com/engine/security/protect-access/
+  - https://www.shodan.io/search?query=port%3A2375

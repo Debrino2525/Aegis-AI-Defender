@@ -1,0 +1,25 @@
+id: AEGIS-TMPL-003
+name: Elasticsearch Unauthenticated Access
+description: >
+  Elasticsearch is accessible without authentication on port 9200. An attacker
+  can read all indices, documents, and cluster health information without credentials.
+  Billions of records have been leaked from unprotected Elasticsearch clusters.
+severity: CRITICAL
+cvss: 9.8
+epss: 0.91
+tags: [elasticsearch, database, unauthenticated, data-exposure]
+checks:
+  - type: http_response
+    port: 9200
+    path: /
+    method: GET
+    status: [200]
+    contains: "cluster_name"
+    evidence: "Elasticsearch cluster info exposed without authentication on port 9200"
+remediation: >
+  1. Enable X-Pack security (xpack.security.enabled: true) in elasticsearch.yml.
+  2. Configure TLS for transport and HTTP layers.
+  3. Create user accounts and role-based access control.
+  4. Restrict network access with firewall rules.
+references:
+  - https://www.elastic.co/guide/en/elasticsearch/reference/current/security-minimal-setup.html

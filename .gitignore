@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Sensitive Environment & Secrets
+.env
+*.pem
+*.key
+*.cert
+
+# SQLite Databases & Local Storage
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+
+# Reverse Engineering Artifacts & Temp Binaries
+HackerAI-windows-x64.exe
+extracted/
+strings.txt
+REVERSE_ENGINEERING_REPORT.md
+extract_*.py
+analyze_*.py
+inspect_*.py
+patch_server.py
+comprehensive_fix.py
+
+# Personal Documents
+*Resume*
+*.docx
+
+# Local Logs & Generated Files
+*.log
+test_report.*
+enforce_pending_containment.bat
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1 @@
+"""Aegis Monitor package."""

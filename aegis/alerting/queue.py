@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from aegis.alerting.models import CriticalAlert, DispatchResult, SeverityLevel, DoDZTPillar
+from aegis.runtime import aegis_data_dir
 
 
 class AlertQueue:
@@ -18,7 +19,7 @@ class AlertQueue:
 
     def __init__(self, db_path: Optional[Path] = None):
         if db_path is None:
-            self.db_path = Path.home() / ".aegis" / "alert_queue.sqlite3"
+            self.db_path = aegis_data_dir() / "alert_queue.sqlite3"
         else:
             self.db_path = Path(db_path)
             
@@ -66,6 +67,11 @@ class AlertQueue:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_fingerprint ON critical_alerts(fingerprint)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_status ON critical_alerts(status)")
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(critical_alerts)")}
+            if "held_count" not in columns:
+                conn.execute("ALTER TABLE critical_alerts ADD COLUMN held_count INTEGER NOT NULL DEFAULT 0")
+            if "paged" not in columns:
+                conn.execute("ALTER TABLE critical_alerts ADD COLUMN paged INTEGER NOT NULL DEFAULT 0")
 
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS dispatch_audit (
@@ -159,6 +165,18 @@ class AlertQueue:
         with self._get_conn() as conn:
             conn.execute("UPDATE critical_alerts SET status = ? WHERE alert_id = ?", (new_status, alert_id))
 
+    def is_paged(self, alert_id: str) -> bool:
+        with self._get_conn() as conn:
+            row = conn.execute(
+                "SELECT paged FROM critical_alerts WHERE alert_id = ?",
+                (alert_id,),
+            ).fetchone()
+        return bool(row and row["paged"])
+
+    def mark_paged(self, alert_id: str) -> None:
+        with self._get_conn() as conn:
+            conn.execute("UPDATE critical_alerts SET paged = 1 WHERE alert_id = ?", (alert_id,))
+
     def record_dispatch_audit(self, alert_id: str, result: DispatchResult):
         with self._get_conn() as conn:
             conn.execute("""
@@ -207,15 +225,49 @@ class AlertQueue:
             return None
 
     def list_recent_alerts(self, limit: int = 50) -> List[Dict[str, Any]]:
+        from aegis.monitor.threat_patterns import hidden_queued_beacon_ids
         with self._get_conn() as conn:
-            rows = conn.execute("SELECT * FROM critical_alerts ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+            rows = conn.execute("SELECT * FROM critical_alerts ORDER BY created_at DESC").fetchall()
             results = []
             for r in rows:
                 d = dict(r)
                 d["zt_pillars"] = json.loads(d.get("zt_pillars") or "[]")
                 d["metadata"] = json.loads(d.get("metadata") or "{}")
                 results.append(d)
-            return results
+        hidden = hidden_queued_beacon_ids(results)
+        visible = [
+            row for row in results
+            if row.get("alert_id") not in hidden and "simulated" not in str(row.get("title") or "").lower()
+        ]
+        return visible[:limit]
+
+    def drop_routine_web_beacons(self) -> int:
+        """Delete stored beacons that are routine web traffic. Returns how many were removed."""
+        from aegis.monitor.threat_patterns import hidden_queued_beacon_ids
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                "SELECT alert_id, title, source_ip, dest_ip, dest_port, metadata FROM critical_alerts"
+            ).fetchall()
+            parsed = []
+            for row in rows:
+                item = dict(row)
+                item["metadata"] = json.loads(item.get("metadata") or "{}")
+                parsed.append(item)
+            hidden = hidden_queued_beacon_ids(parsed)
+            for alert_id in hidden:
+                conn.execute("DELETE FROM dispatch_audit WHERE alert_id = ?", (alert_id,))
+                conn.execute("DELETE FROM critical_alerts WHERE alert_id = ?", (alert_id,))
+            return len(hidden)
+
+    def drop_simulated_alerts(self) -> int:
+        """Remove incidents that were inserted as simulations."""
+        with self._get_conn() as conn:
+            rows = conn.execute("SELECT alert_id, title FROM critical_alerts").fetchall()
+            hidden = [row["alert_id"] for row in rows if "simulated" in str(row["title"] or "").lower()]
+            for alert_id in hidden:
+                conn.execute("DELETE FROM dispatch_audit WHERE alert_id = ?", (alert_id,))
+                conn.execute("DELETE FROM critical_alerts WHERE alert_id = ?", (alert_id,))
+            return len(hidden)
 
     def get_unacknowledged_alerts(self) -> List[Dict[str, Any]]:
         with self._get_conn() as conn:

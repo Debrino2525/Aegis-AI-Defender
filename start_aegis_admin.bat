@@ -20,9 +20,10 @@ if %errorlevel% equ 0 (
     echo      Right-click this file -^> "Run as administrator"
 )
 echo.
-echo  [*] Starting Aegis AI on http://localhost:8000 ...
+echo  [*] Starting Aegis AI on http://127.0.0.1:8000 ...
+echo  [*] Bind is 127.0.0.1 unless AEGIS_HOST is set in the environment or .env
 echo =====================================================================
 echo.
 
-python -m uvicorn server:app --host 0.0.0.0 --port 8000
+python server.py
 pause

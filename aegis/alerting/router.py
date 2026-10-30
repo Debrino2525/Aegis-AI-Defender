@@ -13,6 +13,8 @@ from aegis.alerting.models import (
 from aegis.alerting.queue import AlertQueue
 from aegis.alerting.classifier import AlertClassifier
 from aegis.alerting.dedup import FlapDamper
+from aegis.alerting.cap import DispatchCap
+from aegis.alerting.integrations import PlatformConnections, deliver, message_text
 from aegis.alerting.escalation import EscalationManager
 from aegis.alerting.security import generate_triage_token
 from aegis.alerting.adapters.sms_local import LocalSMSAdapter
@@ -28,6 +30,8 @@ class AlertRouter:
         self.queue = queue or AlertQueue()
         self.classifier = AlertClassifier()
         self.damper = FlapDamper(flap_window_seconds=900, max_alerts_per_window=3)
+        self.cap = DispatchCap(self.queue)
+        self.platforms = PlatformConnections(self.queue)
         self.escalation = EscalationManager(queue=self.queue)
         
         # Channel Adapters
@@ -50,7 +54,6 @@ class AlertRouter:
         if self._running:
             return
         self._running = True
-        await self.heartbeat.start()
         self._escalation_task = asyncio.create_task(self._escalation_loop())
 
     def stop(self):
@@ -95,48 +98,83 @@ class AlertRouter:
         # 2. Resolve on-call responder for this target
         primary_contact, lead_contact, env_label, timeout_mins = self.escalation.resolve_contacts_for_target(alert.source_ip)
         alert.metadata["environment"] = env_label
-        alert.metadata["primary_contact_id"] = primary_contact.contact_id
+        alert.metadata["primary_contact_id"] = primary_contact.contact_id if primary_contact else None
 
         # 3. Enqueue in persistent SQLite queue
         is_new = self.queue.enqueue_alert(alert)
 
-        if not allow_dispatch:
-            # Suppressed by rate limiter / flap damper
+        if primary_contact is None:
+            if allow_dispatch:
+                self.queue.mark_retry(alert.alert_id, "No on-call contact configured")
+            return alert
+
+        if self.queue.is_paged(alert.alert_id) or not allow_dispatch:
+            self.cap.note_held(alert.alert_id)
+            return alert
+
+        slot = self.cap.reserve()
+        if slot == "hold":
+            self.cap.note_held(alert.alert_id)
+            return alert
+        if slot == "summary":
+            self.cap.note_held(alert.alert_id)
+            sent = await self._send_cap_summary(alert, primary_contact)
+            if not sent:
+                self.cap.release_summary()
             return alert
 
         # 4. Generate Zero-Trust signed triage link
         token = generate_triage_token(alert.alert_id, primary_contact.contact_id, ttl_seconds=900)
         triage_url = f"{self.base_console_url}/#triage?token={token}&aid={alert.alert_id}"
 
-        # 5. Cascading Dispatch: Primary (ChatOps/Telegram/WhatsApp) -> Fallback (SMS) -> Out-Of-Band (Modem)
-        dispatched_successfully = False
-
-        # Channel 1: Primary ChatOps / Webhook / Telegram
-        result_primary = await self.adapter_webhook.send(alert, primary_contact, triage_url)
-        self.queue.record_dispatch_audit(alert.alert_id, result_primary)
-        if result_primary.success:
-            dispatched_successfully = True
-
-        # Channel 2: Fallback Local Ghanaian SMS (if primary failed or not configured)
-        if not dispatched_successfully:
-            result_sms = await self.adapter_sms.send(alert, primary_contact, triage_url)
-            self.queue.record_dispatch_audit(alert.alert_id, result_sms)
-            if result_sms.success:
-                dispatched_successfully = True
-
-        # Channel 3: Out-Of-Band Cellular Serial Modem (if all IP networks failed)
-        if not dispatched_successfully:
-            result_modem = await self.adapter_modem.send(alert, primary_contact, triage_url)
-            self.queue.record_dispatch_audit(alert.alert_id, result_modem)
-            if result_modem.success:
-                dispatched_successfully = True
+        dispatched_successfully = await self._send_outside(alert, primary_contact, triage_url)
 
         if dispatched_successfully:
+            self.queue.mark_paged(alert.alert_id)
             self.queue.mark_dispatched(alert.alert_id, "DELIVERED")
         else:
+            self.cap.release_page()
             self.queue.mark_retry(alert.alert_id, "All dispatch channels unconfigured or failed")
 
         return alert
+
+    async def _deliver_platform(self, contact: OnCallContact, title: str, summary: str, link: str):
+        """Page the connected Slack, Teams, or email account. None means none is connected."""
+        connection = self.platforms.destination_for(contact.contact_id)
+        if connection is None:
+            return None
+        return await deliver(connection, message_text(title, summary, link))
+
+    async def _send_outside(self, alert: CriticalAlert, contact: OnCallContact, triage_url: str) -> bool:
+        """Page the connected Slack, Teams, or email account."""
+        platform_result = await self._deliver_platform(contact, alert.title, alert.summary, triage_url)
+        if platform_result is None:
+            return False
+        self.queue.record_dispatch_audit(alert.alert_id, platform_result)
+        return bool(platform_result.success)
+
+    async def _send_cap_summary(self, alert: CriticalAlert, contact: OnCallContact) -> bool:
+        """One message for the hour after the cap is used. Not a new incident."""
+        picture = self.cap.snapshot()
+        summary = CriticalAlert(
+            alert_id=f"CAP-{picture['hour']}",
+            fingerprint="dispatch-cap-summary",
+            title="Outside channel cap reached",
+            severity=SeverityLevel.CRITICAL,
+            summary=(
+                f"Held {picture['held_this_hour']} alerts this hour after "
+                f"{picture['hourly_cap']} outside messages. "
+                f"Latest: {alert.title} from {alert.source_ip}. "
+                "Review them in the console."
+            ),
+            source_ip=alert.source_ip,
+        )
+        platform_result = await self._deliver_platform(
+            contact, summary.title, summary.summary, self.base_console_url
+        )
+        if platform_result is None:
+            return False
+        return bool(platform_result.success)
 
     async def process_escalations(self):
         """Scans unacknowledged alerts and advances escalation levels if timers have elapsed."""
@@ -165,9 +203,24 @@ class AlertRouter:
                 token = generate_triage_token(alert_id, contact.contact_id, ttl_seconds=900)
                 triage_url = f"{self.base_console_url}/#triage?token={token}&aid={alert_id}"
 
-                # Escalate via SMS directly to team lead / incident commander
-                res = await self.adapter_sms.send(rebuilt_alert, contact, triage_url)
-                self.queue.record_dispatch_audit(alert_id, res)
+                slot = self.cap.reserve()
+                if slot != "page":
+                    self.cap.note_held(alert_id)
+                    if slot == "summary":
+                        sent = await self._send_cap_summary(rebuilt_alert, contact)
+                        if not sent:
+                            self.cap.release_summary()
+                    continue
+
+                platform_result = await self._deliver_platform(
+                    contact, rebuilt_alert.title, rebuilt_alert.summary, triage_url
+                )
+                if platform_result is None:
+                    self.cap.release_page()
+                    continue
+                self.queue.record_dispatch_audit(alert_id, platform_result)
+                if not platform_result.success:
+                    self.cap.release_page()
 
     def acknowledge_alert(self, alert_id: str, acknowledged_by: str) -> bool:
         """Acknowledges an alert, halting all active escalation timers."""
@@ -182,15 +235,8 @@ class AlertRouter:
             "total_recent_critical_alerts": len(recent),
             "unacknowledged_critical_count": len(unacked),
             "contacts_count": len(self.escalation.contacts),
-            "channels": {
-                "sms_local_arkesel": bool(self.adapter_sms.arkesel_api_key),
-                "sms_local_hubtel": bool(self.adapter_sms.hubtel_client_id),
-                "telegram": bool(self.adapter_webhook.telegram_bot_token),
-                "whatsapp": bool(self.adapter_webhook.whatsapp_token),
-                "generic_webhook": bool(self.adapter_webhook.generic_webhook_url),
-                "modem_oob_configured": bool(self.adapter_modem.port)
-            },
-            "canary_heartbeat": self.heartbeat.get_status()
+            "dispatch_cap": self.cap.snapshot(),
+            "platforms": self.platforms.public(),
         }
 
 

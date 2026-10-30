@@ -32,45 +32,33 @@ class EscalationManager:
                 for m in db_mappings:
                     self.ownership_mappings.append(AssetOwnerMapping(**m))
 
-        if not self.contacts:
-            self._seed_default_contacts()
+        self._drop_placeholder_directory()
 
-    def _seed_default_contacts(self):
-        """Seeds default fallback contacts for initial setup."""
-        c1 = OnCallContact(
-            contact_id="ONCALL-PRIMARY",
-            name="Primary SOC Responder",
-            role="Tier-1 Security Analyst",
-            phone="+233244000001",
-            whatsapp_number="+233244000001",
-            telegram_chat_id=""
-        )
-        c2 = OnCallContact(
-            contact_id="ONCALL-LEAD",
-            name="SOC Team Lead",
-            role="Incident Commander",
-            phone="+233201000002",
-            whatsapp_number="+233201000002",
-            telegram_chat_id=""
-        )
-        self.contacts[c1.contact_id] = c1
-        self.contacts[c2.contact_id] = c2
-        if self.queue:
-            self.queue.save_contact(c1.model_dump())
-            self.queue.save_contact(c2.model_dump())
-
-        # Default fallback mapping
-        m0 = AssetOwnerMapping(
-            cidr_or_host="0.0.0.0/0",
-            environment="Enterprise Network",
-            owner_team="Security Operations",
-            primary_contact_id=c1.contact_id,
-            escalation_contact_id=c2.contact_id,
-            escalation_timeout_mins=5
-        )
-        self.ownership_mappings.append(m0)
-        if self.queue:
-            self.queue.save_mapping(m0.model_dump())
+    def _drop_placeholder_directory(self):
+        """Remove the old sample on-call directory so it is not shown as staff."""
+        placeholders = {
+            "ONCALL-PRIMARY": "+233244000001",
+            "ONCALL-LEAD": "+233201000002",
+        }
+        for contact_id, phone in placeholders.items():
+            contact = self.contacts.get(contact_id)
+            if contact and (contact.phone or "") == phone:
+                self.delete_contact(contact_id)
+        kept = []
+        for mapping in self.ownership_mappings:
+            is_sample = (
+                mapping.cidr_or_host == "0.0.0.0/0"
+                and mapping.environment == "Enterprise Network"
+                and mapping.owner_team == "Security Operations"
+                and mapping.primary_contact_id == "ONCALL-PRIMARY"
+                and mapping.escalation_contact_id == "ONCALL-LEAD"
+            )
+            if is_sample:
+                if self.queue:
+                    self.queue.delete_mapping(mapping.cidr_or_host)
+                continue
+            kept.append(mapping)
+        self.ownership_mappings = kept
 
     def add_contact(self, contact: OnCallContact):
         self.contacts[contact.contact_id] = contact
@@ -104,12 +92,18 @@ class EscalationManager:
         Resolves primary responder, escalation contact, environment label, and timeout
         for a given asset IP address or hostname.
         """
+        if not self.ownership_mappings:
+            return None, None, "Unassigned", 0
+
+        def pair(mapping):
+            primary = self.contacts.get(mapping.primary_contact_id)
+            lead = self.contacts.get(mapping.escalation_contact_id) or primary
+            return primary, lead, mapping.environment, mapping.escalation_timeout_mins
+
         # Try exact string match first
         for m in self.ownership_mappings:
             if m.cidr_or_host == target_ip_or_host:
-                p = self.contacts.get(m.primary_contact_id) or list(self.contacts.values())[0]
-                e = self.contacts.get(m.escalation_contact_id) or p
-                return p, e, m.environment, m.escalation_timeout_mins
+                return pair(m)
 
         # Try CIDR network match
         try:
@@ -118,17 +112,11 @@ class EscalationManager:
                 if "/" in m.cidr_or_host:
                     net = ipaddress.ip_network(m.cidr_or_host, strict=False)
                     if ip_obj in net:
-                        p = self.contacts.get(m.primary_contact_id) or list(self.contacts.values())[0]
-                        e = self.contacts.get(m.escalation_contact_id) or p
-                        return p, e, m.environment, m.escalation_timeout_mins
+                        return pair(m)
         except ValueError:
             pass
 
-        # Fallback to default
-        fallback = self.ownership_mappings[-1]
-        p = self.contacts.get(fallback.primary_contact_id) or list(self.contacts.values())[0]
-        e = self.contacts.get(fallback.escalation_contact_id) or p
-        return p, e, fallback.environment, fallback.escalation_timeout_mins
+        return pair(self.ownership_mappings[-1])
 
     def check_escalation_needed(self, alert_dict: Dict) -> Tuple[bool, int, Optional[OnCallContact]]:
         """
@@ -152,6 +140,8 @@ class EscalationManager:
         current_level = alert_dict.get("escalation_level", 0)
         source_ip = alert_dict.get("source_ip", "")
         primary, lead, env, timeout_mins = self.resolve_contacts_for_target(source_ip)
+        if lead is None or not timeout_mins:
+            return False, current_level, None
         timeout_seconds = timeout_mins * 60
 
         # Level 0 -> Level 1 (At T+5 mins: escalate to Secondary/Lead)

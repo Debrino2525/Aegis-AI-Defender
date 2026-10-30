@@ -262,6 +262,7 @@ class AIAnalyst:
         self._incidents_by_id: Dict[str, Incident] = {}
         self._src_to_incident: Dict[str, str] = {}
         self._inc_counter = 0
+        self._pending_restore: List[Dict] = []
 
     @property
     def incidents(self) -> Dict[str, Incident]:
@@ -271,6 +272,42 @@ class AIAnalyst:
         self._incidents_by_id.clear()
         self._src_to_incident.clear()
         self._inc_counter = 0
+        self._pending_restore.clear()
+
+    def restore_operator_state(self, rows: List[Dict]) -> None:
+        """Reattach containment actions after a process restart, keyed by source IP."""
+        self._pending_restore = list(rows or [])
+
+    def export_operator_state(self) -> List[Dict]:
+        rows = []
+        for src, inc_id in self._src_to_incident.items():
+            inc = self._incidents_by_id.get(inc_id)
+            if not inc:
+                continue
+            if inc.status == "ACTIVE" and not inc.actions_taken:
+                continue
+            rows.append({
+                "source_ip": src,
+                "incident_id": inc.id,
+                "status": inc.status,
+                "actions_taken": list(inc.actions_taken),
+            })
+        return rows
+
+    def _apply_pending_restore(self, inc: Incident, src_ip: str) -> None:
+        if not self._pending_restore:
+            return
+        kept = []
+        for row in self._pending_restore:
+            if row.get("source_ip") == src_ip:
+                if row.get("status"):
+                    inc.status = row["status"]
+                actions = row.get("actions_taken") or []
+                if actions:
+                    inc.actions_taken = list(actions)
+            else:
+                kept.append(row)
+        self._pending_restore = kept
 
     def _new_id(self) -> str:
         self._inc_counter += 1
@@ -320,6 +357,7 @@ class AIAnalyst:
                     inc = self._build_incident(src_ip, cluster)
                     self._incidents_by_id[inc.id] = inc
                     self._src_to_incident[src_ip] = inc.id
+                self._apply_pending_restore(inc, src_ip)
 
         # Sort by status (ACTIVE first), urgency, confidence
         status_order = {"ACTIVE": 2, "CONTAINED": 1, "RESOLVED": 0}

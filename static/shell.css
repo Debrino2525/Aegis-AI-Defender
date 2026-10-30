@@ -1,0 +1,193 @@
+/* Shell overrides. Loaded after the monolith so precision tokens win
+   without rewriting every page. */
+
+body {
+  background: var(--bg) !important;
+  color: var(--text);
+  font-family: var(--font);
+}
+
+body::after {
+  display: none !important;
+}
+
+#topnav {
+  background: var(--surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-logo {
+  height: 88px;
+  width: auto;
+  display: block;
+}
+
+.wordmark i {
+  color: var(--accent) !important;
+  font-style: normal;
+  font-weight: 500;
+}
+
+#sidebar {
+  width: 212px;
+}
+
+#sidebar .rail-inner,
+#sidebar:hover .rail-inner {
+  width: 212px;
+  background: var(--surface) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+#sidebar .sb-item .lbl,
+#sidebar .sb-sec {
+  opacity: 1 !important;
+}
+
+a.sb-item {
+  text-decoration: none;
+  color: var(--text-dim);
+}
+
+.sb-item {
+  border-radius: var(--radius-sm) !important;
+}
+
+.sb-item.active {
+  background: var(--accent-dim) !important;
+  color: var(--text) !important;
+  border-color: var(--border2) !important;
+  box-shadow: none !important;
+}
+
+.sb-item.active .ico {
+  color: var(--accent);
+}
+
+.cmdk,
+.sync-btn,
+.fi,
+.fsel,
+.fsrch,
+#aegis-login form,
+#aegis-login input,
+#aegis-login button,
+.dt-model-card,
+.inc-card {
+  border-radius: var(--radius) !important;
+}
+
+.btn,
+.btn-sm,
+.nav-tab {
+  border-radius: var(--radius-sm);
+}
+
+.btn-p {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+
+.btn-p:hover {
+  background: var(--accent);
+  filter: brightness(1.06);
+}
+
+.status-dot,
+.dt-status-dot,
+.dt-status-dot-sm,
+.pb,
+.brand-icon {
+  box-shadow: none !important;
+}
+
+#aegis-login {
+  background: var(--bg);
+}
+
+#aegis-login form {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+#aegis-login h2 {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+#aegis-login input {
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text);
+}
+
+#aegis-login button {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+#aegis-login button[type="submit"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+#aegis-login .login-row {
+  display: flex;
+  gap: 8px;
+}
+
+#aegis-login .login-row button[type="submit"] {
+  flex: 1;
+}
+
+a.btn { text-decoration: none; }
+
+a.incident-link,
+a.inc-open {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a.incident-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border2);
+  background: var(--accent-dim);
+  font-size: 12.5px;
+}
+
+html[data-theme="light"] select,
+html[data-theme="light"] select.fsel,
+html[data-theme="light"] .fsel,
+html[data-theme="light"] select option,
+html[data-theme="light"] select optgroup {
+  background-color: var(--surface2) !important;
+  color: var(--text) !important;
+  color-scheme: light !important;
+}
+
+html[data-theme="light"] .card,
+html[data-theme="light"] .mc,
+html[data-theme="light"] .dt-card,
+html[data-theme="light"] .page {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: none;
+}
+
+html[data-theme="light"] #main {
+  background: var(--bg);
+}

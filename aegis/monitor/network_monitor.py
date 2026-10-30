@@ -17,8 +17,11 @@ import httpx
 from urllib.parse import urlparse
 
 from aegis.monitor.behavioral_engine import BehavioralEngine
+from aegis.monitor.geoip import collect_monitor_ips, geoip_snapshot
 from aegis.monitor.threat_patterns import (
-    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS
+    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS, WEB_EDGE_PORTS,
+    is_well_known_web_edge,
+    suppress_web_beacon,
 )
 
 
@@ -331,6 +334,8 @@ class NetworkMonitor:
     def _check_novel_destinations(self, src: str, dest_set: Set[str]):
         """Flags initial connections to unprofiled external IP addresses."""
         for dst in list(dest_set)[:8]:
+            if is_well_known_web_edge(dst):
+                continue
             if not is_private_ip(dst) and self.behavioral_engine.is_new_destination(src, dst):
                 self._emit_alert(
                     pattern_id="AEGIS-BEH-005",
@@ -420,12 +425,26 @@ class NetworkMonitor:
                 technique="T1110",
             )
 
+    def _web_destinations(self, src: str) -> int:
+        """Distinct public web-port peers this host has talked to recently."""
+        dests = set()
+        for (host, dst, port), stamps in self.conn_history.items():
+            if host != src or not stamps or port not in WEB_EDGE_PORTS:
+                continue
+            if is_private_ip(dst):
+                continue
+            dests.add(dst)
+        return len(dests)
+
     def _check_beaconing(self, src: str, dsts: Set[str], now: float):
         """Detects regular interval beaconing (C2 check-in pattern)."""
+        siblings = self._web_destinations(src)
         for dst in dsts:
             if is_private_ip(dst):
                 continue
             for port in [80, 443, 8080, 8443, 4444, 4443]:
+                if suppress_web_beacon(dst, port, siblings):
+                    continue
                 key = (src, dst, port)
                 timestamps = self.conn_history.get(key, [])
                 if len(timestamps) < 4:
@@ -510,6 +529,7 @@ class NetworkMonitor:
         # Keep last 500 alerts
         self.alerts = self.alerts[-500:]
         self.stats["alerts_generated"] += 1
+        self._persist_monitor_alert(alert)
         try:
             from aegis.alerting.router import alert_router
             import asyncio
@@ -785,12 +805,21 @@ class NetworkMonitor:
                 "MEDIUM": sum(1 for a in self.alerts if a["severity"] == "MEDIUM"),
                 "LOW": sum(1 for a in self.alerts if a["severity"] == "LOW"),
                 "unacknowledged": sum(1 for a in self.alerts if not a["acknowledged"]),
-            }
+            },
+            "geoip": geoip_snapshot(collect_monitor_ips(self.current_connections, active_nodes)),
         }
 
     def acknowledge_alert(self, alert_id: str) -> bool:
         for a in self.alerts:
             if a["id"] == alert_id:
                 a["acknowledged"] = True
+                self._persist_monitor_alert(a)
                 return True
         return False
+
+    def _persist_monitor_alert(self, alert: Dict[str, Any]) -> None:
+        try:
+            from aegis.persistence.history_store import get_history_store
+            get_history_store().save_monitor_alert(alert)
+        except Exception as exc:
+            print(f"[AEGIS] Failed to persist monitor alert {alert.get('id')}: {exc}")

@@ -31,12 +31,15 @@ ENV/
 *.pem
 *.key
 *.cert
+admin_token
+alert_signing_key
 
 # SQLite Databases & Local Storage
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
 *.db
+*.mmdb
 
 # Reverse Engineering Artifacts & Temp Binaries
 HackerAI-windows-x64.exe

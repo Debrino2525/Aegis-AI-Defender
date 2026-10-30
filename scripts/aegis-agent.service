@@ -1,0 +1,23 @@
+[Unit]
+Description=Aegis host agent
+Documentation=https://github.com/Debrino2525/Aegis-AI-Defender
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Prefer a dedicated aegis account. scripts/aegis-agent.sh install fills paths.
+# User=aegis
+# Group=aegis
+WorkingDirectory=/opt/aegis
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/aegis
+Environment=AEGIS_AGENT_DIR=/var/lib/aegis/agent
+ExecStart=/usr/bin/python3 -m aegis.agent run
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

@@ -1,7 +1,7 @@
 """
 Aegis AI — Executive & Technical HTML Security Assessment Report Generator.
 Produces executive-grade, beautifully styled, print/PDF-optimized audit reports
-aligned with the Aegis AI design system (Globitech Ghana branding, Palantir/Stripe aesthetic).
+aligned with the Aegis AI design system.
 """
 
 import html as htmllib
@@ -890,7 +890,7 @@ table.data-table tr:hover td {{ background: rgba(255,255,255,.015); }}
     <div class="header-top">
       <div class="brand-row">
         <div class="brand-logo">
-          <!-- Globitech Ghana Vector Mark -->
+          <!-- Globitech mark -->
           <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
             <path d="M16 2L29 9.5V22.5L16 30L3 22.5V9.5L16 2Z" stroke="#9ab8ff" stroke-width="2.2" stroke-linejoin="round"/>
             <path d="M16 8L23 12V20L16 24L9 20V12L16 8Z" fill="url(#brand-grad)"/>
@@ -903,7 +903,7 @@ table.data-table tr:hover td {{ background: rgba(255,255,255,.015); }}
           </svg>
         </div>
         <div class="brand-text">
-          <h1>Aegis AI Enterprise <span style="font-size:12px;color:var(--accent);font-weight:400;margin-left:4px;">by Globitech Ghana</span></h1>
+          <h1>Aegis AI Enterprise <span style="font-size:12px;color:var(--accent);font-weight:400;margin-left:4px;">by Globitech</span></h1>
           <p>Cybersecurity Threat Exposure &amp; Vulnerability Assessment Dossier</p>
         </div>
       </div>
@@ -1024,7 +1024,7 @@ table.data-table tr:hover td {{ background: rgba(255,255,255,.015); }}
   <!-- Footer -->
   <footer class="report-footer">
     <div>
-      <b>Aegis AI Security Platform</b> &bull; Developed by Globitech Ghana Security Research
+      <b>Aegis AI Security Platform</b> &bull; Globitech
     </div>
     <div>
       Confidential Assessment &bull; Not for unauthorized distribution

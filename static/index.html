@@ -4,19 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Aegis AI — Enterprise Vulnerability Intelligence Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/static/design-tokens.css"/>
+<script src="/static/theme.js"></script>
 <style>
-:root{
-  --bg:#0a0b0e;--surface:#101217;--surface2:#14171f;--surface3:#1a1e28;
-  --border:#202532;--border2:#2d3445;
-  --accent:#9ab8ff;--accent2:#8a2be2;--accent-glow:rgba(154,184,255,.10);
-  --dt-magenta:#e024c3;--dt-orange:#ff5722;--dt-purple:#8a2be2;
-  --critical:#ff2d55;--high:#ff5722;--medium:#ffb703;--low:#3a86ff;--info:#64748b;
-  --success:#00c896;--purple:#a855f7;
-  --text:#f0f3f8;--text-dim:#717d96;--text-muted:#283142;
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',Roboto,sans-serif;--mono:'Cascadia Code','Consolas',monospace;
-  --radius:8px;
-}
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
 body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex;flex-direction:column;}
@@ -33,7 +24,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex
 .nav-tabs{display:flex;flex:1;gap:2px;}
 .nav-tab{padding:8px 15px;border-radius:6px;font-size:13px;color:var(--text-dim);cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none;}
 .nav-tab:hover{color:var(--text);background:var(--surface2);}
-.nav-tab.active{color:var(--accent);background:var(--accent-glow);border:1px solid rgba(154,184,255,.18);}
+.nav-tab.active{color:var(--accent);background:var(--accent-glow);border:1px solid rgba(94,234,212,.18);}
 .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
 .status-dot{width:8px;height:8px;background:var(--success);border-radius:50%;box-shadow:0 0 8px var(--success);}
 .hp{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:4px 12px;font-size:11px;color:var(--text-dim);}
@@ -50,13 +41,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex
 .sb-sec{padding:14px 12px 6px;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim);}
 .sb-item{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:7px;margin:1px 8px;cursor:pointer;font-size:13px;color:var(--text-dim);transition:all .15s;user-select:none;}
 .sb-item:hover{background:var(--surface2);color:var(--text);}
-.sb-item.active{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(154,184,255,.15);}
+.sb-item.active{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(94,234,212,.15);}
 .sb-badge{margin-left:auto;background:var(--critical);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;}
 
 /* MAIN */
 #main{flex:1;overflow-y:auto;}
 .page{display:none;padding:20px 22px;flex-direction:column;gap:16px;}
 .page.active{display:flex;}
+#aegis-login{position:fixed;inset:0;z-index:9999;background:rgba(10,11,14,.94);display:none;align-items:center;justify-content:center;padding:16px;}
+#aegis-login.on{display:flex;}
+#aegis-login form{width:min(440px,100%);background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:28px 24px;display:flex;flex-direction:column;gap:12px;}
+#aegis-login h2{font-size:18px;font-weight:700;letter-spacing:.3px;}
+#aegis-login p{font-size:12px;color:var(--text-dim);line-height:1.5;}
+#aegis-login code{font-family:var(--mono);color:var(--accent);font-size:11px;}
+#aegis-login input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--font);}
+#aegis-login button{background:var(--accent);color:#0a0b0e;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;font-family:var(--font);}
+#aegis-login .err{color:var(--critical);min-height:1.1em;font-size:12px;}
 .ph{font-size:20px;font-weight:700;}
 .ps{font-size:12px;color:var(--text-dim);margin-top:2px;}
 
@@ -69,11 +69,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex
 
 /* CARD */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(154,184,255,.13),transparent);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(94,234,212,.13),transparent);}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .ct{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px;}
 .ca{font-size:11px;color:var(--accent);cursor:pointer;opacity:.7;}
 .ca:hover{opacity:1;}
+.routing-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px;font-size:12px;}
+.routing-chip{display:inline-flex;align-items:center;gap:6px;}
+.routing-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
+.routing-dot.on{background:var(--success);}
+.routing-cap{font-family:var(--mono);font-size:12px;font-weight:600;}
+.routing-cap span{color:var(--text-dim);font-weight:500;font-family:var(--font);}
 
 /* METRIC CARDS */
 .mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:all .2s;position:relative;overflow:hidden;}
@@ -168,7 +174,7 @@ table.ft tr:hover td{background:var(--surface2);cursor:pointer;}
 .kev{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.3);padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;}
 .badge{padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;}
 .badge-done{background:rgba(0,200,150,.1);color:var(--success);border:1px solid rgba(0,200,150,.3);}
-.badge-running{background:rgba(154,184,255,.08);color:var(--accent);border:1px solid rgba(154,184,255,.25);animation:pulse 1.5s infinite;}
+.badge-running{background:rgba(94,234,212,.08);color:var(--accent);border:1px solid rgba(94,234,212,.25);animation:pulse 1.5s infinite;}
 .badge-queued{background:rgba(90,122,153,.1);color:var(--text-dim);border:1px solid var(--border);}
 .badge-error{background:rgba(255,45,85,.1);color:var(--critical);border:1px solid rgba(255,45,85,.3);}
 .cve-lnk{font-family:var(--mono);font-size:11px;color:var(--accent);}
@@ -193,8 +199,8 @@ table.ft tr:hover td{background:var(--surface2);cursor:pointer;}
 
 /* BUTTONS */
 .btn{padding:10px 22px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;}
-.btn-p{background:var(--accent);color:#000;box-shadow:0 0 20px rgba(154,184,255,.25);}
-.btn-p:hover{background:#9ab8ff;}
+.btn-p{background:var(--accent);color:var(--accent-ink);box-shadow:none;}
+.btn-p:hover{background:var(--accent);filter:brightness(1.06);}
 .btn-p:disabled{opacity:.45;cursor:not-allowed;}
 .btn-g{background:transparent;border:1px solid var(--border);color:var(--text-dim);}
 .btn-g:hover{border-color:var(--accent);color:var(--accent);}
@@ -220,7 +226,7 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 /* MONITOR STYLES */
 #mon-statsbar{display:flex;gap:12px;flex-wrap:wrap;}
 .mstat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:140px;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.25);}
-.mstat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(154,184,255,.3),transparent);}
+.mstat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(94,234,212,.3),transparent);}
 .mstat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:6px;}
 .mstat-val{font-size:24px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1;}
 .mstat-sub{font-size:10.5px;color:var(--text-dim);margin-top:4px;}
@@ -237,9 +243,9 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 #mon-graph-canvas:active{cursor:grabbing;}
 
 /* Glassmorphism Cyber Tooltip */
-#graph-tooltip{position:absolute;pointer-events:none;background:rgba(8,15,28,.95);border:1px solid rgba(154,184,255,.35);backdrop-filter:blur(10px);border-radius:8px;padding:10px 14px;font-size:11px;color:#e2eaf4;box-shadow:0 12px 36px rgba(0,0,0,.7);z-index:90;display:none;min-width:180px;transform:translate(12px,12px);}
+#graph-tooltip{position:absolute;pointer-events:none;background:rgba(8,15,28,.95);border:1px solid rgba(94,234,212,.35);backdrop-filter:blur(10px);border-radius:8px;padding:10px 14px;font-size:11px;color:#e2eaf4;box-shadow:0 12px 36px rgba(0,0,0,.7);z-index:90;display:none;min-width:180px;transform:translate(12px,12px);}
 .tt-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;}
-.tt-title{font-weight:700;font-size:12px;font-family:var(--mono);color:#9ab8ff;}
+.tt-title{font-weight:700;font-size:12px;font-family:var(--mono);color:#5EEAD4;}
 .tt-row{display:flex;justify-content:space-between;margin:3px 0;font-size:10.5px;color:#8ba3bc;}
 .tt-val{font-weight:600;color:#f1f5f9;font-family:var(--mono);}
 
@@ -300,7 +306,7 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 /* ── FINDING VERIFIER MODAL ─────────────────────────────────────────── */
 #fv-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:9000;display:none;align-items:center;justify-content:center;}
 #fv-overlay.open{display:flex;}
-#fv-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:720px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(154,184,255,.07);}
+#fv-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:720px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(94,234,212,.07);}
 #fv-header{display:flex;align-items:flex-start;gap:14px;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface2);}
 #fv-header-icon{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#1a3a6e,#0d2244);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 #fv-title-block{flex:1;min-width:0;}
@@ -318,7 +324,7 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 /* Instructions tab */
 .fv-step-list{display:flex;flex-direction:column;gap:10px;}
 .fv-step{display:flex;gap:12px;align-items:flex-start;}
-.fv-step-num{width:22px;height:22px;border-radius:50%;background:var(--accent-glow);border:1px solid rgba(154,184,255,.3);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.fv-step-num{width:22px;height:22px;border-radius:50%;background:var(--accent-glow);border:1px solid rgba(94,234,212,.3);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
 .fv-step-text{font-size:12px;color:var(--text);line-height:1.6;}
 .fv-cmd-block{background:#040c1a;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin:10px 0;position:relative;}
 .fv-cmd-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
@@ -353,7 +359,7 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 .fv-proof-box{background:#020810;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:11px;color:#6ef0a0;max-height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.6;border-left:3px solid var(--success);}
 .fv-proof-box.vuln{color:#ff8fa3;border-left-color:var(--critical);}
 /* Test btn in table */
-.fv-test-btn{padding:3px 10px;background:transparent;border:1px solid rgba(154,184,255,.3);border-radius:5px;color:var(--accent);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .15s;}
+.fv-test-btn{padding:3px 10px;background:transparent;border:1px solid rgba(94,234,212,.3);border-radius:5px;color:var(--accent);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .15s;}
 .fv-test-btn:hover{background:var(--accent-glow);border-color:var(--accent);}
 
 
@@ -371,9 +377,9 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 .dt-card:hover{border-color:var(--border2);transform:translateY(-2px);background:var(--surface2);box-shadow:0 12px 30px rgba(0,0,0,.5);}
 .dt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);}
 .dt-card-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);position:relative;}
-.dt-card-icon.sec-ai{box-shadow:0 0 20px rgba(224,36,195,.18);border-color:rgba(224,36,195,.25);}
+.dt-card-icon.sec-ai{box-shadow:none;border-color:var(--border2);}
 .dt-card-icon.threat-viz{box-shadow:0 0 20px rgba(255,87,34,.18);border-color:rgba(255,87,34,.25);}
-.dt-card-icon.vuln-intel{box-shadow:0 0 20px rgba(154,184,255,.18);border-color:rgba(154,184,255,.25);}
+.dt-card-icon.vuln-intel{box-shadow:0 0 20px rgba(94,234,212,.18);border-color:rgba(94,234,212,.25);}
 .dt-card-info{flex:1;min-width:0;}
 .dt-card-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.3px;display:flex;align-items:center;gap:6px;}
 .dt-card-desc{font-size:11px;color:var(--text-dim);margin-top:3px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -383,7 +389,7 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 /* Aegis AI Sidebar Pinned Footer */
 .sb-pinned{margin-top:auto;border-top:1px solid var(--border);padding:10px 8px 6px;}
 .dt-user-card{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;background:rgba(255,255,255,.02);border:1px solid var(--border);margin-top:6px;}
-.dt-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#e024c3,#ff5722);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 0 10px rgba(224,36,195,.3);}
+.dt-avatar{width:30px;height:30px;border-radius:4px;background:var(--surface3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--text);flex-shrink:0;box-shadow:none;}
 .dt-user-info{flex:1;min-width:0;}
 .dt-user-email{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dt-user-role{font-size:9.5px;color:var(--text-dim);display:flex;align-items:center;gap:4px;margin-top:1px;}
@@ -394,19 +400,19 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 .tv-topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 18px;flex-wrap:wrap;}
 .tv-title-block{display:flex;align-items:center;gap:10px;}
 .tv-title{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:.3px;}
-.tv-dep-badge{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:4px;background:rgba(255,87,34,.12);color:var(--dt-orange);border:1px solid rgba(255,87,34,.25);margin-left:6px;}
+.tv-dep-badge{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:4px;background:rgba(255,87,34,.12);color:var(--attention);border:1px solid rgba(255,87,34,.25);margin-left:6px;}
 .tv-search-block{flex:1;max-width:440px;min-width:240px;}
 .tv-omni-search{position:relative;display:flex;align-items:center;}
 .tv-search-icon{position:absolute;left:12px;font-size:12px;color:var(--text-dim);pointer-events:none;}
 .tv-omni-search input{width:100%;background:#06070a;border:1px solid var(--border);border-radius:6px;padding:7px 34px;font-size:12px;color:var(--text);outline:none;transition:all .15s;font-family:var(--font);}
-.tv-omni-search input:focus{border-color:var(--accent);box-shadow:0 0 12px rgba(154,184,255,.15);}
+.tv-omni-search input:focus{border-color:var(--accent);box-shadow:0 0 12px rgba(94,234,212,.15);}
 .tv-search-kbd{position:absolute;right:10px;font-size:9.5px;color:var(--text-dim);background:var(--surface2);padding:2px 5px;border-radius:3px;border:1px solid var(--border);pointer-events:none;}
 .tv-playback-block{display:flex;align-items:center;gap:12px;}
 .tv-live-time{font-size:11px;font-family:var(--mono);color:var(--text-dim);white-space:nowrap;}
 .tv-timeline-ctrls{display:flex;align-items:center;gap:2px;background:#06070a;border:1px solid var(--border);border-radius:6px;padding:2px;}
 .tv-tbtn{background:transparent;border:none;color:var(--text-dim);font-size:10px;font-family:var(--mono);font-weight:600;padding:3px 7px;border-radius:4px;cursor:pointer;transition:all .12s;}
 .tv-tbtn:hover{background:var(--surface2);color:var(--text);}
-.tv-tbtn.active,.tv-tbtn.tv-play{background:rgba(154,184,255,.14);color:var(--accent);}
+.tv-tbtn.active,.tv-tbtn.tv-play{background:rgba(94,234,212,.14);color:var(--accent);}
 
 /* Stage Viewport */
 .tv-stage-wrap{position:relative;background:#050609;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;height:580px;display:flex;flex-direction:column;}
@@ -417,7 +423,7 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 .tv-stage-viewport{position:relative;flex:1;overflow:hidden;background:#050608;}
 .tv-view-layer{position:absolute;inset:0;display:none;}
 .tv-view-layer.active{display:block;}
-#tv-world-canvas,#mon-graph-canvas{width:100%;height:100%;display:block;}
+#mon-graph-canvas{width:100%;height:100%;display:block;}
 
 /* Floating Inspector HUD Window */
 .tv-hud-window{position:absolute;top:18px;left:18px;width:340px;background:rgba(12,15,22,.94);border:1px solid var(--border2);border-radius:9px;box-shadow:0 16px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05);backdrop-filter:blur(8px);z-index:30;overflow:hidden;transition:opacity .15s;}
@@ -470,28 +476,9 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
    AEGIS AI — PREMIUM LAYER
    One accent, quiet neutrals, light-weight numerals, lit surfaces.
    ═══════════════════════════════════════════════════════════════════ */
-:root{
-  color-scheme: dark;
-  --bg:#06070a;
-  --surface:rgba(255,255,255,.03);--surface2:rgba(255,255,255,.05);--surface3:rgba(255,255,255,.085);
-  --solid:#0c0e13;
-  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
-  --accent:#9ab8ff;--accent2:#b79cff;--accent-glow:rgba(154,184,255,.10);
-  --critical:#ff4d5e;--high:#ff8a4c;--medium:#f2c14e;--low:#6ea8ff;--info:#7b8497;--success:#3ddc97;--purple:#b79cff;
-  --dt-magenta:#b79cff;--dt-orange:#ff8a4c;--dt-purple:#b79cff;
-  --text:#eceef3;--text-dim:#8a92a5;--text-muted:#4b5266;
-  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --mono:'JetBrains Mono','Cascadia Code',Consolas,monospace;
-  --radius:16px;
-  --ease:cubic-bezier(.16,1,.3,1);
-}
 body{
   font-family:var(--font);letter-spacing:-.006em;-webkit-font-smoothing:antialiased;
-  font-feature-settings:"cv11","ss03";
-  background:
-    radial-gradient(1200px 700px at 6% -12%,rgba(124,106,255,.14),transparent 60%),
-    radial-gradient(900px 640px at 108% 112%,rgba(70,140,255,.09),transparent 60%),
-    #06070a;
+  background:var(--bg);
 }
 body::after{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.055;mix-blend-mode:overlay;
@@ -500,12 +487,13 @@ body::after{
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
 ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2);background-clip:padding-box;border:2px solid transparent}
-::selection{background:rgba(154,184,255,.28)}
+::selection{background:rgba(94,234,212,.28)}
 
 /* ── TOP BAR ─────────────────────────────────────────────────────── */
-#topnav{height:60px;padding:0 24px 0 18px;gap:20px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
+#topnav{height:100px;padding:0 24px 0 18px;gap:20px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
 .brand{border:none;margin:0;padding:0;gap:12px}
-.brand-mark{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(145deg,#2b2e40,#12141b);border:1px solid var(--border2);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 6px 18px -6px rgba(124,106,255,.5)}
+.brand-logo{height:88px;width:auto;display:block;}
+.brand-mark{width:32px;height:32px;border-radius:4px;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--border2);box-shadow:none}
 .wordmark{font-weight:600;font-size:15px;letter-spacing:.01em;color:var(--text)}
 .wordmark i{font-style:normal;font-weight:400;color:var(--accent2);margin-left:5px}
 .crumb{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-dim);padding-left:20px;border-left:1px solid var(--border);height:22px}
@@ -537,7 +525,7 @@ body::after{
 .sb-item .lbl{opacity:0;transition:opacity .2s}
 #sidebar:hover .sb-item .lbl{opacity:1}
 .sb-item:hover{background:rgba(255,255,255,.05);color:var(--text)}
-.sb-item.active{background:rgba(154,184,255,.1);color:var(--text);border-color:rgba(154,184,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.sb-item.active{background:var(--accent-dim);color:var(--text);border-color:var(--border2);box-shadow:none}
 .sb-item.active .ico{color:var(--accent)}
 .sb-badge{position:absolute;top:-6px;right:-8px;margin:0;min-width:16px;height:16px;padding:0 4px;display:grid;place-items:center;border-radius:999px;font-size:9.5px;font-weight:600;background:var(--critical);color:#fff;box-shadow:0 0 0 2px #0a0b10}
 .rail-spacer{flex:1}
@@ -570,15 +558,15 @@ body::after{
 
 /* ── BUTTONS / INPUTS ────────────────────────────────────────────── */
 .btn{border-radius:11px;font-weight:550;font-size:13px;padding:10px 20px;transition:all .25s var(--ease)}
-.btn-p{background:#eceef3;color:#0a0b0e;box-shadow:0 0 0 1px rgba(255,255,255,.3),0 8px 24px -8px rgba(154,184,255,.45)}
+.btn-p{background:#eceef3;color:#0a0b0e;box-shadow:0 0 0 1px rgba(255,255,255,.3),0 8px 24px -8px rgba(94,234,212,.45)}
 .btn-p:hover{background:#fff;transform:translateY(-1px)}
 .btn-g{border-color:var(--border);color:var(--text-dim);background:rgba(255,255,255,.03)}
 .btn-g:hover{border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.07)}
 .btn-sm{padding:7px 14px;font-size:12.5px;border-radius:10px}
 .fi,.fsel,.fsrch{background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);transition:all .2s var(--ease)}
-.fi:focus,.fsrch:focus{border-color:rgba(154,184,255,.5);box-shadow:0 0 0 4px rgba(154,184,255,.1);background:rgba(255,255,255,.05)}
+.fi:focus,.fsrch:focus{border-color:rgba(94,234,212,.5);box-shadow:0 0 0 4px rgba(94,234,212,.1);background:rgba(255,255,255,.05)}
 .prst,.ff{border-radius:999px;background:rgba(255,255,255,.03)}
-.prst:hover,.prst.on,.ff.on,.ff:hover{border-color:rgba(154,184,255,.35);color:var(--text);background:rgba(154,184,255,.1)}
+.prst:hover,.prst.on,.ff.on,.ff:hover{border-color:rgba(94,234,212,.35);color:var(--text);background:rgba(94,234,212,.1)}
 
 /* ── TABLES / BADGES ─────────────────────────────────────────────── */
 table.ft th,table.ht th{font-size:12px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--text-dim);padding:12px 14px}
@@ -592,7 +580,7 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .sev-LOW{background:rgba(110,168,255,.1);color:var(--low);border-color:rgba(110,168,255,.26)}
 .sf,.at-bar,.pb{border-radius:99px}
 .st,.at-bw{background:rgba(255,255,255,.07)}
-.pb{background:linear-gradient(90deg,var(--accent2),var(--accent));box-shadow:0 0 14px rgba(154,184,255,.5)}
+.pb{background:linear-gradient(90deg,var(--accent2),var(--accent));box-shadow:0 0 14px rgba(94,234,212,.5)}
 .term,.fv-cmd-block,.fv-proof-box{background:rgba(0,0,0,.4)!important;border-color:var(--border)}
 .cve-lnk,.rcve{color:var(--accent)}
 .ti{background:rgba(255,255,255,.03);border-radius:12px}
@@ -604,7 +592,7 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .dt-card{padding:20px 22px;border-radius:18px;transition:transform .4s var(--ease),border-color .3s,background .3s}
 .dt-card:hover{transform:translateY(-3px);border-color:var(--border2);background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025))}
 .dt-card-icon{border-radius:14px;width:50px;height:50px;background:rgba(255,255,255,.04);border:1px solid var(--border)}
-.dt-card-icon.sec-ai,.dt-card-icon.threat-viz,.dt-card-icon.vuln-intel{box-shadow:0 10px 30px -10px rgba(154,184,255,.35);border-color:var(--border2)}
+.dt-card-icon.sec-ai,.dt-card-icon.threat-viz,.dt-card-icon.vuln-intel{box-shadow:0 10px 30px -10px rgba(94,234,212,.35);border-color:var(--border2)}
 .dt-card-title{font-size:15px;font-weight:600;letter-spacing:-.01em}
 .dt-card-title span{background:rgba(255,255,255,.07)!important;color:var(--text-dim)!important;border-radius:999px!important;font-weight:500}
 .dt-card-action{border-radius:999px;padding:5px 12px}
@@ -613,16 +601,16 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .tv-topbar{background:none;border:none;padding:0;box-shadow:none;gap:20px}
 .tv-title{font-size:22px;font-weight:600;letter-spacing:-.025em;gap:12px}
 .tv-omni-search input{background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:12px;padding:10px 40px;font-size:13px}
-.tv-omni-search input:focus{border-color:rgba(154,184,255,.5);box-shadow:0 0 0 4px rgba(154,184,255,.1)}
+.tv-omni-search input:focus{border-color:rgba(94,234,212,.5);box-shadow:0 0 0 4px rgba(94,234,212,.1)}
 .tv-search-icon{display:grid;place-items:center;left:14px;color:var(--text-dim)}
 .tv-search-kbd{border-radius:6px;font-family:var(--mono)}
 .tv-live-time{font:400 12px var(--mono);color:var(--text-dim)}
 .tv-timeline-ctrls{background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:11px;padding:3px}
 .tv-tbtn{border-radius:8px;padding:5px 9px;font-family:var(--mono)}
-.tv-tbtn.active,.tv-tbtn.tv-play{background:rgba(154,184,255,.14);color:var(--accent)}
+.tv-tbtn.active,.tv-tbtn.tv-play{background:rgba(94,234,212,.14);color:var(--accent)}
 
-#mon-statsbar{gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-wrap:nowrap}
-.mstat{background:none;border:none;border-radius:0;box-shadow:none;border-left:1px solid var(--border);padding:20px 28px;min-width:0}
+#mon-statsbar{gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.mstat{background:none;border:none;border-radius:0;box-shadow:none;border-left:1px solid var(--border);padding:16px 20px;min-width:0;flex:1 1 160px}
 .mstat:first-child{border-left:none;padding-left:4px}
 .mstat::before{display:none}
 .mstat-val{font-size:38px;font-weight:300;letter-spacing:-.035em;color:var(--text);line-height:1.05;font-variant-numeric:tabular-nums}
@@ -630,7 +618,7 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 @media(max-width:1100px){#mon-statsbar{flex-wrap:wrap}.mstat{flex:1 1 33%;border-left:none;padding:16px 8px}}
 .mbadge{padding:3px 10px;font-size:11px}
 
-.tv-stage-wrap{height:clamp(560px,calc(100vh - 250px),780px);border-radius:26px;border:1px solid var(--border2);background:#05060a;
+.tv-stage-wrap{height:clamp(720px,calc(100vh - 160px),980px);border-radius:26px;border:1px solid var(--border2);background:#05060a;
   box-shadow:0 50px 140px -40px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.07)}
 .tv-stage-header{position:absolute;top:18px;left:18px;right:18px;padding:0;background:none;border:none;z-index:25;pointer-events:none}
 .tv-stage-header>*{pointer-events:auto}
@@ -642,16 +630,56 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .tv-stage-viewport{position:absolute;inset:0;background:none}
 .tv-stage-viewport::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:6;
   background:radial-gradient(120% 95% at 50% 46%,transparent 42%,rgba(3,4,7,.88) 100%)}
-#tv-map-view{background:radial-gradient(75% 65% at 50% 52%,#0e1424 0%,#06070b 72%)!important}
+#tv-map-view.tv-view-layer.active{display:flex;align-items:flex-start;justify-content:center;padding:92px 36px 28px;background:var(--bg)!important;z-index:12}
+.geo-note{width:min(520px,100%);padding:28px 32px;border-radius:16px;background:#f7f8fa;color:#12161c;border:1px solid #d5dbe3;box-shadow:0 18px 48px rgba(0,0,0,.28);text-align:left}
+.geo-note h2{margin:0 0 8px;font-size:22px;font-weight:650;letter-spacing:-.02em;color:#12161c}
+.geo-note p{margin:0;font-size:14px;line-height:1.55;color:#3c4654}
+.geo-note-k{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a5a00}
+.geo-note .btn{margin-top:16px}
+#tv-map-view:not(.has-points) #tv-world-stage,#tv-map-view:not(.has-points) .geo-count,#tv-map-view:not(.has-points) .geo-tip{display:none}
+#tv-map-view.has-points .geo-note{display:none}
+#tv-map-view.tv-view-layer.active.has-points{display:block;padding:0;background:#070a10!important}
+#tv-world-stage{position:absolute;inset:0;background:#070a10;}
+#tv-world-stage svg{width:100%;height:100%;display:block;}
+#tv-world-stage path{fill:#1e3348;stroke:#8eb4d4;stroke-width:.45;stroke-linejoin:round;}
+.geo-pin{cursor:pointer;}
+.geo-pin-halo{fill:rgba(255,92,92,.22);stroke:rgba(255,160,150,.75);stroke-width:.7;transform-box:fill-box;transform-origin:center;animation:geo-heartbeat 1.8s ease-out infinite;}
+.geo-pin-dot{fill:#ff5d57;transform-box:fill-box;transform-origin:center;animation:geo-dot-beat 1.8s ease-in-out infinite;}
+@keyframes geo-heartbeat{
+  0%{transform:scale(.65);opacity:.75}
+  14%{transform:scale(1.45);opacity:.35}
+  22%{transform:scale(.8);opacity:.6}
+  36%{transform:scale(2.2);opacity:0}
+  100%{transform:scale(2.2);opacity:0}
+}
+@keyframes geo-dot-beat{
+  0%,100%{transform:scale(1)}
+  14%{transform:scale(1.4)}
+  22%{transform:scale(1)}
+  36%{transform:scale(1.2)}
+}
+html[data-theme="light"] .tv-stage-wrap{
+  --text:#E7EDF4;
+  --text-dim:#D5DEE8;
+  --text-muted:#C5D0DC;
+  --border:rgba(231,237,244,.16);
+  --border2:rgba(231,237,244,.28);
+  color:#E7EDF4;
+}
+.geo-tip{position:absolute;z-index:4;pointer-events:none;max-width:280px;padding:8px 10px;border-radius:8px;background:rgba(247,248,250,.96);color:#12161c;box-shadow:0 10px 28px rgba(0,0,0,.35);}
+.geo-tip[hidden]{display:none;}
+.geo-tip-ip{font-family:var(--mono);font-size:12px;font-weight:600;}
+.geo-tip-place{margin-top:2px;font-size:12px;color:#3c4654;}
+.geo-count{position:absolute;right:24px;bottom:24px;z-index:4;padding:8px 12px;border-radius:999px;background:rgba(12,14,20,.72);border:1px solid rgba(255,255,255,.12);color:#e8eef6;font-size:12px;backdrop-filter:blur(12px);}
 #tv-graph-view{background:radial-gradient(75% 65% at 50% 50%,#0e1424 0%,#06070b 72%)}
 
-.tv-hero{position:absolute;left:24px;bottom:24px;z-index:20;width:372px;padding:20px 22px;border-radius:20px;
+.tv-hero{position:absolute;left:24px;bottom:24px;z-index:20;width:min(560px,calc(100% - 48px));padding:20px 22px;border-radius:20px;
   background:rgba(12,14,20,.6);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
   border:1px solid var(--border2);box-shadow:0 30px 80px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.09);
   transition:border-color .4s,box-shadow .4s}
 .tv-hero .k{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text-dim)}
 .tv-hero .h{font-size:22px;font-weight:500;letter-spacing:-.025em;margin:10px 0 8px;line-height:1.2}
-.tv-hero .p{font-size:13px;color:var(--text-dim);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tv-hero .p{font-size:13px;color:var(--text-dim);line-height:1.55;max-height:9.6em;overflow:auto}
 .tv-hero .a{display:flex;gap:8px;margin-top:16px}
 .pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--success);animation:ring 2.4s infinite}
 @keyframes ring{0%{box-shadow:0 0 0 0 rgba(61,220,151,.5)}70%{box-shadow:0 0 0 9px rgba(61,220,151,0)}100%{box-shadow:0 0 0 0 rgba(61,220,151,0)}}
@@ -682,7 +710,10 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .inc-card.crit{border-left:1px solid rgba(255,77,94,.4);box-shadow:inset 3px 0 0 var(--critical),inset 0 1px 0 rgba(255,255,255,.05)}
 .inc-card.high{border-left:1px solid rgba(255,138,76,.4);box-shadow:inset 3px 0 0 var(--high),inset 0 1px 0 rgba(255,255,255,.05)}
 .inc-card.med{border-left:1px solid rgba(242,193,78,.4);box-shadow:inset 3px 0 0 var(--medium),inset 0 1px 0 rgba(255,255,255,.05)}
-.inc-narr{font-size:13.5px;line-height:1.7}
+.inc-narr{font-size:13.5px;line-height:1.7;white-space:normal;overflow:visible}
+.contain-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.contain-bar .fsel{width:auto;min-width:0;flex:1 1 180px;max-width:280px;padding:8px 12px;font-size:13px}
+.contain-note{flex:1 1 220px;font-size:12px;line-height:1.45;color:var(--text-dim)}
 
 /* ── OVERLAYS (solid, so nothing bleeds through) ─────────────────── */
 #toast{background:var(--solid);border-radius:14px;border:1px solid var(--border2)}
@@ -693,7 +724,7 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .fv-tab{border-radius:10px 10px 0 0}
 #fv-run-btn{background:#eceef3;color:#0a0b0e;border-radius:11px}
 .fv-test-btn{border-radius:999px;border-color:var(--border2);color:var(--text-dim);padding:4px 12px}
-.fv-test-btn:hover{border-color:rgba(154,184,255,.5);color:var(--text);background:rgba(154,184,255,.1)}
+.fv-test-btn:hover{border-color:rgba(94,234,212,.5);color:var(--text);background:rgba(94,234,212,.1)}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
@@ -706,7 +737,7 @@ select, select.fsel, .fsel {
   border: 1px solid var(--border, rgba(255,255,255,.1)) !important;
   border-radius: 8px !important;
   outline: none !important;
-  font-family: var(--font, 'Inter', sans-serif);
+  font-family: var(--font, "IBM Plex Sans", sans-serif);
   cursor: pointer;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -718,17 +749,17 @@ select, select.fsel, .fsel {
   padding-right: 32px !important;
 }
 select:focus, select.fsel:focus, .fsel:focus {
-  border-color: var(--accent, #9ab8ff) !important;
-  box-shadow: 0 0 0 2px rgba(154, 184, 255, 0.2) !important;
+  border-color: var(--accent, #5EEAD4) !important;
+  box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.2) !important;
 }
 select option, select optgroup, .fsel option, .fsel optgroup, option, optgroup {
   background-color: #0c0e14 !important;
   color: #eceef3 !important;
   padding: 8px 12px;
-  font-family: var(--font, 'Inter', sans-serif);
+  font-family: var(--font, "IBM Plex Sans", sans-serif);
 }
 select optgroup, .fsel optgroup, optgroup {
-  color: #9ab8ff !important;
+  color: #5EEAD4 !important;
   background-color: #121620 !important;
   font-weight: 700 !important;
   font-size: 11px !important;
@@ -739,18 +770,32 @@ select option:checked, select option:hover {
   color: #ffffff !important;
 }
 </style>
+<link rel="stylesheet" href="/static/shell.css"/>
 </head>
 <body>
+<div id="aegis-login" class="on" role="dialog" aria-modal="true" aria-labelledby="aegis-login-title">
+  <form id="aegis-login-form">
+    <h2 id="aegis-login-title">Unlock Aegis</h2>
+    <p>This console requires the admin token or password. Set <code>AEGIS_ADMIN_TOKEN</code> or <code>AEGIS_ADMIN_PASSWORD</code>. If neither is set, the first start prints a token and stores it in <code>~/.aegis/admin_token</code>.</p>
+    <input id="aegis-login-secret" type="password" autocomplete="current-password" placeholder="Admin token or password" required />
+    <div class="login-row">
+      <button type="submit">Unlock</button>
+      <button type="button" data-theme-toggle onclick="aegisToggleTheme()">Light</button>
+    </div>
+    <div class="err" id="aegis-login-err"></div>
+  </form>
+</div>
+
 
 <svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
   <defs>
     <linearGradient id="dt-grad-magenta" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff2a8d"/>
-      <stop offset="100%" stop-color="#8a2be2"/>
+      <stop offset="0%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#0C6670"/>
     </linearGradient>
     <linearGradient id="dt-grad-orange" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff7a00"/>
-      <stop offset="100%" stop-color="#e024c3"/>
+      <stop offset="0%" stop-color="#E8A23A"/>
+      <stop offset="100%" stop-color="#8A5A00"/>
     </linearGradient>
     <linearGradient id="dt-grad-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00f5d4"/>
@@ -763,16 +808,7 @@ select option:checked, select option:hover {
 <!-- TOP BAR -->
 <nav id="topnav">
   <div class="brand">
-    <div class="brand-mark" title="Globitech Ghana">
-      <svg width="22" height="22" viewBox="0 0 120 120" fill="none" role="img" aria-label="Globitech mark">
-        <path d="M18 78C34 70 48 52 58 28C62 42 72 58 92 68C70 66 48 70 18 78Z" fill="#F7941D"/>
-        <path d="M22 62C42 52 58 34 68 10C74 28 88 46 112 54C86 54 58 56 22 62Z" fill="#8DC63F"/>
-        <path d="M28 46C50 36 66 20 74 0C82 18 98 34 120 40C92 42 62 42 28 46Z" fill="#00AEEF"/>
-        <path d="M14 90C28 84 40 72 48 54C52 66 60 78 78 86C58 84 38 86 14 90Z" fill="#F7941D"/>
-        <path d="M10 102C22 98 32 90 38 76C42 86 50 96 66 102C48 100 30 100 10 102Z" fill="#F7941D" opacity="0.9"/>
-      </svg>
-    </div>
-    <div class="wordmark">Aegis<i>AI</i> <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:4px;letter-spacing:0.5px">by Globitech</span></div>
+    <img class="brand-logo" src="/static/globitech-logo.png" alt="Globitech Ghana"/>
   </div>
   <div class="crumb"><span>Platform</span><span style="opacity:.4">/</span><b id="crumb-page">Dashboard</b></div>
   <button class="cmdk" onclick="openCmdK()">
@@ -780,9 +816,11 @@ select option:checked, select option:hover {
     Search a device, subnet, IP or host<kbd>&#8984;K</kbd>
   </button>
   <div class="nav-right">
-    <div class="dt-status-tag" title="All engines operational"><span class="dt-status-dot"></span><span>All systems operational</span></div>
-    <div class="hp">VDB <b id="vdb-st">Ready</b></div>
+    <div class="hp">VDB <b id="vdb-st">Local</b></div>
+    <a class="incident-link" href="/incidents">Incidents</a>
+    <button type="button" class="sync-btn" data-theme-toggle onclick="aegisToggleTheme()">Light</button>
     <button class="sync-btn" onclick="triggerUpdate()">Sync</button>
+    <button class="sync-btn" onclick="aegisLogout()" title="Lock the console">Lock</button>
     <button class="sync-btn danger" onclick="resetPlatform()" title="Reset all scans and alerts to clean state">Reset</button>
   </div>
 </nav>
@@ -792,6 +830,7 @@ select option:checked, select option:hover {
 <aside id="sidebar"><div class="rail-inner">
   <div class="sb-item active" onclick="showPage('dashboard')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/></svg></span><span class="lbl">Dashboard</span></div>
   <div class="sb-item" onclick="showPage('monitor')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/><span class="sb-badge" id="sb-alerts" style="display:none">0</span></svg></span><span class="lbl">Live Monitor</span></div>
+  <a class="sb-item" href="/incidents"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg></span><span class="lbl">Incidents</span></a>
   <div class="sb-item" onclick="showPage('scan')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg></span><span class="lbl">New Scan</span></div>
   <div class="sb-sec">Intelligence</div>
   <div class="sb-item" onclick="showPage('risks')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8v4M12 15.5v.5"/><span class="sb-badge" id="sb-cc" style="display:none">0</span></svg></span><span class="lbl">Risks</span></div>
@@ -800,7 +839,7 @@ select option:checked, select option:hover {
   <div class="sb-item" onclick="showPage('history')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">Reports</span></div>
   <div class="sb-item" onclick="showPage('settings')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="lbl">Settings</span></div>
   <div class="rail-spacer"></div>
-  <div class="sb-item" onclick="toast('Aegis AI Documentation &amp; Support online','ok')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></span><span class="lbl">Help</span></div>
+  <div class="sb-item" onclick="toast('Documentation is not available in this console')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></span><span class="lbl">Help</span></div>
 </div></aside>
 
 <!-- MAIN -->
@@ -812,7 +851,7 @@ select option:checked, select option:hover {
   <div class="dt-launchers-wrap">
     <div class="dt-launchers-header">
       <span>Live Security Platform</span>
-      <span style="color:var(--text-dim);font-weight:500;"><span class="dt-status-dot" style="display:inline-block;margin-right:6px"></span>Product Status: Active</span>
+      <span style="color:var(--text-dim);font-weight:500;">Local console</span>
     </div>
     <div class="dt-launchers-grid">
       <!-- Behavioral Telemetry Engine -->
@@ -823,7 +862,7 @@ select option:checked, select option:hover {
           </svg>
         </div>
         <div class="dt-card-info">
-          <div class="dt-card-title">Behavioral Telemetry Engine <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(224,36,195,.15);color:var(--dt-magenta)">ACTIVE</span></div>
+          <div class="dt-card-title">Behavioral Telemetry Engine <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-dim);color:var(--accent)">ACTIVE</span></div>
           <div class="dt-card-desc">Autonomous threat analysis, host behavioral baseline profiling &amp; incident correlation</div>
         </div>
         <div class="dt-card-action">Launch &rarr;</div>
@@ -839,8 +878,8 @@ select option:checked, select option:hover {
           </svg>
         </div>
         <div class="dt-card-info">
-          <div class="dt-card-title">Threat Visualizer <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,87,34,.15);color:var(--dt-orange)">LIVE HUD</span></div>
-          <div class="dt-card-desc">Real-time force-directed 3D network topology graph, packet streams &amp; socket telemetry</div>
+          <div class="dt-card-title">Threat Visualizer</div>
+          <div class="dt-card-desc">Host topology from live socket telemetry. Geographic placement is not configured.</div>
         </div>
         <div class="dt-card-action">Launch &rarr;</div>
       </div>
@@ -906,21 +945,18 @@ select option:checked, select option:hover {
     </div>
   </div>
 
-  <!-- Critical Alert Routing & Zero Trust Dispatcher -->
+  <!-- Alert routing status. Connect lives in Settings. -->
   <div class="card" style="margin-bottom:16px">
     <div class="ch">
       <div>
-        <div class="ct">Critical Alert Routing &amp; DoD Zero Trust Dispatcher</div>
-        <div style="font-size:11px;color:var(--text-dim)">Autonomous cascading notification (ChatOps &rarr; Local Ghana SMS &rarr; Cellular Out-of-Band) with dead-man escalation</div>
+        <div class="ct">Alert routing</div>
+        <div id="routing-status" class="routing-status">
+          <span style="color:var(--text-dim)">Loading channel status...</span>
+        </div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-g btn-sm" onclick="sendTestCriticalAlert()">&#9889; Trigger Simulated Critical Alert</button>
-      </div>
+      <div class="ca" onclick="openAlertRoutingSettings()">Settings →</div>
     </div>
-    <div class="g4" id="alert-channels-grid" style="margin-top:12px;margin-bottom:16px">
-      <div class="empty"><div class="ei"></div><div class="eh">Loading routing channels...</div></div>
-    </div>
-    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Active Emergency Dispatches &amp; Escalation Ledger</div>
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;margin-top:12px">Active incidents</div>
     <div id="critical-alerts-wrap">
       <div class="empty"><div class="ei"></div><div class="eh">No active critical alerts in queue</div></div>
     </div>
@@ -1060,8 +1096,8 @@ select option:checked, select option:hover {
 
 <!-- ASSETS -->
 <div class="page" id="page-assets">
-  <div><div class="ph">Asset Inventory</div><div class="ps">All discovered hosts, services, and technology stack</div></div>
-  <div id="assets-wrap"><div class="empty"><div class="ei"></div><div class="eh">No assets discovered</div><div class="ep">Scan hosts to populate asset inventory</div></div></div>
+  <div><div class="ph">Asset Inventory</div><div class="ps">Enrolled hosts from real agent heartbeats. Scan inventory stays separate.</div></div>
+  <div id="assets-wrap"><div class="empty"><div class="ei"></div><div class="eh">No hosts have enrolled a heartbeat</div><div class="ep">Mint a token under Settings → Host agents and run python -m aegis.agent enroll on a Windows or Linux server.</div></div></div>
 </div>
 
 <!-- LIVE MONITOR -->
@@ -1085,18 +1121,9 @@ select option:checked, select option:hover {
     </div>
 
     <div class="tv-playback-block">
-      <div class="tv-live-time" id="tv-live-clock">Saturday Oct 24 2026 · Accra +00:00</div>
+      <div class="tv-live-time" id="tv-live-clock">—</div>
       <div class="tv-timeline-ctrls">
-        <button class="tv-tbtn" onclick="jumpTvTime('1d')">1d</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('1h')">1h</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('10m')">10m</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('1m')">1m</button>
-        <button class="tv-tbtn tv-play active" id="tv-play-btn" onclick="toggleTvPlay()">► Live</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+1m')">1m</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+10m')">10m</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+1h')">1h</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+1d')">1d</button>
-        <button class="tv-tbtn" onclick="refreshMonitorData()" title="Reload telemetry">⟳</button>
+        <button class="tv-tbtn" onclick="refreshMonitorData()" title="Reload telemetry">⟳ Refresh</button>
       </div>
     </div>
   </div>
@@ -1105,7 +1132,7 @@ select option:checked, select option:hover {
   <div id="mon-statsbar">
     <div class="mstat"><div class="mstat-lbl">Uptime</div><div class="mstat-val" id="ms-uptime">0s</div><div class="mstat-sub">Telemetry active</div></div>
     <div class="mstat"><div class="mstat-lbl">Connections Seen</div><div class="mstat-val" id="ms-conns">0</div><div class="mstat-sub">Live TCP sockets</div></div>
-    <div class="mstat"><div class="mstat-lbl">Alerts Generated</div><div class="mstat-val" id="ms-alerts">0</div><div class="mstat-sub">Model detections</div></div>
+    <div class="mstat"><div class="mstat-lbl">Alerts Generated</div><div class="mstat-val" id="ms-alerts">0</div><div class="mstat-sub">Behavioral alerts</div></div>
     <div class="mstat"><div class="mstat-lbl">Hosts Profiled</div><div class="mstat-val" id="ms-hosts">0</div><div class="mstat-sub">Baselines active</div></div>
     <div class="mstat"><div class="mstat-lbl">Active Incidents</div><div class="mstat-val" id="ms-incidents">0</div><div class="mstat-sub">Behavioral Engine</div></div>
     <div class="mstat">
@@ -1123,8 +1150,8 @@ select option:checked, select option:hover {
   <div class="tv-stage-wrap">
     <div class="tv-stage-header">
       <div class="tv-view-tabs">
-        <button class="tv-view-tab active" id="tab-view-map" onclick="switchTvView('map')">Global Threat Map</button>
-        <button class="tv-view-tab" id="tab-view-graph" onclick="switchTvView('graph')">3D Topology Physics</button>
+        <button class="tv-view-tab" id="tab-view-map" onclick="switchTvView('map')">Global Threat Map</button>
+        <button class="tv-view-tab active" id="tab-view-graph" onclick="switchTvView('graph')">Site topology</button>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
         <span id="tv-threat-summary-pill" style="font-size:10px;color:var(--text-dim)">No active threats</span>
@@ -1135,14 +1162,20 @@ select option:checked, select option:hover {
 
     <div class="tv-stage-viewport" id="tv-stage-viewport">
       <!-- 1. Global Threat Map Layer -->
-      <div id="tv-map-view" class="tv-view-layer active" style="position:relative;width:100%;height:100%;background:#06080d;overflow:hidden;">
-        <!-- Real Geographically Accurate World Map SVG -->
-        <img src="/static/world_map.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;opacity:0.92;" alt="World Map"/>
-        <canvas id="tv-world-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+      <div id="tv-map-view" class="tv-view-layer">
+        <div id="tv-world-stage"></div>
+        <div id="geo-tip" class="geo-tip" hidden></div>
+        <div id="geo-count" class="geo-count" hidden></div>
+        <div class="geo-note" id="geo-note">
+          <p class="geo-note-k" id="geo-note-k">Unavailable</p>
+          <h2 id="geo-note-title">GeoIP database is missing</h2>
+          <p id="geo-note-body">Set GEOIP_DB_PATH to a local GeoLite2-City.mmdb file, or save that path under Settings. This console does not invent coordinates. Private addresses stay on site topology.</p>
+          <button type="button" class="btn btn-p btn-sm" onclick="switchTvView('graph')">Open site topology</button>
+        </div>
       </div>
 
-      <!-- 2. 3D Topology Physics Layer -->
-      <div id="tv-graph-view" class="tv-view-layer">
+      <!-- 2. Site topology from live sockets -->
+      <div id="tv-graph-view" class="tv-view-layer active">
         <canvas id="mon-graph-canvas"></canvas>
         <div id="graph-tooltip"></div>
       </div>
@@ -1153,7 +1186,8 @@ select option:checked, select option:hover {
         <div class="h" id="tv-hero-h">All quiet</div>
         <div class="p" id="tv-hero-p">Traffic is within the learned baseline.</div>
         <div class="a">
-          <button class="btn btn-p btn-sm" onclick="document.getElementById('incidents-list').scrollIntoView({behavior:'smooth',block:'center'})">View incidents</button>
+          <a class="btn btn-p btn-sm" href="/incidents">Incident workspace</a>
+          <button class="btn btn-g btn-sm" onclick="document.getElementById('incidents-list').scrollIntoView({behavior:'smooth',block:'center'})">View incidents</button>
           <button class="btn btn-g btn-sm" onclick="toggleInspector(true)">Inspector</button>
         </div>
       </div>
@@ -1181,9 +1215,6 @@ select option:checked, select option:hover {
             <div id="tv-host-anomalies" class="tv-hud-anomaly-list">
               <div style="font-size:11px;color:var(--text-dim);">Loading...</div>
             </div>
-            <div style="margin-top:12px;">
-              <button class="fv-test-btn" style="width:100%;padding:6px 12px;font-size:11px;" onclick="openFVByRef('ftbody',0)">Run Live Audit / PoC</button>
-            </div>
           </div>
         </div>
       </div>
@@ -1195,10 +1226,9 @@ select option:checked, select option:hover {
     <div class="dt-ribbon-bar">
       <div style="display:flex;align-items:center;gap:12px;">
         <button class="dt-filter-pill">Filters</button>
-        <span class="dt-alerts-count-label"><b id="dt-model-count">0</b> Total Model Alerts</span>
+        <span class="dt-alerts-count-label"><b id="dt-model-count">0</b> Behavioral alerts</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <span class="dt-auto-resp-badge">Response: Passive Monitor</span>
         <span class="dt-sys-badge" id="dt-sys-badge">Live telemetry</span>
       </div>
     </div>
@@ -1209,7 +1239,7 @@ select option:checked, select option:hover {
   </div>
 
   <!-- TARGET WATCHLIST SECTION -->
-  <div class="card" style="border:1px solid rgba(154,184,255,.2);background:linear-gradient(180deg,var(--surface) 0%,rgba(13,21,38,.8) 100%)">
+  <div class="card" style="border:1px solid rgba(94,234,212,.2);background:linear-gradient(180deg,var(--surface) 0%,rgba(13,21,38,.8) 100%)">
     <div class="ch">
       <div class="ct">Continuous Threat Watchlist &mdash; Monitored URLs &amp; IPs</div>
       <span style="font-size:11px;color:var(--text-dim)">Autonomous port drift, DNS drift, service probing &amp; local traffic correlation</span>
@@ -1277,7 +1307,7 @@ select option:checked, select option:hover {
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div>
       <div class="ph">Platform Settings &amp; Alert Configurations</div>
-      <div class="ps">Configure Threat Intelligence APIs, emergency SMS &amp; ChatOps dispatch gateways, on-call responder directories, and asset ownership rules</div>
+      <div class="ps">Connect Slack, Microsoft Teams, or an email account. Each responder can connect their own. API keys stay masked; leave a masked value unchanged to keep the stored secret.</div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-p btn-sm" onclick="saveCurrentSettingsTab()">&#128190; Save Configuration</button>
@@ -1286,79 +1316,22 @@ select option:checked, select option:hover {
 
   <!-- Settings Navigation Sub-Tabs -->
   <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px">
-    <button class="btn btn-g btn-sm on" id="stab-btn-channels" onclick="switchSettingsTab('channels')">&#128225; Alert Dispatch Gateways</button>
+    <button class="btn btn-g btn-sm on" id="stab-btn-channels" onclick="switchSettingsTab('channels')">Slack, Teams, and email</button>
     <button class="btn btn-g btn-sm" id="stab-btn-responders" onclick="switchSettingsTab('responders')">&#128101; On-Call Responders</button>
     <button class="btn btn-g btn-sm" id="stab-btn-ownership" onclick="switchSettingsTab('ownership')">&#127963; Asset Ownership Rules</button>
     <button class="btn btn-g btn-sm" id="stab-btn-threat" onclick="switchSettingsTab('threat')">&#128273; Threat Intel APIs</button>
+    <button class="btn btn-g btn-sm" id="stab-btn-fleet" onclick="switchSettingsTab('fleet')">Host agents</button>
   </div>
 
   <!-- TAB 1: Alert Dispatch Gateways -->
   <div class="settings-tab-pane" id="stab-channels">
-    <div class="g2">
-      <!-- Local Ghana SMS Gateway -->
-      <div class="card">
-        <div class="ch"><div class="ct">Local Ghanaian SMS Gateway</div><span class="badge badge-done" id="badge-sms-status">Active</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Primary delivery medium for West African telcos (MTN, Telecel, AT). Direct delivery under 10 seconds.</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div><div class="fl">Arkesel API Key (Recommended)</div><input class="fi" type="password" id="cfg-arkesel-key" placeholder="Enter Arkesel API v2 Key..."/></div>
-          <div><div class="fl">Arkesel Sender ID (NCA Registered)</div><input class="fi" id="cfg-arkesel-sender" placeholder="AegisAI (Max 11 chars)" value="AegisAI"/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Hubtel SMS (Secondary Gateway)</div></div>
-          <div class="g2">
-            <div><div class="fl">Hubtel Client ID</div><input class="fi" id="cfg-hubtel-id" placeholder="Hubtel Client ID..."/></div>
-            <div><div class="fl">Hubtel Client Secret</div><input class="fi" type="password" id="cfg-hubtel-secret" placeholder="Hubtel Secret..."/></div>
-          </div>
-          <div><div class="fl">Hubtel Sender ID</div><input class="fi" id="cfg-hubtel-sender" placeholder="AegisAI" value="AegisAI"/></div>
-          <!-- Test SMS Box -->
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test SMS</div>
-            <div style="display:flex;gap:6px">
-              <input class="fi" id="test-sms-phone" placeholder="+233244000000" style="flex:1"/>
-              <button class="btn btn-g btn-sm" onclick="testDispatchGateway('sms')">Verify SMS</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ChatOps Dispatch Gateways -->
-      <div class="card">
-        <div class="ch"><div class="ct">ChatOps &amp; Messaging Gateways</div><span class="badge badge-done" id="badge-chat-status">Active</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Real-time interactive alerts with one-time HMAC cryptographic triage links.</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div><div class="fl">Telegram Bot Token (via @BotFather)</div><input class="fi" type="password" id="cfg-tg-token" placeholder="e.g. 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"/></div>
-          <div><div class="fl">Default Telegram Chat / Group ID</div><input class="fi" id="cfg-tg-chat" placeholder="e.g. -100123456789 or @SecurityChannel"/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">WhatsApp Business Cloud API</div></div>
-          <div><div class="fl">WhatsApp System User Token</div><input class="fi" type="password" id="cfg-wa-token" placeholder="EAAB..."/></div>
-          <div><div class="fl">WhatsApp Phone Number ID</div><input class="fi" id="cfg-wa-phone-id" placeholder="1045239..."/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Enterprise Webhook (Slack / Teams / SIEM)</div></div>
-          <div><div class="fl">Critical Alert Webhook URL</div><input class="fi" id="cfg-webhook-url" placeholder="https://hooks.slack.com/services/... or https://siem.corp/webhook"/></div>
-          <!-- Test ChatOps Box -->
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test ChatOps</div>
-            <div style="display:flex;gap:6px">
-              <input class="fi" id="test-chat-target" placeholder="Telegram Chat ID or Webhook recipient" style="flex:1"/>
-              <button class="btn btn-g btn-sm" onclick="testDispatchGateway('telegram')">Verify ChatOps</button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="g3" id="platform-connect-cards">
+      <div class="empty"><div class="eh">Loading Slack, Teams, and email...</div></div>
     </div>
-
-    <div class="g2" style="margin-top:14px">
-      <!-- Out-of-band Serial Modem -->
-      <div class="card">
-        <div class="ch"><div class="ct">Cellular Out-of-Band Serial Modem</div><span class="badge badge-running">Hardware</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Air-gapped 4G LTE emergency dispatch via physical serial connection (AT+CMGS).</div>
-        <div class="g2">
-          <div><div class="fl">Serial Device / COM Port</div><input class="fi" id="cfg-modem-port" placeholder="COM3 or /dev/ttyUSB0" value="COM3"/></div>
-          <div><div class="fl">Baud Rate</div><input class="fi" id="cfg-modem-baud" placeholder="115200" value="115200"/></div>
-        </div>
-      </div>
-      <!-- Dead-Man Canary Heartbeat -->
-      <div class="card">
-        <div class="ch"><div class="ct">Dead-Man Canary Heartbeat</div><span class="badge badge-done">Watchdog</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Periodic off-premises ping detecting if Aegis was silenced or terminated by an attacker.</div>
-        <div><div class="fl">Off-Premises Canary Ping URL</div><input class="fi" id="cfg-canary-url" placeholder="https://canary.corp/ping or https://hc-ping.com/uuid"/></div>
-      </div>
+    <div style="margin-top:12px;max-width:320px">
+      <div class="fl">Outside messages per hour</div>
+      <input class="fi" id="cfg-alert-hourly-cap" inputmode="numeric" placeholder="10" value="10"/>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:4px">After this many messages to Slack, Teams, or email in an hour, those platforms get one summary. Further alerts stay on the incident.</div>
     </div>
   </div>
 
@@ -1369,7 +1342,7 @@ select option:checked, select option:hover {
         <div class="ct">Active On-Call Responders Directory</div>
         <button class="btn btn-p btn-sm" onclick="openNewContactModal()">+ Add New Responder</button>
       </div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Security personnel and incident commanders registered to receive automated emergency dispatches.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Threat responders. Tap Connect on a row to attach that person's Slack, Teams, or email. The console does not mark an account connected until the platform sign-in finishes.</div>
       <div id="contacts-tbl-wrap"><div class="empty"><div class="eh">Loading responders...</div></div></div>
     </div>
     <!-- Add Contact Form Inline Card -->
@@ -1378,12 +1351,11 @@ select option:checked, select option:hover {
       <div class="g3" style="margin-bottom:10px">
         <div><div class="fl">Full Name</div><input class="fi" id="new-c-name" placeholder="e.g. Samuel K. Mensah"/></div>
         <div><div class="fl">SOC Role</div><select class="fsel" id="new-c-role"><option>Tier-1 Security Analyst</option><option>SOC Team Lead</option><option>Incident Commander</option><option>Security Director</option><option>DevOps On-Call</option></select></div>
-        <div><div class="fl">Primary Phone (Ghana/Intl)</div><input class="fi" id="new-c-phone" placeholder="+233244123456"/></div>
+        <div><div class="fl">Phone on file</div><input class="fi" id="new-c-phone" placeholder="E.164 phone number"/></div>
       </div>
       <div class="g3" style="margin-bottom:14px">
-        <div><div class="fl">WhatsApp Number (Optional)</div><input class="fi" id="new-c-whatsapp" placeholder="+233244123456"/></div>
-        <div><div class="fl">Telegram Chat ID (Optional)</div><input class="fi" id="new-c-telegram" placeholder="e.g. 987654321"/></div>
-        <div><div class="fl">Corporate Email (Optional)</div><input class="fi" id="new-c-email" placeholder="analyst@corp.com"/></div>
+        <div><div class="fl">Email on file</div><input class="fi" id="new-c-email" placeholder="analyst@corp.com"/></div>
+        <div style="grid-column:span 2;font-size:11px;color:var(--text-dim);align-self:end">After this person is saved, tap Connect on their row for Slack, Teams, or their mailbox. The phone is kept on the directory.</div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px">
         <button class="btn btn-p btn-sm" onclick="submitNewContact()">Save Responder</button>
@@ -1424,7 +1396,7 @@ select option:checked, select option:hover {
   <div class="settings-tab-pane" id="stab-threat" style="display:none">
     <div class="card">
       <div class="ch"><div class="ct">Threat Intelligence Feeds &amp; CVE Enrichment API Keys</div></div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">Power real-time CVE enrichment, CVSS scoring, CISA Known Exploited Vulnerabilities catalog, and live C2 indicator matching.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox syncs the last day of IOCs when an Auth-Key is saved. AbuseIPDB syncs its blacklist when an API key is saved. OTX and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
       <div class="g2">
         <div>
           <div class="fl">NIST National Vulnerability Database (NVD 2.0) API Key</div>
@@ -1433,23 +1405,78 @@ select option:checked, select option:hover {
         </div>
         <div>
           <div class="fl">AbuseIPDB Threat Intelligence API Key</div>
-          <input class="fi" type="password" id="cfg-abuse-key" placeholder="AbuseIPDB API Key (1,000 lookups/day)"/>
+          <input class="fi" type="password" id="cfg-abuse-key" placeholder="Sent as the Key header" autocomplete="off"/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.abuseipdb.com/register" target="_blank" style="color:var(--accent)">abuseipdb.com &rarr;</a></div>
         </div>
         <div>
           <div class="fl">AlienVault Open Threat Exchange (OTX) API Key</div>
-          <input class="fi" type="password" id="cfg-otx-key" placeholder="AlienVault OTX API Key..."/>
+          <input class="fi" type="password" id="cfg-otx-key" placeholder="Stored only. Lookups are not implemented."/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://otx.alienvault.com" target="_blank" style="color:var(--accent)">otx.alienvault.com &rarr;</a></div>
         </div>
         <div>
           <div class="fl">VirusTotal API Key (Optional)</div>
-          <input class="fi" type="password" id="cfg-vt-key" placeholder="VirusTotal API Key (500 lookups/day)"/>
+          <input class="fi" type="password" id="cfg-vt-key" placeholder="Stored only. Lookups are not implemented."/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.virustotal.com/gui/join-us" target="_blank" style="color:var(--accent)">virustotal.com &rarr;</a></div>
         </div>
+        <div>
+          <div class="fl">Abuse.ch ThreatFox Auth-Key</div>
+          <input class="fi" type="password" id="cfg-threatfox-key" placeholder="Sent as the Auth-Key header" autocomplete="off"/>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Free key at <a href="https://auth.abuse.ch/" target="_blank" style="color:var(--accent)">auth.abuse.ch &rarr;</a>. Sync All Feeds pulls get_iocs for the last day.</div>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="fl">GeoLite2 City database path</div>
+        <input class="fi" type="text" id="cfg-geoip-path" placeholder="/var/lib/aegis/GeoLite2-City.mmdb" spellcheck="false" autocomplete="off"/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Local file only. Same value as GEOIP_DB_PATH. Leave blank when GeoLite2-City.mmdb is not installed. A missing file or a private address produces no map point.</div>
       </div>
       <div style="margin-top:16px;display:flex;justify-content:flex-end">
         <button class="btn btn-p btn-sm" onclick="saveThreatKeysOnly()">Save Threat Intel Keys</button>
       </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: Host agents / fleet enrollment -->
+  <div class="settings-tab-pane" id="stab-fleet" style="display:none">
+    <div class="card" style="margin-bottom:14px">
+      <div class="ch"><div class="ct">Host agents</div></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Mint a one-time token, then enroll a Windows or Linux host with <span class="mono">python -m aegis.agent enroll</span>. The agent writes certs to <span class="mono">~/.aegis/agent/</span> and Assets lists only hosts that have heartbeated. This is not an NDR tap.</div>
+      <div class="g2" style="margin-bottom:12px">
+        <div>
+          <div class="fl">Console URL agents should call</div>
+          <input class="fi" id="cfg-fleet-console-url" placeholder="http://127.0.0.1:8000" spellcheck="false"/>
+        </div>
+        <div>
+          <div class="fl">Bootstrap enrollment token (env, reusable until rotated)</div>
+          <input class="fi" type="password" id="cfg-fleet-enroll-token" placeholder="Optional AEGIS_ENROLLMENT_TOKEN" autocomplete="off"/>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:4px" id="fleet-env-token-note">Leave blank to keep the stored value. Prefer one-time tokens below for real servers.</div>
+        </div>
+      </div>
+      <div class="g2" style="margin-bottom:12px">
+        <div>
+          <div class="fl">Site CA fingerprint</div>
+          <div class="mono" id="fleet-ca-fingerprint" style="font-size:11px;color:var(--text-dim);word-break:break-all">—</div>
+        </div>
+        <div>
+          <div class="fl">Heartbeated hosts</div>
+          <div id="fleet-host-counts" style="font-size:13px;font-weight:600">0</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px" id="fleet-tls-note">HTTPS is off. Set AEGIS_TLS=1 to serve the site CA and require a client certificate on heartbeats.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-p btn-sm" type="button" onclick="mintEnrollmentToken()">Mint one-time token</button>
+        <span style="font-size:11px;color:var(--text-dim)" id="fleet-token-meta">Tokens expire in 24 hours and are consumed on enroll.</span>
+      </div>
+      <div id="fleet-token-once-wrap" style="display:none;margin-top:12px">
+        <div class="fl">Copy this token now. It is not shown again.</div>
+        <input class="fi" id="fleet-token-once" readonly spellcheck="false"/>
+        <div class="fl" style="margin-top:8px">Enroll command</div>
+        <pre id="fleet-enroll-cmd" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap"></pre>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">Enrolled hosts</div></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Revoke stops the current client certificate. Re-enroll mints a replacement token for the same agent id. Assets still lists only hosts that have heartbeated.</div>
+      <div id="fleet-hosts-tbl"><div class="empty"><div class="eh">No enrolled hosts</div></div></div>
     </div>
   </div>
 </div>
@@ -1467,6 +1494,88 @@ let currentScan=null;
 let ws=null;
 let presetPorts='80,443,22,21,25,53,8080,8443,3306,5432,6379,27017,9200,2375,3389,5900';
 let sfilt='ALL',rfilt='ALL';
+window.__aegisAuthed = false;
+
+const _aegisFetch = window.fetch.bind(window);
+window.fetch = function(input, init){
+  return _aegisFetch(input, init).then(res => {
+    const url = typeof input === 'string' ? input : ((input && input.url) || '');
+    if (res.status === 401 && url.indexOf('/api/auth/') === -1) {
+      window.__aegisAuthed = false;
+      showAegisLogin();
+    }
+    return res;
+  });
+};
+
+function aegisFollowNext(){
+  const next = new URLSearchParams(location.search).get('next');
+  if (next === '/incidents') {
+    location.assign('/incidents');
+    return true;
+  }
+  return false;
+}
+function showAegisLogin(){
+  const el = document.getElementById('aegis-login');
+  if (el) el.classList.add('on');
+  const field = document.getElementById('aegis-login-secret');
+  if (field) field.focus();
+}
+function hideAegisLogin(){
+  const el = document.getElementById('aegis-login');
+  if (el) el.classList.remove('on');
+  const err = document.getElementById('aegis-login-err');
+  if (err) err.textContent = '';
+}
+async function aegisBoot(){
+  try {
+    const res = await _aegisFetch('/api/auth/status');
+    const data = await res.json();
+    if (data.authenticated) {
+      window.__aegisAuthed = true;
+      hideAegisLogin();
+      if (aegisFollowNext()) return;
+      loadDash();
+      return;
+    }
+  } catch (e) {}
+  window.__aegisAuthed = false;
+  showAegisLogin();
+}
+async function aegisLogout(){
+  try { await _aegisFetch('/api/auth/logout', {method:'POST'}); } catch (e) {}
+  window.__aegisAuthed = false;
+  const field = document.getElementById('aegis-login-secret');
+  if (field) field.value = '';
+  showAegisLogin();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('aegis-login-form');
+  if (!form) return;
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const secret = (document.getElementById('aegis-login-secret').value || '').trim();
+    const err = document.getElementById('aegis-login-err');
+    try {
+      const res = await _aegisFetch('/api/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({secret})
+      });
+      if (!res.ok) {
+        if (err) err.textContent = 'That token or password was not accepted.';
+        return;
+      }
+      window.__aegisAuthed = true;
+      hideAegisLogin();
+      if (aegisFollowNext()) return;
+      loadDash();
+    } catch (e) {
+      if (err) err.textContent = 'Could not reach the console.';
+    }
+  });
+});
 
 // ── NAV ────────────────────────────────────────────────────────────────────
 function showPage(n){
@@ -1484,18 +1593,15 @@ function showPage(n){
   if(n==='settings') loadSettings();
   if(n==='monitor'){
     initMonitor();
-    // Init or reinit TV engine (canvas needs page visible for sizing)
     setTimeout(() => {
-      if(!tvWorldRafId) initWorldMapCanvas();
-      else {
-        const cvs = document.getElementById('tv-world-canvas');
-        if(cvs) {
-          const dpr = window.devicePixelRatio || 1;
-          const rect = cvs.parentElement ? cvs.parentElement.getBoundingClientRect() : cvs.getBoundingClientRect();
-          if(rect.width && rect.height) {
-            cvs.width = Math.round(rect.width * dpr);
-            cvs.height = Math.round(rect.height * dpr);
-          }
+      if(typeof initGraphEngine === 'function') initGraphEngine();
+      const cvs = document.getElementById('mon-graph-canvas');
+      if(cvs) {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = cvs.getBoundingClientRect();
+        if(rect.width && rect.height) {
+          cvs.width = Math.round(rect.width * dpr);
+          cvs.height = Math.round(rect.height * dpr);
         }
       }
     }, 50);
@@ -1520,6 +1626,7 @@ async function loadDash(){
     renderInsights(d.top_insights||[]);
     renderAttack(d.attack_summary||{});
     renderRansom((d.attack_summary||{}).ransomware_cves||[]);
+    if (typeof loadAlertingState === 'function') loadAlertingState();
   }catch(e){console.error(e);}
 }
 
@@ -1750,51 +1857,152 @@ async function loadRisks(){
 }
 
 // ── THREAT PAGE ────────────────────────────────────────────────────────────
+function workspaceLink(connections, provider){
+  return (connections || []).find(function(c){ return c.provider === provider && !c.contact_id; }) || null;
+}
+function linkFor(connections, provider, contactId){
+  const wanted = contactId || '';
+  return (connections || []).find(function(c){ return c.provider === provider && (c.contact_id || '') === wanted; }) || null;
+}
+function platformStatusLine(link){
+  if(!link) return 'Not connected';
+  const name = link.account_label || 'Connected account';
+  const dest = link.destination_label || '';
+  if(dest && dest.indexOf('/') === -1) return name + ' · ' + dest;
+  return name;
+}
+function connectButton(provider, label, contactId){
+  return `<button class="btn btn-p btn-sm" data-provider="${esc(provider)}" data-contact="${esc(contactId||'')}" onclick="connectPlatform(this.dataset.provider, this.dataset.contact)">${esc(label || 'Connect')}</button>`;
+}
+function disconnectButton(provider, contactId, label){
+  return `<button class="btn btn-g btn-sm" data-provider="${esc(provider)}" data-contact="${esc(contactId||'')}" onclick="disconnectPlatform(this.dataset.provider, this.dataset.contact)">${esc(label || 'Disconnect')}</button>`;
+}
+function platformActions(link, provider, contactId, label, disconnectLabel){
+  if(link) return disconnectButton(provider, contactId, disconnectLabel);
+  return connectButton(provider, label || 'Connect', contactId);
+}
+function platformCard(title, blurb, link, actionsHtml){
+  const connected = !!link;
+  return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:12px;font-weight:700">${title}</span><span class="badge ${connected?'badge-done':'badge-queued'}">${connected?'CONNECTED':'NOT CONNECTED'}</span></div>
+    <div style="font-size:11px;color:var(--text-dim);min-height:32px">${blurb}</div>
+    <div style="font-size:12px;margin:8px 0;font-weight:600">${esc(platformStatusLine(link))}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${actionsHtml}</div>
+  </div>`;
+}
+function platformCardsHtml(connections){
+  const slack = workspaceLink(connections, 'slack');
+  const teams = workspaceLink(connections, 'teams');
+  const microsoft = workspaceLink(connections, 'email_microsoft');
+  const google = workspaceLink(connections, 'email_google');
+  const emailNames = [microsoft, google].filter(Boolean).map(platformStatusLine);
+  const emailLink = emailNames.length ? {account_label: emailNames.join(' · '), destination_label: ''} : null;
+  const emailActions = platformActions(microsoft, 'email_microsoft', '', 'Connect Microsoft', 'Disconnect Microsoft')
+    + platformActions(google, 'email_google', '', 'Connect Google', 'Disconnect Google');
+  return [
+    platformCard('Slack', 'Tap Connect. The browser opens Slack so you can sign in and allow Aegis.', slack, platformActions(slack, 'slack', '', 'Connect')),
+    platformCard('Microsoft Teams', 'Tap Connect. The browser opens Microsoft so you can sign in and allow Aegis.', teams, platformActions(teams, 'teams', '', 'Connect')),
+    platformCard('Email', 'Tap Connect. The browser opens Microsoft 365 or Google so you can sign in. Alerts go to that mailbox.', emailLink, emailActions),
+  ].join('');
+}
+function paintPlatformCards(connections){
+  const el = document.getElementById('platform-connect-cards');
+  if(el) el.innerHTML = platformCardsHtml(connections);
+}
+function routingChannelChip(name, link){
+  const on = !!link;
+  const label = on ? platformStatusLine(link) : 'not connected';
+  return `<span class="routing-chip"><span class="routing-dot${on?' on':''}"></span>${esc(name)} · ${esc(label)}</span>`;
+}
+function paintRoutingStatus(connections, cap){
+  const el = document.getElementById('routing-status');
+  if(!el) return;
+  const slack = workspaceLink(connections, 'slack');
+  const teams = workspaceLink(connections, 'teams');
+  const mail = workspaceLink(connections, 'email_microsoft') || workspaceLink(connections, 'email_google');
+  const sent = Number((cap || {}).sent_this_hour || 0);
+  const hourly = Number((cap || {}).hourly_cap || 10);
+  el.innerHTML = routingChannelChip('Slack', slack)
+    + routingChannelChip('Teams', teams)
+    + routingChannelChip('Email', mail)
+    + `<span class="routing-cap">${sent} of ${hourly} <span>this hour</span></span>`;
+}
+function openAlertRoutingSettings(){
+  showPage('settings');
+  switchSettingsTab('channels');
+}
+async function connectPlatform(provider, contactId){
+  try{
+    const res = await fetch('/api/integrations/' + encodeURIComponent(provider) + '/start', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({contact_id: contactId || ''})
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if(!res.ok){ toast(data.detail || 'Could not start connect', 'err'); return; }
+    if(data.authorize_url){ location.href = data.authorize_url; return; }
+    const names = {slack:'Slack', teams:'Microsoft', email_microsoft:'Microsoft', email_google:'Google'};
+    toast('Aegis cannot open ' + (names[provider] || 'that') + ' sign-in yet. The browser page exists only when Aegis has its own app there, the same way Cursor has its GitHub app.', 'err');
+  }catch(e){ toast('Could not start connect', 'err'); }
+}
+async function disconnectPlatform(provider, contactId){
+  try{
+    const res = await fetch('/api/integrations/' + encodeURIComponent(provider) + '/disconnect?contact_id=' + encodeURIComponent(contactId || ''), {method:'POST'});
+    if(!res.ok){ toast('Could not disconnect', 'err'); return; }
+    toast('Disconnected', 'ok');
+    loadAlertingState();
+    const responders = document.getElementById('stab-responders');
+    if(responders && responders.style.display !== 'none') loadContactsList();
+  }catch(e){ toast('Could not disconnect', 'err'); }
+}
+
 async function loadAlertingState(){
   try{
-    const [statusRes, alertsRes] = await Promise.all([fetch('/api/alerting/status'), fetch('/api/alerting/alerts')]);
+    const [statusRes, alertsRes, integRes] = await Promise.all([
+      fetch('/api/alerting/status'),
+      fetch('/api/alerting/alerts'),
+      fetch('/api/integrations')
+    ]);
     const status = await statusRes.json();
     const alerts = await alertsRes.json();
-    const chGrid = document.getElementById('alert-channels-grid');
-    if(chGrid){
-      const ch = status.channels || {};
-      const smsOk = ch.sms_local_arkesel || ch.sms_local_hubtel;
-      const chatOk = ch.telegram || ch.whatsapp || ch.generic_webhook;
-      const oobOk = ch.modem_oob_configured;
-      const canaryOk = (status.canary_heartbeat || {}).canary_configured;
-      chGrid.innerHTML = `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Local SMS (Ghana)</span><span class="badge ${smsOk?'badge-done':'badge-queued'}">${smsOk?'ACTIVE':'READY'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Arkesel / Hubtel Ghana Gateway (MTN, Telecel, AT)</div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">ChatOps Dispatch</span><span class="badge ${chatOk?'badge-done':'badge-queued'}">${chatOk?'ACTIVE':'CONFIG READY'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Telegram Bot &amp; WhatsApp Cloud API</div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Cellular Out-of-Band</span><span class="badge ${oobOk?'badge-done':'badge-queued'}">${oobOk?'PORT COM3':'AIR-GAP STANDBY'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Hardware Serial 4G LTE Modem</div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Dead-Man Canary</span><span class="badge ${canaryOk?'badge-done':'badge-queued'}">${canaryOk?'ACTIVE':'MONITORED'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Off-Premises Tamper Heartbeat Watchdog</div>
-        </div>`;
-    }
+    const integrations = integRes.ok ? await integRes.json() : {connections:[]};
+    const connections = integrations.connections || status.platforms || [];
+    window._platformConnections = connections;
+    paintPlatformCards(connections);
+    const cap = status.dispatch_cap || {};
+    paintRoutingStatus(connections, cap);
     const aWrap = document.getElementById('critical-alerts-wrap');
     if(aWrap){
       if(!alerts || !alerts.length){
         aWrap.innerHTML = '<div class="empty"><div class="eh">No active critical alerts in queue</div></div>';
       } else {
         const rows = alerts.map(a=>{
-          const pillars = (a.zt_pillars||[]).map(p=>`<span style="background:rgba(154,184,255,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-right:4px">${p}</span>`).join('') || '—';
+          const id = String(a.alert_id||'');
+          const pillars = (a.zt_pillars||[]).map(p=>`<span style="background:rgba(94,234,212,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-right:4px">${esc(p)}</span>`).join('') || '—';
           const escBadge = a.escalation_level > 0 ? `<span class="badge badge-error">Level ${a.escalation_level} Escalated</span>` : `<span class="badge badge-running">Level 0 Primary</span>`;
-          const ackBtn = a.acknowledged ? `<span style="color:var(--success);font-weight:700;font-size:11px">&#10003; Acknowledged</span>` : `<button class="btn btn-p btn-sm" onclick="ackCriticalAlert('${a.alert_id}')">Acknowledge</button>`;
-          return `<tr><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${a.alert_id}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">x${a.occurrence_count||1}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`;
+          const ackBtn = a.acknowledged ? `<span style="color:var(--success);font-weight:700;font-size:11px">&#10003; Acknowledged</span>` : `<button class="btn btn-p btn-sm" onclick="event.stopPropagation(); ackCriticalAlert('${id}')">Acknowledge</button>`;
+          const held = Number(a.held_count || 0);
+          const countCell = `x${a.occurrence_count||1}` + (held ? `<div style="font-size:10px;color:var(--text-dim);font-weight:500">${held} held</div>` : '');
+          const summary = esc(String(a.summary||'').replace(/\s*\|\s*Key:[\s\S]*$/,''));
+          const heldLine = held ? `<div style="margin-top:8px;font-size:12px">Held from outside channels: ${held}. They stay on this incident.</div>` : '';
+          const detail = `<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;font-size:11px">`
+            + `<div><div style="color:var(--text-dim)">Destination</div><div style="font-family:var(--mono)">${esc(a.dest_ip||'—')}${a.dest_port?':'+esc(a.dest_port):''}</div></div>`
+            + `<div><div style="color:var(--text-dim)">Tactic</div><div>${esc(a.tactic||'—')}</div></div>`
+            + `<div><div style="color:var(--text-dim)">Technique</div><div style="font-family:var(--mono)">${esc(a.technique||'—')}</div></div>`
+            + `<div><div style="color:var(--text-dim)">Last seen</div><div>${esc(a.last_occurrence||a.created_at||'—')}</div></div>`
+            + `</div><div style="margin-top:8px;line-height:1.45">${summary||'No additional detail was recorded.'}</div>${heldLine}`;
+          return `<tr style="cursor:pointer" onclick="toggleAlertDetail('${id}')"><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${esc(id)}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">${countCell}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`
+            + `<tr id="adet-${id}" style="display:none"><td colspan="7" style="background:var(--surface2);padding:12px 14px">${detail}</td></tr>`;
         }).join('');
-        aWrap.innerHTML = `<table class="ft"><thead><tr><th>ID</th><th>Incident</th><th>Source</th><th>DoD Zero Trust Pillars</th><th>Count</th><th>Escalation</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>`;
+        aWrap.innerHTML = `<table class="ft"><thead><tr><th>ID</th><th>Incident</th><th>Source</th><th>Zero Trust</th><th>Count</th><th>Escalation</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>`;
       }
     }
   }catch(e){console.warn('loadAlertingState error:', e);}
+}
+
+function toggleAlertDetail(id){
+  const row=document.getElementById('adet-'+id);
+  if(row) row.style.display=row.style.display==='table-row'?'none':'table-row';
 }
 
 async function ackCriticalAlert(aid){
@@ -1807,20 +2015,6 @@ async function ackCriticalAlert(aid){
       toast('Failed to acknowledge alert', 'err');
     }
   }catch(e){toast('Error connecting to alert service', 'err');}
-}
-
-async function sendTestCriticalAlert(){
-  toast('Dispatching simulated critical alert...');
-  try{
-    const res = await fetch('/api/alerting/test', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'Simulated Ransomware Lateral Movement (Test)', target:'192.168.10.50'})});
-    const d = await res.json();
-    if(d.ok){
-      toast(`Simulated alert ${d.alert_id} generated and routed`, 'ok');
-      loadAlertingState();
-    } else {
-      toast('Simulation failed', 'err');
-    }
-  }catch(e){toast('Network error triggering test', 'err');}
 }
 
 async function loadThreat(){
@@ -1849,14 +2043,72 @@ async function loadThreat(){
 }
 
 // ── ASSETS PAGE ────────────────────────────────────────────────────────────
+function fleetStatusColor(status){
+  if(status==='online') return 'var(--success)';
+  if(status==='stale') return 'var(--medium)';
+  if(status==='revoked') return 'var(--critical)';
+  return 'var(--text-dim)';
+}
+function fleetHostActions(h){
+  const id = JSON.stringify(h.agent_id || '');
+  const revoke = h.revoked || h.status==='revoked'
+    ? `<button class="btn btn-g btn-sm" type="button" disabled>Revoked</button>`
+    : `<button class="btn btn-d btn-sm" type="button" onclick='revokeFleetHost(${id})'>Revoke</button>`;
+  return `<span style="display:flex;gap:6px;flex-wrap:wrap">${revoke}<button class="btn btn-g btn-sm" type="button" onclick='reenrollFleetHost(${id})'>Re-enroll</button></span>`;
+}
 async function loadAssets(){
-  const d=await fetch('/api/intelligence').then(r=>r.json());
-  const hosts=d.hosts||[],cats=d.tech_categories||{};
   const wrap=document.getElementById('assets-wrap');
-  if(!hosts.length){wrap.innerHTML='<div class="empty"><div class="ei"></div><div class="eh">No assets discovered</div><div class="ep">Scan hosts to populate asset inventory</div></div>';return;}
-  const catCards=Object.entries(cats).map(([c,i])=>`<div class="mc tc"><div class="ml">${i.icon} ${c}</div><div class="mv" style="font-size:22px">${i.count}</div><div class="msub">service${i.count!==1?'s':''}</div></div>`).join('');
-  const rows=hosts.map(h=>`<tr onclick="viewScan('${h.scan_id}')"><td style="font-weight:600;color:var(--accent)">${esc(h.host)}</td><td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${(h.open_ports||[]).join(', ')||'—'}</td><td style="color:${h.total_findings>0?'var(--medium)':'var(--success)'}">${h.total_findings}</td><td style="color:var(--critical)">${(h.severity_breakdown||{}).CRITICAL||0}</td><td style="color:var(--high)">${(h.severity_breakdown||{}).HIGH||0}</td><td style="color:var(--text-dim)">${h.duration?h.duration+'s':'—'}</td><td style="color:var(--text-dim);font-size:11px">${h.started_at?h.started_at.split('T')[0]:'—'}</td><td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();viewScan('${h.scan_id}')">View</button></td></tr>`).join('');
-  wrap.innerHTML=`<div class="g4" style="margin-bottom:16px">${catCards}</div><div class="card"><div class="ch"><div class="ct">Discovered Hosts</div></div><table class="ht"><thead><tr><th>Host</th><th>Ports</th><th>Findings</th><th>Critical</th><th>High</th><th>Duration</th><th>Scanned</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  let fleet={hosts:[]}, intelData={hosts:[],tech_categories:{}};
+  try{
+    const [fleetRes, intelRes]=await Promise.all([fetch('/api/fleet/hosts'), fetch('/api/intelligence')]);
+    if(fleetRes.ok) fleet=await fleetRes.json();
+    if(intelRes.ok) intelData=await intelRes.json();
+  }catch(e){
+    wrap.innerHTML='<div class="empty"><div class="ei"></div><div class="eh">Could not load assets</div></div>';
+    return;
+  }
+  const enrolled=fleet.hosts||[];
+  const scanned=intelData.hosts||[];
+  const cats=intelData.tech_categories||{};
+  let html='';
+  if(!enrolled.length){
+    html+='<div class="empty"><div class="ei"></div><div class="eh">No hosts have enrolled a heartbeat</div><div class="ep">Mint a token under Settings → Host agents and run python -m aegis.agent enroll on a Windows or Linux server.</div></div>';
+  } else {
+    const online=enrolled.filter(h=>h.status==='online').length;
+    html+=`<div class="g4" style="margin-bottom:16px">
+      <div class="mc tc"><div class="ml">Enrolled hosts</div><div class="mv" style="font-size:22px">${enrolled.length}</div><div class="msub">from real heartbeats</div></div>
+      <div class="mc tc"><div class="ml">Online</div><div class="mv" style="font-size:22px">${online}</div><div class="msub">seen in the last 90s</div></div>
+    </div>`;
+    const rows=enrolled.map(h=>{
+      const addrs=[].concat(h.ipv4||[], h.ipv6||[]).join(', ')||'—';
+      const os=[h.os_name,h.arch].filter(Boolean).join(' ')||'—';
+      return `<tr>
+        <td style="font-weight:600;color:var(--accent)">${esc(h.hostname)}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(h.agent_id)}</td>
+        <td>${esc(os)}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(addrs)}</td>
+        <td style="color:${fleetStatusColor(h.status)};font-weight:600">${esc(h.status||'offline')}</td>
+        <td style="color:var(--text-dim);font-size:11px">${esc(h.last_seen||'—')}</td>
+        <td style="color:var(--text-dim)">${h.listen_count!=null?h.listen_count:'—'}</td>
+        <td style="color:var(--text-dim)">${h.cpu_percent!=null?h.cpu_percent+'%':'—'}</td>
+        <td>${fleetHostActions(h)}</td>
+      </tr>`;
+    }).join('');
+    html+=`<div id="assets-reenroll-wrap" style="display:none;margin-bottom:12px" class="card"><div class="ch"><div class="ct">Re-enroll token</div></div><div class="fl">Copy this token now. It is not shown again.</div><input class="fi" id="assets-reenroll-token" readonly spellcheck="false"/><pre id="assets-reenroll-cmd" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap;margin-top:8px"></pre></div>`;
+    html+=`<div class="card"><div class="ch"><div class="ct">Enrolled hosts</div></div>
+      <table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>OS</th><th>Addresses</th><th>Status</th><th>Last seen</th><th>Listen</th><th>CPU</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+  if(scanned.length){
+    const catCards=Object.entries(cats).map(([c,i])=>`<div class="mc tc"><div class="ml">${i.icon} ${c}</div><div class="mv" style="font-size:22px">${i.count}</div><div class="msub">service${i.count!==1?'s':''}</div></div>`).join('');
+    const rows=scanned.map(h=>`<tr onclick="viewScan('${h.scan_id}')"><td style="font-weight:600;color:var(--accent)">${esc(h.host)}</td><td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${(h.open_ports||[]).join(', ')||'—'}</td><td style="color:${h.total_findings>0?'var(--medium)':'var(--success)'}">${h.total_findings}</td><td style="color:var(--critical)">${(h.severity_breakdown||{}).CRITICAL||0}</td><td style="color:var(--high)">${(h.severity_breakdown||{}).HIGH||0}</td><td style="color:var(--text-dim)">${h.duration?h.duration+'s':'—'}</td><td style="color:var(--text-dim);font-size:11px">${h.started_at?h.started_at.split('T')[0]:'—'}</td><td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();viewScan('${h.scan_id}')">View</button></td></tr>`).join('');
+    html+=`<div style="margin-top:20px"><div class="ps" style="margin-bottom:8px">Scan inventory (Prevent) — hosts this console scanned, not the enrolled fleet.</div>
+      <div class="g4" style="margin-bottom:16px">${catCards}</div>
+      <div class="card"><div class="ch"><div class="ct">Scan inventory</div></div>
+      <table class="ht"><thead><tr><th>Host</th><th>Ports</th><th>Findings</th><th>Critical</th><th>High</th><th>Duration</th><th>Scanned</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div></div>`;
+  }
+  wrap.innerHTML=html;
 }
 
 // ── HISTORY PAGE ───────────────────────────────────────────────────────────
@@ -1942,20 +2194,21 @@ async function loadFeedConnectors(){
     const grid=document.getElementById('feed-connectors-grid');
     if(!grid)return;
     grid.innerHTML=feeds.map(f=>{
-      const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':'var(--high)';
-      const statusBg=f.status==='ACTIVE'?'rgba(0,200,150,.08)':f.status==='RATE_LIMITED'?'rgba(255,159,10,.08)':'rgba(255,45,85,.08)';
-      const statusIcon=f.status==='ACTIVE'?'&#10003;':f.status==='RATE_LIMITED'?'&#9888;':'&#128274;';
+      const unwired=f.status==='NOT_WIRED'||f.status==='UNAVAILABLE';
+      const statusLabel=unwired?'NOT WIRED':f.status;
+      const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':f.status==='CONFIGURED'?'var(--accent)':'var(--text-dim)';
+      const statusBg=f.status==='ACTIVE'?'rgba(0,200,150,.08)':f.status==='RATE_LIMITED'?'rgba(255,159,10,.08)':'transparent';
+      const countLabel=f.record_count==null?'—':Number(f.record_count).toLocaleString();
       return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px">`
         +`<div style="display:flex;justify-content:space-between;align-items:center">`
         +`<span style="font-weight:700;font-size:13px;color:var(--text)">${f.name}</span>`
-        +`<span style="background:${statusBg};color:${statusColor};padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700">${statusIcon} ${f.status}</span>`
+        +`<span style="background:${statusBg};color:${statusColor};padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;border:1px solid var(--border)">${statusLabel}</span>`
         +`</div>`
         +`<div style="font-size:11px;color:var(--text-dim);line-height:1.4">${f.description}</div>`
         +`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)">`
-        +`<span style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)">${(f.record_count||0).toLocaleString()}</span>`
+        +`<span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${unwired?'var(--text-dim)':'var(--accent)'}">${countLabel}</span>`
         +`<span style="font-size:10px;color:var(--text-dim)">${f.type}</span>`
         +`</div>`
-        +(f.status==='KEY_REQUIRED'?`<a href="${f.signup_url}" target="_blank" rel="noopener" style="font-size:10px;color:var(--accent);text-decoration:none">Get free API key &rarr;</a>`:'')
         +`</div>`;
     }).join('');
   }catch(e){console.warn("Feed status load failed:",e);}
@@ -2257,6 +2510,8 @@ function updateMonitorUI(data){
 
   // Render Baselines
   renderBaselines(data.baselines || {});
+
+  applyMonitorGeo(data.geoip);
 }
 
 function renderAlertFeed(alerts){
@@ -2376,7 +2631,7 @@ function initGraphEngine(){
       tt.style.left = (e.clientX - rect.left + 14) + 'px';
       tt.style.top = (e.clientY - rect.top + 14) + 'px';
       const typeLabel = found.type === 'local' ? 'Local Host / Gateway' : (found.type === 'monitored' ? 'Watched Threat Asset' : (found.type === 'internal' ? 'Internal Network Endpoint' : 'External Remote Host'));
-      const typeColor = found.type === 'local' ? '#9ab8ff' : (found.type === 'monitored' ? '#8b5cf6' : (found.type === 'internal' ? '#00e699' : '#64748b'));
+      const typeColor = found.type === 'local' ? '#5EEAD4' : (found.type === 'monitored' ? '#E8A23A' : (found.type === 'internal' ? '#00e699' : '#64748b'));
       tt.innerHTML = `
         <div class="tt-hdr">
           <span class="tt-title">${esc(found.id)}</span>
@@ -2751,7 +3006,7 @@ function renderLoop(){
 
   // Background Radar concentric orbital guide rings
   ctx.save();
-  ctx.strokeStyle = 'rgba(154,184,255, 0.06)';
+  ctx.strokeStyle = 'rgba(94,234,212, 0.06)';
   ctx.lineWidth = 1 * dpr;
   const orbitRadii = [130 * dpr, 220 * dpr, 310 * dpr];
   orbitRadii.forEach(r => {
@@ -2783,10 +3038,10 @@ function renderLoop(){
       ctx.strokeStyle = 'rgba(255, 51, 102, 0.7)';
       ctx.lineWidth = 2 * dpr;
     } else if(isConnectedToHover){
-      ctx.strokeStyle = '#9ab8ff';
+      ctx.strokeStyle = '#5EEAD4';
       ctx.lineWidth = 2 * dpr;
     } else {
-      ctx.strokeStyle = 'rgba(154,184,255, 0.16)';
+      ctx.strokeStyle = 'rgba(94,234,212, 0.16)';
       ctx.lineWidth = 1 * dpr;
     }
     ctx.stroke();
@@ -2798,8 +3053,8 @@ function renderLoop(){
 
     ctx.beginPath();
     ctx.arc(px, py, 2 * dpr, 0, Math.PI * 2);
-    ctx.fillStyle = e.suspicious ? '#ff4d5e' : '#9ab8ff';
-    ctx.shadowColor = e.suspicious ? '#ff4d5e' : '#9ab8ff';
+    ctx.fillStyle = e.suspicious ? '#ff4d5e' : '#5EEAD4';
+    ctx.shadowColor = e.suspicious ? '#ff4d5e' : '#5EEAD4';
     ctx.shadowBlur = 4 * dpr;
     ctx.fill();
     ctx.shadowBlur = 0;
@@ -2810,7 +3065,7 @@ function renderLoop(){
     const isHover = hoveredNode === n;
     const isLocal = n.type === 'local';
 
-    let ringColor = isLocal ? '#9ab8ff' : (n.suspicious ? '#ff4d5e' : (n.type === 'monitored' ? '#a855f7' : '#475569'));
+    let ringColor = isLocal ? '#5EEAD4' : (n.suspicious ? '#ff4d5e' : (n.type === 'monitored' ? '#E8A23A' : '#475569'));
     const R = (isLocal ? 20 : 13) * dpr;
 
     // Outer subtle pulse
@@ -2857,7 +3112,7 @@ function renderLoop(){
 
     ctx.save();
     ctx.fillStyle = isHover ? 'rgba(10, 20, 36, 0.96)' : 'rgba(5, 8, 14, 0.92)';
-    ctx.strokeStyle = isHover ? '#9ab8ff' : (isLocal ? 'rgba(154,184,255, 0.5)' : 'rgba(255, 255, 255, 0.12)');
+    ctx.strokeStyle = isHover ? '#5EEAD4' : (isLocal ? 'rgba(94,234,212, 0.5)' : 'rgba(255, 255, 255, 0.12)');
     ctx.lineWidth = 1 * dpr;
     ctx.beginPath();
     if(ctx.roundRect) ctx.roundRect(pillX, pillY, pillW, pillH, 3 * dpr);
@@ -2866,7 +3121,7 @@ function renderLoop(){
     ctx.stroke();
     ctx.restore();
 
-    ctx.fillStyle = isLocal ? '#9ab8ff' : (isHover ? '#ffffff' : '#94a3b8');
+    ctx.fillStyle = isLocal ? '#5EEAD4' : (isHover ? '#ffffff' : '#94a3b8');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, n.x, pillY + pillH / 2);
@@ -2904,8 +3159,8 @@ function renderTimeline(history){
 
   // Gradient fill under line
   const grad = ctx.createLinearGradient(0, padTop, 0, h - padBottom);
-  grad.addColorStop(0, 'rgba(154,184,255, 0.3)');
-  grad.addColorStop(1, 'rgba(154,184,255, 0.0)');
+  grad.addColorStop(0, 'rgba(94,234,212, 0.3)');
+  grad.addColorStop(1, 'rgba(94,234,212, 0.0)');
 
   ctx.beginPath();
   history.forEach((pt, i) => {
@@ -2928,13 +3183,13 @@ function renderTimeline(history){
     if(i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
-  ctx.strokeStyle = '#9ab8ff';
+  ctx.strokeStyle = '#5EEAD4';
   ctx.lineWidth = 2 * dpr;
   ctx.stroke();
 
   // Draw current value indicator
   const lastVal = counts[counts.length - 1];
-  ctx.fillStyle = '#9ab8ff';
+  ctx.fillStyle = '#5EEAD4';
   ctx.font = `bold ${10*dpr}px Cascadia Code, monospace`;
   ctx.textAlign = 'right';
   ctx.fillText(`${lastVal} active`, w - 10*dpr, padTop + 12*dpr);
@@ -2977,18 +3232,49 @@ async function executeIncidentAction(incId, actionType, target, btn) {
   }
 }
 
+function syncContainmentTarget(incId) {
+  const kind = document.getElementById('act-kind-' + incId);
+  const target = document.getElementById('act-target-' + incId);
+  const note = document.getElementById('act-note-' + incId);
+  if (!kind || !target) return;
+  const action = kind.value;
+  const want = action === 'terminate_process' ? 'proc' : ((action === 'block_ip' || action === 'isolate_connections') ? 'ip' : '');
+  let shown = 0;
+  Array.from(target.options).forEach((opt, i) => {
+    if (i === 0) return;
+    const match = !!want && opt.dataset.kind === want;
+    opt.hidden = !match;
+    opt.disabled = !match;
+    if (match) shown += 1;
+  });
+  const needsTarget = want !== '';
+  target.hidden = !needsTarget;
+  target.disabled = !needsTarget;
+  if (target.selectedOptions[0] && target.selectedOptions[0].disabled) target.value = '';
+  if (!note) return;
+  if (action === 'resolve') note.textContent = 'Marks this incident resolved. It does not change the host.';
+  else if (action === 'block_ip') note.textContent = shown ? 'Firewall block uses the IP selected once.' : 'No remote IP on this incident.';
+  else if (action === 'isolate_connections') note.textContent = shown ? 'Drops sockets to the IP selected once.' : 'No remote IP on this incident.';
+  else if (action === 'terminate_process') note.textContent = shown ? 'Stops the process selected once.' : 'No process name on this incident.';
+  else note.textContent = 'Choose one action. The target IP or process is selected once.';
+}
+
 function executeSelectedIncidentAction(incId, btn) {
-  const sel = document.getElementById('act-select-' + incId);
-  if (!sel || !sel.value) {
-    toast('Please select an action from the dropdown first', 'err');
+  const kind = document.getElementById('act-kind-' + incId);
+  const target = document.getElementById('act-target-' + incId);
+  if (!kind || !kind.value) {
+    toast('Choose an action first', 'err');
     return;
   }
-  try {
-    const item = JSON.parse(sel.value);
-    executeIncidentAction(incId, item.type, item.target, btn);
-  } catch (e) {
-    toast('Invalid action configuration', 'err');
+  if (kind.value === 'resolve') {
+    executeIncidentAction(incId, 'resolve', incId, btn);
+    return;
   }
+  if (!target || !target.value) {
+    toast('Choose a target', 'err');
+    return;
+  }
+  executeIncidentAction(incId, kind.value, target.value, btn);
 }
 
 function executeAlertDropdownAction(incId, alertId, btn) {
@@ -2997,12 +3283,15 @@ function executeAlertDropdownAction(incId, alertId, btn) {
     toast('Select an action for this alert first', 'err');
     return;
   }
-  try {
-    const item = JSON.parse(sel.value);
-    executeIncidentAction(incId, item.type, item.target, btn);
-  } catch (e) {
-    toast('Invalid alert action selection', 'err');
+  const action = sel.value;
+  let target = incId;
+  if (action === 'block_ip' || action === 'isolate_connections') target = sel.dataset.ip || '';
+  else if (action === 'terminate_process') target = sel.dataset.proc || '';
+  if (action !== 'resolve' && !target) {
+    toast('This alert has no target for that action', 'err');
+    return;
   }
+  executeIncidentAction(incId, action, target, btn);
 }
 
 function promptCustomAction(incId) {
@@ -3099,6 +3388,7 @@ function renderIncidents(incidents){
       <div class="inc-card ${sev}" id="card-${esc(inc.id)}" style="${isContained ? 'border-color:rgba(61,220,151,.4);background:rgba(61,220,151,.025);' : ''}">
         <div class="inc-hdr" style="flex-wrap:wrap;gap:8px;">
           <span class="inc-id">${esc(inc.id)}</span>
+          <a class="inc-open" href="/incidents?id=${encodeURIComponent(inc.id)}">Workspace</a>
           <span class="inc-urg mbadge ${sev}">${esc(inc.urgency)} URGENCY</span>
           <span class="mbadge ${isContained ? 'ok' : 'crit'}" style="font-size:10px;">${st}</span>
           <span style="font-size:11px;color:var(--text-dim);font-weight:600">Confidence: ${inc.confidence}%</span>
@@ -3117,27 +3407,19 @@ function renderIncidents(incidents){
             <button class="btn btn-g btn-sm" style="padding:2px 8px;font-size:10.5px;border-radius:6px;" onclick="promptCustomAction('${esc(inc.id)}')">Custom Action…</button>
           </div>
 
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <select class="fsel" id="act-select-${esc(inc.id)}" style="flex:1;min-width:260px;max-width:580px;padding:8px 34px 8px 12px;font-size:12px;border-radius:8px;background-color:#0c0e14;color:#eceef3;color-scheme:dark;">
-              <option value="" style="background:#0c0e14;color:#8a92a5;">-- Select Enforceable Containment Action --</option>
-              ${procs.length ? `
-                <optgroup label="Process Termination (Local Host)" style="background:#121620;color:#9ab8ff;">
-                  ${procs.map(p => `<option value='{"type":"terminate_process","target":"${esc(p)}"}' style="background:#0c0e14;color:#eceef3;">[Kill Process] ${esc(p)}</option>`).join('')}
-                </optgroup>
-              ` : ''}
-              ${dests.length ? `
-                <optgroup label="Firewall Containment (Windows Defender)" style="background:#121620;color:#9ab8ff;">
-                  ${dests.map(d => `<option value='{"type":"block_ip","target":"${esc(d)}"}' style="background:#0c0e14;color:#eceef3;">[Block IP] ${esc(d)} (Drop Traffic)</option>`).join('')}
-                </optgroup>
-                <optgroup label="Socket Session Drop" style="background:#121620;color:#9ab8ff;">
-                  ${dests.map(d => `<option value='{"type":"isolate_connections","target":"${esc(d)}"}' style="background:#0c0e14;color:#eceef3;">[Drop Sockets] ${esc(d)} (Active TCP)</option>`).join('')}
-                </optgroup>
-              ` : ''}
-              <optgroup label="Incident Status" style="background:#121620;color:#9ab8ff;">
-                <option value='{"type":"resolve","target":"${esc(inc.id)}"}' style="background:#0c0e14;color:#eceef3;">[Resolve] Mark Incident Contained &amp; Archived</option>
-              </optgroup>
+          <div class="contain-bar">
+            <select class="fsel" id="act-kind-${esc(inc.id)}" onchange="syncContainmentTarget('${esc(inc.id)}')">
+              <option value="">Action</option>
+              ${dests.length ? `<option value="block_ip">Firewall block</option><option value="isolate_connections">Drop sockets</option>` : ''}
+              ${procs.length ? `<option value="terminate_process">Stop process</option>` : ''}
+              <option value="resolve">Resolve</option>
             </select>
-
+            <select class="fsel" id="act-target-${esc(inc.id)}" hidden>
+              <option value="">Target</option>
+              ${dests.map(d => `<option data-kind="ip" value="${esc(d)}">${esc(d)}</option>`).join('')}
+              ${procs.map(p => `<option data-kind="proc" value="${esc(p)}">${esc(p)}</option>`).join('')}
+            </select>
+            <span class="contain-note" id="act-note-${esc(inc.id)}">Choose one action. The target IP or process is selected once.</span>
             <button class="btn btn-p btn-sm" style="padding:8px 20px;font-size:12px;border-radius:8px;" onclick="executeSelectedIncidentAction('${esc(inc.id)}', this)">
               Enforce Action
             </button>
@@ -3174,17 +3456,16 @@ function renderIncidents(incidents){
                         <span class="sev sev-${a.severity || 'LOW'}">${a.severity || 'LOW'}</span>
                         <span style="font-family:var(--mono);color:var(--text-dim);font-size:10.5px;">${esc(a.id || '')}</span>
                         <b style="color:var(--text);font-weight:500;">${esc(a.title || 'Behavioral Alert')}</b>
-                        ${aProc ? `<span style="font-family:var(--mono);color:var(--accent);font-size:10px;background:rgba(154,184,255,.08);padding:1px 6px;border-radius:4px;">${esc(aProc)}</span>` : ''}
+                        ${aProc ? `<span style="font-family:var(--mono);color:var(--accent);font-size:10px;background:rgba(94,234,212,.08);padding:1px 6px;border-radius:4px;">${esc(aProc)}</span>` : ''}
                         ${aDst ? `<span style="font-family:var(--mono);color:var(--text-dim);font-size:10px;">&rarr; ${esc(aDst)}${a.dest_port ? ':' + a.dest_port : ''}</span>` : ''}
                       </div>
 
                       <div style="display:flex;align-items:center;gap:6px;">
-                        <select class="fsel" id="${actSelId}" style="padding:5px 28px 5px 8px;font-size:11px;border-radius:6px;width:200px;background-color:#0c0e14;color:#eceef3;color-scheme:dark;">
-                          <option value="" style="background:#0c0e14;color:#8a92a5;">-- Alert Action --</option>
-                          ${aProc ? `<option value='{"type":"terminate_process","target":"${esc(aProc)}"}' style="background:#0c0e14;color:#eceef3;">[Kill] ${esc(aProc)}</option>` : ''}
-                          ${aDst ? `<option value='{"type":"block_ip","target":"${esc(aDst)}"}' style="background:#0c0e14;color:#eceef3;">[Block IP] ${esc(aDst)}</option>` : ''}
-                          ${aDst ? `<option value='{"type":"isolate_connections","target":"${esc(aDst)}"}' style="background:#0c0e14;color:#eceef3;">[Drop Sockets] ${esc(aDst)}</option>` : ''}
-                          <option value='{"type":"resolve","target":"${esc(inc.id)}"}' style="background:#0c0e14;color:#eceef3;">[Resolve] Incident</option>
+                        <select class="fsel" id="${actSelId}" data-ip="${esc(aDst)}" data-proc="${esc(aProc)}" style="padding:5px 8px;font-size:12px;width:160px;">
+                          <option value="">Action</option>
+                          ${aDst ? `<option value="block_ip">Firewall block</option><option value="isolate_connections">Drop sockets</option>` : ''}
+                          ${aProc ? `<option value="terminate_process">Stop process</option>` : ''}
+                          <option value="resolve">Resolve</option>
                         </select>
                         <button class="btn btn-g btn-sm" style="padding:5px 12px;font-size:11px;border-radius:6px;" onclick="executeAlertDropdownAction('${esc(inc.id)}', '${esc(a.id)}', this)">
                           Execute
@@ -3278,8 +3559,11 @@ function renderBaselines(baselines){
 }
 
 // Init
-loadDash();
-setInterval(()=>{if(document.querySelector('.page.active')?.id==='page-dashboard') loadDash();},8000);
+aegisBoot();
+setInterval(()=>{
+  if(!window.__aegisAuthed) return;
+  if(document.querySelector('.page.active')?.id==='page-dashboard') loadDash();
+},8000);
 
 // ── FINDING VERIFIER ───────────────────────────────────────────────────────
 let _fvFinding = null;
@@ -3498,7 +3782,7 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeFV(); });
 
 
 // ── THREAT VISUALIZER WORLD MAP & ALERTS ENGINE ────────────────────────────
-let tvCurrentView = 'map';
+let tvCurrentView = 'graph';
 let monLocalIp = null; // Set from live WebSocket state
 let tvWorldRaf = null;
 let tvLivePlaying = true;
@@ -3510,7 +3794,7 @@ function initTvEngine() {
   renderModelAlertsCarousel();
   updateTvClock();
   setInterval(updateTvClock, 1000);
-  initWorldMapCanvas();
+  if (typeof initGraphEngine === 'function') initGraphEngine();
 }
 
 function updateTvClock() {
@@ -3519,8 +3803,12 @@ function updateTvClock() {
   const d = new Date();
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const timeStr = d.toTimeString().split(' ')[0];
-  el.textContent = `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()} ${d.getFullYear()} ${timeStr} · Accra +00:00`;
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const stamp = new Intl.DateTimeFormat(undefined, {
+    weekday:'long', month:'short', day:'numeric', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  }).format(d);
+  el.textContent = `${stamp} · ${zone}`;
 }
 
 function switchTvView(view) {
@@ -3550,18 +3838,7 @@ function switchTvView(view) {
       }, 50);
     }
   }
-  if(view === 'map') {
-    // Resize map canvas when returning to map view
-    const mcvs = document.getElementById('tv-world-canvas');
-    if(mcvs) {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = mcvs.parentElement ? mcvs.parentElement.getBoundingClientRect() : mcvs.getBoundingClientRect();
-      if(rect.width && rect.height) {
-        mcvs.width = Math.round(rect.width * dpr);
-        mcvs.height = Math.round(rect.height * dpr);
-      }
-    }
-  }
+  if(view === 'map' && typeof renderGeoMap === 'function') renderGeoMap();
 }
 
 function toggleInspector(show) {
@@ -3611,16 +3888,13 @@ function renderModelAlertsCarousel(liveAlerts) {
   if(!container) return;
 
   const sevMap = { 'CRITICAL': 'crit', 'HIGH': 'high', 'MEDIUM': 'med', 'LOW': 'low', 'INFO': 'low' };
-  const scoreMap = { 'CRITICAL': 89, 'HIGH': 74, 'MEDIUM': 58, 'LOW': 38, 'INFO': 20 };
 
   const list = (Array.isArray(liveAlerts) && liveAlerts.length > 0)
     ? liveAlerts.map(a => ({
-        score: scoreMap[a.severity] || 50,
         sev: sevMap[a.severity] || 'low',
+        severity: a.severity || 'INFO',
         title: a.title || 'Behavioral Alert',
-        cat: (a.source_ip ? a.source_ip + ' → ' : '') + (a.alert_type || 'Network'),
-        tag: (a.severity === 'CRITICAL' || a.severity === 'HIGH') ? 'Suspicious' : 'Informational',
-        count: 1
+        cat: (a.source_ip ? a.source_ip + ' → ' : '') + (a.dest_ip || a.alert_type || 'Network')
       }))
     : [];
 
@@ -3636,8 +3910,7 @@ function renderModelAlertsCarousel(liveAlerts) {
     <div class="dt-model-card">
       <div>
         <div class="dt-card-top">
-          <span class="dt-score-pill ${item.sev}">\u25b2 ${item.score}%</span>
-          <span class="dt-count-pill">${item.count}</span>
+          <span class="dt-score-pill ${item.sev}">${esc(item.severity)}</span>
         </div>
         <div class="dt-alert-title">${esc(item.title)}</div>
         <div class="dt-alert-cat">${esc(item.cat)}</div>
@@ -3653,16 +3926,15 @@ function renderModelAlertsCarousel(liveAlerts) {
 function onAlertCardClick(str) {
   try {
     const item = typeof str === 'string' ? JSON.parse(str) : str;
-    const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '10.103.198.26';
-    const cCount = (typeof monConns !== 'undefined' && Array.isArray(monConns)) ? monConns.length : (simNodes.length || 0);
+    const ip = item.host || item.source_ip || '';
+    if (!ip) return;
+    const cCount = (typeof monConns !== 'undefined' && Array.isArray(monConns)) ? monConns.length : 0;
     selectInspectorHost({
-      ip: item.host || lip,
-      loc: 'Accra Gateway (Local Host)',
-      score: item.score ? item.score + '%' : (item.severity || 'Normal'),
+      ip: ip,
+      loc: 'Observed host',
       conns: cCount,
-      alerts: [{ severity: item.severity || 'HIGH', title: item.title || 'Model Alert' }]
+      alerts: [{ severity: item.severity || 'INFO', title: item.title || 'Alert' }]
     });
-    toast(`Selected: ${item.title || 'Alert'}`, 'ok');
   } catch(e) { console.warn(e); }
 }
 
@@ -3673,225 +3945,163 @@ function onTvSearch(q) {
   if(match) {
     selectInspectorHost({
       ip: match.ip || match.id,
-      loc: match.type === 'local' ? 'Accra Gateway (Local Host)' : 'Remote Endpoint',
+      loc: match.type === 'local' ? 'This host' : 'Remote host',
       score: match.suspicious ? 'Alert' : 'Normal',
       conns: match.conns || 1,
       alerts: match.alerts || []
     });
   } else {
-    selectInspectorHost({ ip: q, loc: 'Searched Host', score: 'Unprofiled', conns: 0, alerts: [] });
+    toast('No live host matches that search');
   }
 }
 
-function toggleTvPlay() {
-  tvLivePlaying = !tvLivePlaying;
-  const btn = document.getElementById('tv-play-btn');
-  if(btn) {
-    btn.textContent = tvLivePlaying ? '► Live' : '❚❚ Paused';
-    btn.classList.toggle('active', tvLivePlaying);
-  }
-}
+function toggleTvPlay() {}
 
-function jumpTvTime(step) {
-  toast(`Timeline scrubber shifted ${step}`, 'ok');
-}
+function jumpTvTime() {}
 
-// ── CINEMATIC WORLD MAP: dot-matrix land, severity-aware arcs, lit beacon ────
-let tvWorldRafId = null;
-let tvLand = null, tvDots = null, tvDotsKey = '';
+// World map plots only coordinates returned by the local GeoIP database.
+let geoPoints = [];
+let geoConfigured = false;
 
-function buildLandMask() {
-  const img = new Image();
-  img.onload = () => {
-    try {
-      const cols = 230, rows = 115;
-      const c = document.createElement('canvas'); c.width = cols; c.height = rows;
-      const x = c.getContext('2d', { willReadFrequently: true });
-      x.drawImage(img, 0, 0, cols, rows);
-      const d = x.getImageData(0, 0, cols, rows).data;
-      const mask = new Uint8Array(cols * rows);
-      for (let i = 0; i < cols * rows; i++) mask[i] = (d[i*4] + d[i*4+1] + d[i*4+2] > 78) ? 1 : 0;
-      tvLand = { cols, rows, mask }; tvDots = null;
-      const el = document.querySelector('#tv-map-view img');
-      if (el) el.style.opacity = '0';
-    } catch (e) { console.warn('Land mask unavailable, using static map', e); }
-  };
-  img.src = '/static/world_map.svg';
-}
-
-function ensureDots(w, h) {
-  if (!tvLand) return null;
-  const key = w + 'x' + h;
-  if (tvDots && tvDotsKey === key) return tvDots;
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const x = c.getContext('2d');
-  const { cols, rows, mask } = tvLand;
-  const sx = w / cols, sy = h / rows, r = Math.max(1, Math.min(sx, sy) * 0.3);
-  x.fillStyle = 'rgba(150,176,235,0.34)';
-  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-    if (mask[j * cols + i]) { x.beginPath(); x.arc((i + .5) * sx, (j + .5) * sy, r, 0, 6.2832); x.fill(); }
-  }
-  tvDots = c; tvDotsKey = key; return c;
-}
-
-function initWorldMapCanvas() {
-  const cvs = document.getElementById('tv-world-canvas');
-  if (!cvs) return;
-  function resizeMap() {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = (cvs.parentElement || cvs).getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      cvs.width = Math.round(rect.width * dpr);
-      cvs.height = Math.round(rect.height * dpr);
-    }
-  }
-  resizeMap();
-  window.addEventListener('resize', resizeMap);
-  if (!tvLand) buildLandMask();
-
-  cvs.addEventListener('click', e => {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = cvs.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) * dpr, my = (e.clientY - rect.top) * dpr;
-    const hx = ((-0.187 + 180) / 360) * cvs.width, hy = ((90 - 5.6037) / 180) * cvs.height;
-    if (Math.hypot(mx - hx, my - hy) < 50 * dpr) {
-      const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '10.103.198.26';
-      selectInspectorHost({ ip: lip, loc: 'Accra Gateway (Local Host)', score: 'Normal', conns: (simNodes.length || 1) });
-    }
+function applyMonitorGeo(geo) {
+  const payload = geo || {};
+  geoConfigured = !!(payload.configured && payload.database === 'loaded');
+  geoPoints = (Array.isArray(payload.points) ? payload.points : []).filter(function(point) {
+    if (!point) return false;
+    const lat = point.latitude, lon = point.longitude;
+    if (typeof lat !== 'number' || typeof lon !== 'number') return false;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+    if (lat === 0 && lon === 0) return false;
+    return true;
   });
-  if (!tvWorldRafId) tvWorldRafId = requestAnimationFrame(renderWorldMapLoop);
+  renderGeoMap();
 }
 
-// TODO: Replace with server-side GeoIP database lookup from /api/monitor
-// Derives equirectangular coordinates deterministically from real IP address bytes
-function resolveHostGeo(ip, index, total) {
-  if (!ip) return { lon: 0, lat: 20 };
-  const parts = String(ip).split('.').map(p => parseInt(p, 10) || 0);
-  if (parts.length === 4) {
-    const lon = ((parts[0] * 37 + parts[1] * 19 + parts[3]) % 330) - 165;
-    const lat = ((parts[1] * 23 + parts[2] * 29) % 120) - 55;
-    return { lon, lat };
-  }
-  const phi = (index / (total || 1)) * Math.PI * 2;
-  return { lon: Math.cos(phi) * 110, lat: Math.sin(phi) * 45 };
+function resolveHostGeo(ip) {
+  const hit = geoPoints.find(function(point) { return point.ip === ip; });
+  if (!hit) return null;
+  return {
+    lat: hit.latitude,
+    lon: hit.longitude,
+    city: hit.city || '',
+    country: hit.country || ''
+  };
 }
 
-function renderWorldMapLoop() {
-  tvWorldRafId = requestAnimationFrame(renderWorldMapLoop);
-  const cvs = document.getElementById('tv-world-canvas');
-  if (!cvs || document.querySelector('.page.active')?.id !== 'page-monitor' || tvCurrentView !== 'map') return;
-  const ctx = cvs.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = cvs.width, h = cvs.height;
-  if (!w || !h) {
-    const rect = (cvs.parentElement || cvs).getBoundingClientRect();
-    if (rect.width && rect.height) { cvs.width = Math.round(rect.width * dpr); cvs.height = Math.round(rect.height * dpr); }
-    return;
+let geoMapPromise = null;
+
+function ensureWorldMap() {
+  const stage = document.getElementById('tv-world-stage');
+  if (!stage) return Promise.resolve();
+  if (stage.dataset.ready === '1') return Promise.resolve();
+  if (!geoMapPromise) {
+    geoMapPromise = fetch('/static/world_map.svg')
+      .then(function(response) {
+        if (!response.ok) throw new Error('map');
+        return response.text();
+      })
+      .then(function(text) {
+        stage.innerHTML = text.replace('preserveAspectRatio="none"', 'preserveAspectRatio="xMidYMid meet"');
+        const svg = stage.querySelector('svg');
+        if (!svg) throw new Error('map');
+        const markers = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        markers.setAttribute('id', 'tv-world-markers');
+        svg.appendChild(markers);
+        stage.dataset.ready = '1';
+      })
+      .catch(function() {
+        geoMapPromise = null;
+        stage.dataset.ready = '';
+      });
   }
-  const now = Date.now();
-  ctx.clearRect(0, 0, w, h);
+  return geoMapPromise;
+}
 
-  // 1 · Dot-matrix land with a slow light sweep that only touches the dots
-  const dots = ensureDots(w, h);
-  if (dots) {
-    ctx.drawImage(dots, 0, 0);
-    const sweep = ((now * 0.00005) % 1.4 - 0.2) * w;
-    const g = ctx.createLinearGradient(sweep - w * 0.14, 0, sweep + w * 0.14, 0);
-    g.addColorStop(0, 'rgba(190,210,255,0)');
-    g.addColorStop(.5, 'rgba(190,210,255,0.55)');
-    g.addColorStop(1, 'rgba(190,210,255,0)');
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
-  }
+function hideGeoTip() {
+  const tip = document.getElementById('geo-tip');
+  if (tip) tip.hidden = true;
+}
 
-  const hx = ((-0.187 + 180.0) / 360.0) * w;
-  const hy = ((90.0 - 5.6037) / 180.0) * h;
+function showGeoTip(point, pin) {
+  const tip = document.getElementById('geo-tip');
+  const layer = document.getElementById('tv-map-view');
+  if (!tip || !layer || !pin) return;
+  tip.replaceChildren();
+  const ip = document.createElement('div');
+  ip.className = 'geo-tip-ip';
+  ip.textContent = point.ip || '';
+  const place = document.createElement('div');
+  place.className = 'geo-tip-place';
+  place.textContent = [point.city, point.country].filter(Boolean).join(', ') || 'GeoLite2 City';
+  tip.append(ip, place);
+  tip.hidden = false;
+  const pinBox = pin.getBoundingClientRect();
+  const host = layer.getBoundingClientRect();
+  const left = pinBox.right - host.left + 8;
+  const top = pinBox.top - host.top - 6;
+  tip.style.left = Math.max(12, Math.min(left, host.width - tip.offsetWidth - 12)) + 'px';
+  tip.style.top = Math.max(12, Math.min(top, host.height - tip.offsetHeight - 12)) + 'px';
+}
 
-  // 2 · Live endpoints (derived from active socket telemetry)
-  const targets = [];
-  if (simNodes && simNodes.length > 1) {
-    simNodes.filter(n => n.type !== 'local').slice(0, 8).forEach((rn, i) => {
-      const g = resolveHostGeo(rn.id || rn.ip, i, simNodes.length);
-      targets.push({
-        x: ((g.lon + 180) / 360) * w, y: ((90 - g.lat) / 180) * h,
-        label: rn.id, bad: !!rn.suspicious, seed: i * 0.17
+function drawGeoMarkers() {
+  const markers = document.getElementById('tv-world-markers');
+  if (!markers) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  markers.replaceChildren();
+  geoPoints.forEach(function(point) {
+    const x = ((Number(point.longitude) + 180) / 360) * 1000;
+    const y = ((90 - Number(point.latitude)) / 180) * 500;
+    const pin = document.createElementNS(ns, 'g');
+    pin.setAttribute('class', 'geo-pin');
+    pin.setAttribute('transform', 'translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')');
+    const halo = document.createElementNS(ns, 'circle');
+    halo.setAttribute('class', 'geo-pin-halo');
+    halo.setAttribute('r', '9');
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('class', 'geo-pin-dot');
+    dot.setAttribute('r', '3.6');
+    pin.append(halo, dot);
+    pin.addEventListener('mouseenter', function() { showGeoTip(point, pin); });
+    pin.addEventListener('mouseleave', hideGeoTip);
+    pin.addEventListener('click', function() {
+      selectInspectorHost({
+        ip: point.ip,
+        loc: [point.city, point.country].filter(Boolean).join(', ') || 'GeoLite2 City',
+        conns: 0,
+        alerts: []
       });
     });
-  }
-
-  const quad = (p, x0, y0, cx, cy, x1, y1) => {
-    const o = 1 - p;
-    return [o*o*x0 + 2*o*p*cx + p*p*x1, o*o*y0 + 2*o*p*cy + p*p*y1];
-  };
-
-  targets.forEach(t => {
-    const col = t.bad ? '255,77,94' : '154,184,255';
-    const dist = Math.hypot(t.x - hx, t.y - hy);
-    const cx = (hx + t.x) / 2, cy = Math.min(hy, t.y) - dist * 0.28;
-
-    // faint full path
-    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.quadraticCurveTo(cx, cy, t.x, t.y);
-    ctx.strokeStyle = `rgba(${col},0.12)`; ctx.lineWidth = 1 * dpr; ctx.stroke();
-
-    // comet: fading trail + bright head
-    const head = ((now * 0.00035 + t.seed) % 1);
-    const steps = 22, span = 0.22;
-    let prev = quad(Math.max(0, head - span), hx, hy, cx, cy, t.x, t.y);
-    for (let s = 1; s <= steps; s++) {
-      const p = Math.max(0, head - span) + (Math.min(head, 1) - Math.max(0, head - span)) * (s / steps);
-      const pt = quad(p, hx, hy, cx, cy, t.x, t.y);
-      ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(pt[0], pt[1]);
-      ctx.strokeStyle = `rgba(${col},${(s / steps) * 0.85})`;
-      ctx.lineWidth = (0.6 + (s / steps) * 1.6) * dpr; ctx.lineCap = 'round'; ctx.stroke();
-      prev = pt;
-    }
-    const hp = quad(head, hx, hy, cx, cy, t.x, t.y);
-    ctx.beginPath(); ctx.arc(hp[0], hp[1], 2.4 * dpr, 0, 6.2832);
-    ctx.fillStyle = '#fff'; ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = 14 * dpr; ctx.fill(); ctx.shadowBlur = 0;
-
-    // endpoint: core + expanding ring (severity-weighted)
-    const ph = ((now * 0.0006 + t.seed * 3) % 1);
-    ctx.beginPath(); ctx.arc(t.x, t.y, (4 + ph * (t.bad ? 22 : 14)) * dpr, 0, 6.2832);
-    ctx.strokeStyle = `rgba(${col},${(1 - ph) * 0.55})`; ctx.lineWidth = 1.2 * dpr; ctx.stroke();
-    ctx.beginPath(); ctx.arc(t.x, t.y, 3.2 * dpr, 0, 6.2832);
-    ctx.fillStyle = `rgb(${col})`; ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = 10 * dpr; ctx.fill(); ctx.shadowBlur = 0;
-
-    // labels: only for threats, to keep the map clean
-    if (t.bad) {
-      ctx.font = `500 ${Math.round(10.5 * dpr)}px 'JetBrains Mono', monospace`;
-      const tw = ctx.measureText(t.label).width, pw = tw + 16 * dpr, ph2 = 22 * dpr;
-      const px = t.x - pw / 2, py = t.y + 14 * dpr;
-      ctx.fillStyle = 'rgba(14,16,22,0.78)'; ctx.strokeStyle = 'rgba(255,77,94,0.45)'; ctx.lineWidth = 1 * dpr;
-      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px, py, pw, ph2, 11 * dpr) : ctx.rect(px, py, pw, ph2);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ffb3bb'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(t.label, t.x, py + ph2 / 2);
-    }
+    markers.appendChild(pin);
   });
+}
 
-  // 3 · Gateway beacon: three staggered sonar rings + glowing core
-  for (let i = 0; i < 3; i++) {
-    const p = ((now * 0.00028) + i / 3) % 1;
-    ctx.beginPath(); ctx.arc(hx, hy, (6 + p * 46) * dpr, 0, 6.2832);
-    ctx.strokeStyle = `rgba(154,184,255,${(1 - p) * 0.5})`; ctx.lineWidth = 1.3 * dpr; ctx.stroke();
+function renderGeoMap() {
+  const layer = document.getElementById('tv-map-view');
+  const noteK = document.getElementById('geo-note-k');
+  const noteTitle = document.getElementById('geo-note-title');
+  const noteBody = document.getElementById('geo-note-body');
+  const count = document.getElementById('geo-count');
+  if (!layer) return;
+  const showPoints = geoConfigured && geoPoints.length > 0;
+  layer.classList.toggle('has-points', showPoints);
+  if (!showPoints) {
+    hideGeoTip();
+    if (count) count.hidden = true;
+    if (noteK) noteK.textContent = geoConfigured ? 'No coordinates' : 'Unavailable';
+    if (noteTitle) noteTitle.textContent = geoConfigured ? 'No public coordinates to plot' : 'GeoIP database is missing';
+    if (noteBody) noteBody.textContent = geoConfigured
+      ? 'The GeoLite2 City database is loaded. None of the public addresses on this host resolved to a location. Private addresses stay on site topology.'
+      : 'Set GEOIP_DB_PATH to a local GeoLite2-City.mmdb file, or save that path under Settings. This console does not invent coordinates. Private addresses stay on site topology.';
+    return;
   }
-  const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, 34 * dpr);
-  glow.addColorStop(0, 'rgba(154,184,255,0.45)'); glow.addColorStop(1, 'rgba(154,184,255,0)');
-  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(hx, hy, 34 * dpr, 0, 6.2832); ctx.fill();
-  ctx.beginPath(); ctx.arc(hx, hy, 4.5 * dpr, 0, 6.2832);
-  ctx.fillStyle = '#fff'; ctx.shadowColor = '#9ab8ff'; ctx.shadowBlur = 16 * dpr; ctx.fill(); ctx.shadowBlur = 0;
-
-  const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '10.103.198.26';
-  const txt = `Gateway  ${lip}`;
-  ctx.font = `500 ${Math.round(11 * dpr)}px 'JetBrains Mono', monospace`;
-  const tw = ctx.measureText(txt).width, pw = tw + 22 * dpr, ph3 = 26 * dpr;
-  const px = hx - pw / 2, py = hy + 22 * dpr;
-  ctx.fillStyle = 'rgba(14,16,22,0.72)'; ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 1 * dpr;
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px, py, pw, ph3, 13 * dpr) : ctx.rect(px, py, pw, ph3);
-  ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#eceef3'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(txt, hx, py + ph3 / 2);
+  if (count) {
+    count.hidden = false;
+    count.textContent = geoPoints.length + (geoPoints.length === 1 ? ' located address' : ' located addresses');
+  }
+  ensureWorldMap().then(function() {
+    if (!(geoConfigured && geoPoints.length)) return;
+    drawGeoMarkers();
+  });
 }
 
 // Ensure initTvEngine runs on load
@@ -3914,8 +4124,10 @@ function switchSettingsTab(tab){
   if(pane) pane.style.display = 'block';
   const btn = document.getElementById('stab-btn-' + tab);
   if(btn) btn.classList.add('on');
+  if(tab === 'channels') loadAlertingState();
   if(tab === 'responders') loadContactsList();
   if(tab === 'ownership') loadMappingsList();
+  if(tab === 'fleet') loadFleetSettings();
 }
 
 async function loadSettings(){
@@ -3930,35 +4142,144 @@ async function loadSettings(){
     document.getElementById('cfg-abuse-key').value = ti.abuseipdb_api_key || '';
     document.getElementById('cfg-otx-key').value = ti.otx_api_key || '';
     document.getElementById('cfg-vt-key').value = ti.virustotal_api_key || '';
+    const threatfoxKey = document.getElementById('cfg-threatfox-key');
+    if (threatfoxKey) threatfoxKey.value = ti.threatfox_auth_key || '';
+    const geoPath = document.getElementById('cfg-geoip-path');
+    if (geoPath) geoPath.value = ti.geoip_db_path || '';
 
-    // Alerting Gateways fields
-    document.getElementById('cfg-arkesel-key').value = al.arkesel_api_key || '';
-    document.getElementById('cfg-arkesel-sender').value = al.arkesel_sender_id || 'AegisAI';
-    document.getElementById('cfg-hubtel-id').value = al.hubtel_client_id || '';
-    document.getElementById('cfg-hubtel-secret').value = al.hubtel_client_secret || '';
-    document.getElementById('cfg-hubtel-sender').value = al.hubtel_sender_id || 'AegisAI';
-    document.getElementById('cfg-tg-token').value = al.telegram_bot_token || '';
-    document.getElementById('cfg-tg-chat').value = al.telegram_chat_id || '';
-    document.getElementById('cfg-wa-token').value = al.whatsapp_api_token || '';
-    document.getElementById('cfg-wa-phone-id').value = al.whatsapp_phone_number_id || '';
-    document.getElementById('cfg-webhook-url').value = al.critical_alert_webhook_url || '';
-    document.getElementById('cfg-modem-port').value = al.modem_serial_port || 'COM3';
-    document.getElementById('cfg-modem-baud').value = al.modem_baudrate || 115200;
-    document.getElementById('cfg-canary-url').value = al.canary_heartbeat_url || '';
-
-    // Status Badges
-    const smsBadge = document.getElementById('badge-sms-status');
-    if(smsBadge){
-      smsBadge.textContent = (al.arkesel_api_key || al.hubtel_client_id) ? 'Active' : 'Unconfigured';
-      smsBadge.className = 'badge ' + ((al.arkesel_api_key || al.hubtel_client_id) ? 'badge-done' : 'badge-queued');
-    }
-    const chatBadge = document.getElementById('badge-chat-status');
-    if(chatBadge){
-      chatBadge.textContent = (al.telegram_bot_token || al.whatsapp_api_token || al.critical_alert_webhook_url) ? 'Active' : 'Unconfigured';
-      chatBadge.className = 'badge ' + ((al.telegram_bot_token || al.whatsapp_api_token || al.critical_alert_webhook_url) ? 'badge-done' : 'badge-queued');
-    }
+    const capField = document.getElementById('cfg-alert-hourly-cap');
+    if (capField) capField.value = al.alert_hourly_cap || 10;
+    loadFleetSettingsFrom(_settingsData.fleet || {});
   } catch(e) {
     console.warn('loadSettings error:', e);
+  }
+}
+
+function loadFleetSettingsFrom(fl){
+  const urlField = document.getElementById('cfg-fleet-console-url');
+  if (urlField) urlField.value = fl.aegis_console_url || '';
+  const tokenField = document.getElementById('cfg-fleet-enroll-token');
+  if (tokenField) tokenField.value = fl.enrollment_token || '';
+  const fp = document.getElementById('fleet-ca-fingerprint');
+  if (fp) fp.textContent = fl.ca_fingerprint || '—';
+  const counts = document.getElementById('fleet-host-counts');
+  if (counts) counts.textContent = `${fl.heartbeated_hosts || 0} with heartbeat · ${fl.enrolled_hosts || 0} enrolled · ${fl.revoked_hosts || 0} revoked`;
+  const note = document.getElementById('fleet-env-token-note');
+  if (note) note.textContent = fl.has_env_enrollment_token
+    ? 'A reusable env token is set. Leave the masked value unchanged to keep it. Prefer one-time tokens for production hosts.'
+    : 'Leave blank to keep the stored value. Prefer one-time tokens below for real servers.';
+  const tls = document.getElementById('fleet-tls-note');
+  if (tls) {
+    if (fl.tls_enabled) {
+      tls.textContent = 'HTTPS is on. Heartbeats require a verified client certificate (CERT_REQUIRED on /api/fleet/heartbeat). Enroll still uses the one-time token. Copy ~/.aegis/ca/ca.crt onto the host and pass --ca when the server cert is the site CA.';
+    } else if (fl.tls_proxy) {
+      tls.textContent = 'AEGIS_TLS_PROXY is on. Heartbeats trust a verified nginx client certificate header.';
+    } else {
+      tls.textContent = 'HTTPS is off. Set AEGIS_TLS=1 to serve ~/.aegis/ca/server.crt and require a client certificate on heartbeats.';
+    }
+  }
+  loadFleetHostsTable();
+}
+
+async function loadFleetSettings(){
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    loadFleetSettingsFrom(data.fleet || {});
+  } catch (e) {
+    console.warn('loadFleetSettings error:', e);
+  }
+}
+
+function fleetConsoleUrl(){
+  const urlField = document.getElementById('cfg-fleet-console-url');
+  let url = ((urlField && urlField.value) || 'http://127.0.0.1:8000').replace(/\/$/, '');
+  const tlsOn = ((_settingsData.fleet || {}).tls_enabled);
+  if (tlsOn && url.indexOf('http://') === 0) url = 'https://' + url.slice('http://'.length);
+  return url;
+}
+function fleetEnrollCommand(token){
+  const url = fleetConsoleUrl();
+  const tlsOn = ((_settingsData.fleet || {}).tls_enabled);
+  let cmd = 'python -m aegis.agent enroll --url ' + url + ' --token ' + (token || '');
+  if (tlsOn) cmd += ' --ca ~/.aegis/ca/ca.crt';
+  cmd += '\npython -m aegis.agent run';
+  return cmd;
+}
+function showFleetToken(token, metaText){
+  const wrap = document.getElementById('fleet-token-once-wrap');
+  const field = document.getElementById('fleet-token-once');
+  const cmd = document.getElementById('fleet-enroll-cmd');
+  if (wrap) wrap.style.display = 'block';
+  if (field) field.value = token || '';
+  if (cmd) cmd.textContent = fleetEnrollCommand(token);
+  const meta = document.getElementById('fleet-token-meta');
+  if (meta && metaText) meta.textContent = metaText;
+}
+async function mintEnrollmentToken(){
+  try {
+    const res = await fetch('/api/fleet/tokens', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({label:'settings'})});
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) { toast(data.detail || 'Could not mint token', 'err'); return; }
+    showFleetToken(data.token, 'Expires ' + (data.expires_at || 'in 24 hours') + '. Copy it onto the host now.');
+    toast('One-time enrollment token minted', 'ok');
+  } catch (e) {
+    toast('Could not mint token', 'err');
+  }
+}
+async function loadFleetHostsTable(){
+  const wrap = document.getElementById('fleet-hosts-tbl');
+  if (!wrap) return;
+  try {
+    const res = await fetch('/api/fleet/hosts?all=1');
+    const data = await res.json().catch(function(){ return {hosts:[]}; });
+    const hosts = data.hosts || [];
+    if (!hosts.length) {
+      wrap.innerHTML = '<div class="empty"><div class="eh">No enrolled hosts</div></div>';
+      return;
+    }
+    const rows = hosts.map(h => `<tr>
+      <td style="font-weight:600">${esc(h.hostname)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(h.agent_id)}</td>
+      <td style="color:${fleetStatusColor(h.status)};font-weight:600">${esc(h.status||'offline')}</td>
+      <td style="color:var(--text-dim);font-size:11px">${esc(h.last_seen||'never')}</td>
+      <td>${fleetHostActions(h)}</td>
+    </tr>`).join('');
+    wrap.innerHTML = `<table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>Status</th><th>Last seen</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = '<div class="empty"><div class="eh">Could not load hosts</div></div>';
+  }
+}
+async function revokeFleetHost(agentId){
+  if (!confirm('Revoke this host? Its client certificate will fail heartbeat until you re-enroll.')) return;
+  try {
+    const res = await fetch('/api/fleet/hosts/' + encodeURIComponent(agentId) + '/revoke', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason:'operator'})});
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) { toast(data.detail || 'Could not revoke host', 'err'); return; }
+    toast('Host revoked. Heartbeats with that certificate will fail.', 'ok');
+    loadAssets();
+    loadFleetSettings();
+  } catch (e) {
+    toast('Could not revoke host', 'err');
+  }
+}
+async function reenrollFleetHost(agentId){
+  try {
+    const res = await fetch('/api/fleet/hosts/' + encodeURIComponent(agentId) + '/reenroll', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) { toast(data.detail || 'Could not mint a re-enroll token', 'err'); return; }
+    showFleetToken(data.token, 'Re-enroll token for ' + (data.hostname || data.agent_id || 'host') + '. Expires ' + (data.expires_at || 'in 24 hours') + '.');
+    toast('Re-enroll token minted. Copy it onto the host now.', 'ok');
+    await loadAssets();
+    const assetsWrap = document.getElementById('assets-reenroll-wrap');
+    const assetsField = document.getElementById('assets-reenroll-token');
+    const assetsCmd = document.getElementById('assets-reenroll-cmd');
+    if (assetsWrap) assetsWrap.style.display = 'block';
+    if (assetsField) assetsField.value = data.token || '';
+    if (assetsCmd) assetsCmd.textContent = fleetEnrollCommand(data.token);
+    loadFleetSettings();
+  } catch (e) {
+    toast('Could not mint a re-enroll token', 'err');
   }
 }
 
@@ -3969,22 +4290,16 @@ async function saveCurrentSettingsTab(){
       nvd_api_key: document.getElementById('cfg-nvd-key').value.trim(),
       abuseipdb_api_key: document.getElementById('cfg-abuse-key').value.trim(),
       otx_api_key: document.getElementById('cfg-otx-key').value.trim(),
-      virustotal_api_key: document.getElementById('cfg-vt-key').value.trim()
+      virustotal_api_key: document.getElementById('cfg-vt-key').value.trim(),
+      threatfox_auth_key: (document.getElementById('cfg-threatfox-key').value || '').trim(),
+      geoip_db_path: (document.getElementById('cfg-geoip-path').value || '').trim()
     },
     alerting: {
-      arkesel_api_key: document.getElementById('cfg-arkesel-key').value.trim(),
-      arkesel_sender_id: document.getElementById('cfg-arkesel-sender').value.trim(),
-      hubtel_client_id: document.getElementById('cfg-hubtel-id').value.trim(),
-      hubtel_client_secret: document.getElementById('cfg-hubtel-secret').value.trim(),
-      hubtel_sender_id: document.getElementById('cfg-hubtel-sender').value.trim(),
-      telegram_bot_token: document.getElementById('cfg-tg-token').value.trim(),
-      telegram_chat_id: document.getElementById('cfg-tg-chat').value.trim(),
-      whatsapp_api_token: document.getElementById('cfg-wa-token').value.trim(),
-      whatsapp_phone_number_id: document.getElementById('cfg-wa-phone-id').value.trim(),
-      critical_alert_webhook_url: document.getElementById('cfg-webhook-url').value.trim(),
-      modem_serial_port: document.getElementById('cfg-modem-port').value.trim(),
-      modem_baudrate: +document.getElementById('cfg-modem-baud').value || 115200,
-      canary_heartbeat_url: document.getElementById('cfg-canary-url').value.trim()
+      alert_hourly_cap: (document.getElementById('cfg-alert-hourly-cap') || {value:''}).value.trim()
+    },
+    fleet: {
+      enrollment_token: (document.getElementById('cfg-fleet-enroll-token') || {value:''}).value.trim(),
+      aegis_console_url: (document.getElementById('cfg-fleet-console-url') || {value:''}).value.trim()
     }
   };
   try {
@@ -4008,25 +4323,39 @@ async function saveThreatKeysOnly(){
 
 async function loadContactsList(){
   try {
-    const res = await fetch('/api/alerting/contacts');
+    const [res, integRes] = await Promise.all([
+      fetch('/api/alerting/contacts'),
+      fetch('/api/integrations')
+    ]);
     _oncallContacts = await res.json();
+    const integrations = integRes.ok ? await integRes.json() : {connections:[]};
+    const connections = integrations.connections || [];
+    window._platformConnections = connections;
     const wrap = document.getElementById('contacts-tbl-wrap');
     if(!wrap) return;
     if(!_oncallContacts.length){
       wrap.innerHTML = '<div class="empty"><div class="eh">No responders registered yet</div></div>';
       return;
     }
-    const rows = _oncallContacts.map(c => `<tr>
-      <td style="font-weight:700;color:var(--text)">${esc(c.name)}</td>
-      <td><span class="badge badge-running" style="font-size:9px">${esc(c.role)}</span></td>
-      <td style="font-family:var(--mono);color:var(--accent);font-size:11px">${esc(c.phone)}</td>
-      <td style="font-family:var(--mono);font-size:11px">${esc(c.whatsapp_number || c.phone)}</td>
-      <td style="font-size:11px;color:var(--text-dim)">${esc(c.telegram_chat_id || '—')}</td>
-      <td style="font-size:11px;color:var(--text-dim)">${esc(c.email || '—')}</td>
+    const rows = _oncallContacts.map(c => {
+      const cid = c.contact_id;
+      const slack = linkFor(connections, 'slack', cid);
+      const teams = linkFor(connections, 'teams', cid);
+      const mailMs = linkFor(connections, 'email_microsoft', cid);
+      const mailGoogle = linkFor(connections, 'email_google', cid);
+      return `<tr>
+      <td style="font-weight:700;color:var(--text)">${esc(c.name)}<div style="font-size:10px;color:var(--text-dim);font-weight:500">${esc(c.role)}</div></td>
+      <td>${slack ? `<div style="font-size:11px;margin-bottom:4px">${esc(platformStatusLine(slack))}</div>` : ''}${platformActions(slack, 'slack', cid, 'Connect')}</td>
+      <td>${teams ? `<div style="font-size:11px;margin-bottom:4px">${esc(platformStatusLine(teams))}</div>` : ''}${platformActions(teams, 'teams', cid, 'Connect')}</td>
+      <td>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">${esc(c.email || 'No email on file')}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${platformActions(mailMs, 'email_microsoft', cid, 'Connect Microsoft')}${platformActions(mailGoogle, 'email_google', cid, 'Connect Google')}</div>
+      </td>
       <td><span class="badge ${c.is_active ? 'badge-done' : 'badge-queued'}">${c.is_active ? 'ACTIVE' : 'OFFLINE'}</span></td>
-      <td style="text-align:right"><button class="btn btn-d btn-sm" onclick="deleteContact('${c.contact_id}')">&#10005;</button></td>
-    </tr>`).join('');
-    wrap.innerHTML = `<table class="ft"><thead><tr><th>Name</th><th>Role</th><th>Primary Phone</th><th>WhatsApp</th><th>Telegram</th><th>Email</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>${rows}</tbody></table>`;
+      <td style="text-align:right"><button class="btn btn-d btn-sm" onclick="deleteContact('${esc(cid)}')">&#10005;</button></td>
+    </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table class="ft"><thead><tr><th>Responder</th><th>Slack</th><th>Teams</th><th>Email</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>${rows}</tbody></table>`;
     populateMappingDropdowns();
   } catch(e) {
     console.warn('loadContactsList error:', e);
@@ -4047,8 +4376,8 @@ async function submitNewContact(){
     name,
     role,
     phone,
-    whatsapp_number: document.getElementById('new-c-whatsapp').value.trim() || phone,
-    telegram_chat_id: document.getElementById('new-c-telegram').value.trim(),
+    whatsapp_number: '',
+    telegram_chat_id: '',
     email: document.getElementById('new-c-email').value.trim(),
     is_active: true
   };
@@ -4164,26 +4493,6 @@ async function deleteMapping(cidr){
   } catch(e){ toast('Delete failed', 'err'); }
 }
 
-async function testDispatchGateway(channel){
-  let recipient = '';
-  if(channel === 'sms') recipient = document.getElementById('test-sms-phone').value.trim();
-  else recipient = document.getElementById('test-chat-target').value.trim() || 'default';
-  if(!recipient){ toast('Enter recipient phone number or Chat ID', 'err'); return; }
-  toast(`Sending test dispatch via ${channel.toUpperCase()}...`);
-  try {
-    const res = await fetch('/api/settings/test-channel', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({channel, recipient})
-    });
-    const d = await res.json();
-    if(d.success){
-      toast(`${channel.toUpperCase()} test dispatched successfully! Ref: ${d.provider_ref}`, 'ok');
-    } else {
-      toast(`${channel.toUpperCase()} test failed: ${d.error}`, 'err');
-    }
-  } catch(e){ toast('Gateway test error: ' + e, 'err'); }
-}
 </script>
 <script>
 // ── PREMIUM LAYER: breadcrumb, ⌘K, hero status card ─────────────────────────
@@ -4212,7 +4521,7 @@ async function testDispatchGateway(channel){
       k.textContent='Needs your attention';
       h.textContent=inc.length===1?'1 incident is active':inc.length+' incidents are active';
       const n=(inc[0].narrative||'').trim();
-      p.textContent=n.length>170?n.slice(0,167)+'…':(n||'Correlated alerts were clustered into an incident.');
+      p.textContent=n||'Correlated alerts were clustered into an incident.';
       if(pill) pill.textContent=inc.length+' active '+(inc.length===1?'threat':'threats');
     } else if(crit+high>0){
       alertMode=true;

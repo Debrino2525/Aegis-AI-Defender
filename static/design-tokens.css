@@ -1,0 +1,84 @@
+/* Precision night operations.
+   Graphite planes, one signal-cyan accent, amber for attention,
+   crimson for critical only. Light mode is a cool gray paper.
+   Radius stays 4–6px. IBM Plex is the open face. */
+
+:root,
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0B0E12;
+  --surface: #12161C;
+  --surface2: #181D26;
+  --surface3: #212833;
+  --solid: #0E1218;
+  --border: rgba(231, 237, 244, 0.10);
+  --border2: rgba(231, 237, 244, 0.18);
+  --accent: #5EEAD4;
+  --accent-ink: #04221E;
+  --accent-dim: rgba(94, 234, 212, 0.14);
+  --accent2: #5EEAD4;
+  --accent-glow: rgba(94, 234, 212, 0.12);
+  --attention: #E8A23A;
+  --critical: #F05260;
+  --high: #E8A23A;
+  --medium: #D6B25E;
+  --low: #8FB4C6;
+  --info: #9AA6B6;
+  --success: #3DDC97;
+  --purple: #5EEAD4;
+  --text: #E7EDF4;
+  --text-dim: #B7C0CC;
+  --text-muted: #8B97A8;
+  --font: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius: 6px;
+  --radius-sm: 4px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #E8ECF1;
+  --surface: #F4F7FA;
+  --surface2: #FFFFFF;
+  --surface3: #E1E6ED;
+  --solid: #FFFFFF;
+  --border: rgba(18, 24, 32, 0.12);
+  --border2: rgba(18, 24, 32, 0.22);
+  --accent: #0C6670;
+  --accent-ink: #F7FFFE;
+  --accent-dim: rgba(12, 102, 112, 0.10);
+  --accent2: #0C6670;
+  --accent-glow: rgba(12, 102, 112, 0.12);
+  --attention: #8A5A00;
+  --critical: #B42334;
+  --high: #8A5A00;
+  --medium: #7A5610;
+  --low: #3D5A73;
+  --info: #4E5B6C;
+  --success: #0E7A4B;
+  --purple: #0C6670;
+  --text: #12181F;
+  --text-dim: #3E4A59;
+  --text-muted: #5C6778;
+  --font: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius: 6px;
+  --radius-sm: 4px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

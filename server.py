@@ -280,6 +280,13 @@ async def root():
     return html_path.read_text(encoding="utf-8")
 
 
+@app.get("/incidents", response_class=HTMLResponse)
+async def incident_workspace():
+    """Investigation surface: one incident, its evidence, and a confirmed response."""
+    html_path = Path(__file__).parent / "static" / "incident.html"
+    return html_path.read_text(encoding="utf-8")
+
+
 # ── REST: list all scans ────────────────────────────────────────────────────
 @app.get("/api/scans")
 async def list_scans():

@@ -102,15 +102,7 @@ class ThreatFeedSync:
                 "docs": "Open access. No API key needed."
             },
             self._threatfox_feed(),
-            self._unwired_feed(
-                feed_id="abuseipdb",
-                name="AbuseIPDB Threat Intelligence",
-                provider="AbuseIPDB Project",
-                feed_type="IP Reputation & Malicious Host Scoring",
-                description="Not connected. A stored key does not run lookups; this connector has no client.",
-                signup_url="https://www.abuseipdb.com/register",
-                has_key=bool(self.abuseipdb_api_key),
-            ),
+            self._abuseipdb_feed(),
             self._unwired_feed(
                 feed_id="alienvault_otx",
                 name="AlienVault Open Threat Exchange (OTX)",
@@ -147,6 +139,66 @@ class ThreatFeedSync:
             "signup_url": signup_url,
             "docs": "Unavailable. No live sync or lookup is implemented.",
         }
+
+    def _abuseipdb_feed(self) -> Dict[str, Any]:
+        """Status from the last real AbuseIPDB blacklist. Never invents a count."""
+        from aegis.intel.abuseipdb import CONFIDENCE_MINIMUM, snapshot
+
+        base = {
+            "id": "abuseipdb",
+            "name": "AbuseIPDB Threat Intelligence",
+            "provider": "AbuseIPDB",
+            "type": "IP Reputation & Malicious Host Scoring",
+            "auth_required": True,
+            "signup_url": "https://www.abuseipdb.com/register",
+        }
+        if not self.abuseipdb_api_key:
+            return {
+                **base,
+                "status": "NOT_WIRED",
+                "has_key": False,
+                "record_count": None,
+                "description": "Not connected. Set ABUSEIPDB_API_KEY. Requests send it as the Key header.",
+                "docs": "No blacklist sync until an API key is set.",
+            }
+        stored = snapshot(self.db)
+        if stored is None:
+            return {
+                **base,
+                "status": "CONFIGURED",
+                "has_key": True,
+                "record_count": None,
+                "description": (
+                    "API key is set. Sync All Feeds pulls the AbuseIPDB blacklist "
+                    f"at confidence {CONFIDENCE_MINIMUM} or higher. No snapshot is stored yet."
+                ),
+                "docs": "GET https://api.abuseipdb.com/api/v2/blacklist with header Key.",
+            }
+        count = stored["address_count"]
+        return {
+            **base,
+            "status": "ACTIVE",
+            "has_key": True,
+            "record_count": count,
+            "description": (
+                f"Last sync stored {count} addresses from the AbuseIPDB blacklist "
+                f"(confidence {stored['confidence_minimum']} or higher)."
+            ),
+            "docs": "Count is the number of addresses in the last successful response.",
+        }
+
+    async def sync_abuseipdb(self) -> Optional[int]:
+        """Store one AbuseIPDB blacklist response. Returns None when it is not usable."""
+        from aegis.intel.abuseipdb import fetch_blacklist, replace_snapshot
+
+        result = await fetch_blacklist()
+        if not result["ok"] or result["addresses"] is None:
+            reason = result.get("reason") or "unavailable"
+            console.print(f"[yellow][!] AbuseIPDB sync skipped: {reason}[/yellow]")
+            return None
+        count = replace_snapshot(self.db, result["addresses"])
+        console.print(f"[green][+] AbuseIPDB sync stored {count} addresses.[/green]")
+        return count
 
     def _threatfox_feed(self) -> Dict[str, Any]:
         """Status from the last real ThreatFox response. Never invents a count."""
@@ -223,6 +275,9 @@ class ThreatFeedSync:
         threatfox_count = await self.sync_threatfox(days=1)
         if threatfox_count is not None:
             counts["threatfox"] = threatfox_count
+        abuseipdb_count = await self.sync_abuseipdb()
+        if abuseipdb_count is not None:
+            counts["abuseipdb"] = abuseipdb_count
         return counts
 
     async def sync_cisa_kev(self) -> int:

@@ -127,7 +127,7 @@ What this build actually enforces:
 - `GET /api/settings` masks API keys, client secrets, bot tokens, webhook URLs, the canary URL, and the signing key. Saving the masked preview back does not overwrite the stored secret.
 - Scan reports, behavioral monitor alerts, and incident containment notes are stored in `~/.aegis/history.sqlite3` and are loaded again after a restart. Critical alert routing was already stored in `~/.aegis/alert_queue.sqlite3`. A scan that was still running when the process died is marked `interrupted`.
 
-Still true, and not fixed here: there are no user accounts, RBAC, or SSO. Host containment is Windows-oriented (`netsh`, process kill). OTX, AbuseIPDB, and VirusTotal cards record whether a key is present; they do not perform live lookups. ThreatFox does sync when `THREATFOX_AUTH_KEY` is set. Do not bind this process on a public interface.
+Still true, and not fixed here: there are no user accounts, RBAC, or SSO. Host containment is Windows-oriented (`netsh`, process kill). OTX and VirusTotal cards record whether a key is present; they do not perform live lookups. ThreatFox syncs when `THREATFOX_AUTH_KEY` is set. AbuseIPDB syncs its blacklist when `ABUSEIPDB_API_KEY` is set. Do not bind this process on a public interface.
 
 ---
 

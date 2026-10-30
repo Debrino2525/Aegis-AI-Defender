@@ -417,7 +417,7 @@ table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
 .tv-stage-viewport{position:relative;flex:1;overflow:hidden;background:#050608;}
 .tv-view-layer{position:absolute;inset:0;display:none;}
 .tv-view-layer.active{display:block;}
-#tv-world-canvas,#mon-graph-canvas{width:100%;height:100%;display:block;}
+#mon-graph-canvas{width:100%;height:100%;display:block;}
 
 /* Floating Inspector HUD Window */
 .tv-hud-window{position:absolute;top:18px;left:18px;width:340px;background:rgba(12,15,22,.94);border:1px solid var(--border2);border-radius:9px;box-shadow:0 16px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05);backdrop-filter:blur(8px);z-index:30;overflow:hidden;transition:opacity .15s;}
@@ -629,9 +629,20 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .geo-note p{margin:0;font-size:14px;line-height:1.55;color:#3c4654}
 .geo-note-k{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a5a00}
 .geo-note .btn{margin-top:16px}
-#tv-map-view:not(.has-points) #tv-world-canvas{display:none}
+#tv-map-view:not(.has-points) #tv-world-stage,#tv-map-view:not(.has-points) .geo-count,#tv-map-view:not(.has-points) .geo-tip{display:none}
 #tv-map-view.has-points .geo-note{display:none}
-#tv-map-view.tv-view-layer.active.has-points{display:block;padding:0;background:#12161c!important}
+#tv-map-view.tv-view-layer.active.has-points{display:block;padding:0;background:#070a10!important}
+#tv-world-stage{position:absolute;inset:0;background:#070a10;}
+#tv-world-stage svg{width:100%;height:100%;display:block;}
+#tv-world-stage path{fill:#1e3348;stroke:#8eb4d4;stroke-width:.45;stroke-linejoin:round;}
+.geo-pin{cursor:pointer;}
+.geo-pin-halo{fill:rgba(255,92,92,.22);stroke:rgba(255,160,150,.7);stroke-width:.7;}
+.geo-pin-dot{fill:#ff5d57;}
+.geo-tip{position:absolute;z-index:4;pointer-events:none;max-width:280px;padding:8px 10px;border-radius:8px;background:rgba(247,248,250,.96);color:#12161c;box-shadow:0 10px 28px rgba(0,0,0,.35);}
+.geo-tip[hidden]{display:none;}
+.geo-tip-ip{font-family:var(--mono);font-size:12px;font-weight:600;}
+.geo-tip-place{margin-top:2px;font-size:12px;color:#3c4654;}
+.geo-count{position:absolute;right:24px;bottom:24px;z-index:4;padding:8px 12px;border-radius:999px;background:rgba(12,14,20,.72);border:1px solid rgba(255,255,255,.12);color:#e8eef6;font-size:12px;backdrop-filter:blur(12px);}
 #tv-graph-view{background:radial-gradient(75% 65% at 50% 50%,#0e1424 0%,#06070b 72%)}
 
 .tv-hero{position:absolute;left:24px;bottom:24px;z-index:20;width:min(560px,calc(100% - 48px));padding:20px 22px;border-radius:20px;
@@ -1133,7 +1144,9 @@ select option:checked, select option:hover {
     <div class="tv-stage-viewport" id="tv-stage-viewport">
       <!-- 1. Global Threat Map Layer -->
       <div id="tv-map-view" class="tv-view-layer">
-        <canvas id="tv-world-canvas"></canvas>
+        <div id="tv-world-stage"></div>
+        <div id="geo-tip" class="geo-tip" hidden></div>
+        <div id="geo-count" class="geo-count" hidden></div>
         <div class="geo-note" id="geo-note">
           <p class="geo-note-k" id="geo-note-k">Unavailable</p>
           <h2 id="geo-note-title">GeoIP database is missing</h2>
@@ -3824,16 +3837,105 @@ function resolveHostGeo(ip) {
   };
 }
 
+let geoMapPromise = null;
+
+function ensureWorldMap() {
+  const stage = document.getElementById('tv-world-stage');
+  if (!stage) return Promise.resolve();
+  if (stage.dataset.ready === '1') return Promise.resolve();
+  if (!geoMapPromise) {
+    geoMapPromise = fetch('/static/world_map.svg')
+      .then(function(response) {
+        if (!response.ok) throw new Error('map');
+        return response.text();
+      })
+      .then(function(text) {
+        stage.innerHTML = text.replace('preserveAspectRatio="none"', 'preserveAspectRatio="xMidYMid meet"');
+        const svg = stage.querySelector('svg');
+        if (!svg) throw new Error('map');
+        const markers = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        markers.setAttribute('id', 'tv-world-markers');
+        svg.appendChild(markers);
+        stage.dataset.ready = '1';
+      })
+      .catch(function() {
+        geoMapPromise = null;
+        stage.dataset.ready = '';
+      });
+  }
+  return geoMapPromise;
+}
+
+function hideGeoTip() {
+  const tip = document.getElementById('geo-tip');
+  if (tip) tip.hidden = true;
+}
+
+function showGeoTip(point, pin) {
+  const tip = document.getElementById('geo-tip');
+  const layer = document.getElementById('tv-map-view');
+  if (!tip || !layer || !pin) return;
+  tip.replaceChildren();
+  const ip = document.createElement('div');
+  ip.className = 'geo-tip-ip';
+  ip.textContent = point.ip || '';
+  const place = document.createElement('div');
+  place.className = 'geo-tip-place';
+  place.textContent = [point.city, point.country].filter(Boolean).join(', ') || 'GeoLite2 City';
+  tip.append(ip, place);
+  tip.hidden = false;
+  const pinBox = pin.getBoundingClientRect();
+  const host = layer.getBoundingClientRect();
+  const left = pinBox.right - host.left + 8;
+  const top = pinBox.top - host.top - 6;
+  tip.style.left = Math.max(12, Math.min(left, host.width - tip.offsetWidth - 12)) + 'px';
+  tip.style.top = Math.max(12, Math.min(top, host.height - tip.offsetHeight - 12)) + 'px';
+}
+
+function drawGeoMarkers() {
+  const markers = document.getElementById('tv-world-markers');
+  if (!markers) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  markers.replaceChildren();
+  geoPoints.forEach(function(point) {
+    const x = ((Number(point.longitude) + 180) / 360) * 1000;
+    const y = ((90 - Number(point.latitude)) / 180) * 500;
+    const pin = document.createElementNS(ns, 'g');
+    pin.setAttribute('class', 'geo-pin');
+    pin.setAttribute('transform', 'translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')');
+    const halo = document.createElementNS(ns, 'circle');
+    halo.setAttribute('class', 'geo-pin-halo');
+    halo.setAttribute('r', '9');
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('class', 'geo-pin-dot');
+    dot.setAttribute('r', '3.6');
+    pin.append(halo, dot);
+    pin.addEventListener('mouseenter', function() { showGeoTip(point, pin); });
+    pin.addEventListener('mouseleave', hideGeoTip);
+    pin.addEventListener('click', function() {
+      selectInspectorHost({
+        ip: point.ip,
+        loc: [point.city, point.country].filter(Boolean).join(', ') || 'GeoLite2 City',
+        conns: 0,
+        alerts: []
+      });
+    });
+    markers.appendChild(pin);
+  });
+}
+
 function renderGeoMap() {
   const layer = document.getElementById('tv-map-view');
   const noteK = document.getElementById('geo-note-k');
   const noteTitle = document.getElementById('geo-note-title');
   const noteBody = document.getElementById('geo-note-body');
-  const cvs = document.getElementById('tv-world-canvas');
+  const count = document.getElementById('geo-count');
   if (!layer) return;
   const showPoints = geoConfigured && geoPoints.length > 0;
   layer.classList.toggle('has-points', showPoints);
   if (!showPoints) {
+    hideGeoTip();
+    if (count) count.hidden = true;
     if (noteK) noteK.textContent = geoConfigured ? 'No coordinates' : 'Unavailable';
     if (noteTitle) noteTitle.textContent = geoConfigured ? 'No public coordinates to plot' : 'GeoIP database is missing';
     if (noteBody) noteBody.textContent = geoConfigured
@@ -3841,53 +3943,13 @@ function renderGeoMap() {
       : 'Set GEOIP_DB_PATH to a local GeoLite2-City.mmdb file, or save that path under Settings. This console does not invent coordinates. Private addresses stay on site topology.';
     return;
   }
-  if (!cvs) return;
-  const dpr = window.devicePixelRatio || 1;
-  const rect = layer.getBoundingClientRect();
-  if (rect.width && rect.height) {
-    cvs.width = Math.round(rect.width * dpr);
-    cvs.height = Math.round(rect.height * dpr);
+  if (count) {
+    count.hidden = false;
+    count.textContent = geoPoints.length + (geoPoints.length === 1 ? ' located address' : ' located addresses');
   }
-  const ctx = cvs.getContext('2d');
-  if (!ctx || !cvs.width || !cvs.height) return;
-  const w = cvs.width, h = cvs.height;
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#12161c';
-  ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = dpr;
-  ctx.beginPath();
-  for (let lon = -180; lon <= 180; lon += 30) {
-    const x = ((lon + 180) / 360) * w;
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-  }
-  for (let lat = -60; lat <= 60; lat += 30) {
-    const y = ((90 - lat) / 180) * h;
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-  }
-  ctx.stroke();
-  geoPoints.forEach(function(point) {
-    const x = ((point.longitude + 180) / 360) * w;
-    const y = ((90 - point.latitude) / 180) * h;
-    ctx.beginPath();
-    ctx.arc(x, y, 5 * dpr, 0, Math.PI * 2);
-    ctx.fillStyle = '#c4554a';
-    ctx.fill();
-    const place = [point.city, point.country].filter(Boolean).join(', ');
-    const label = place ? (point.ip + ' · ' + place) : point.ip;
-    ctx.font = Math.round(12 * dpr) + 'px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    const pad = 6 * dpr;
-    const tw = ctx.measureText(label).width;
-    const bx = Math.min(Math.max(8 * dpr, x + 10 * dpr), Math.max(8 * dpr, w - tw - pad * 2 - 8 * dpr));
-    const by = Math.min(Math.max(8 * dpr, y - 11 * dpr), h - 28 * dpr);
-    ctx.fillStyle = 'rgba(247,248,250,0.94)';
-    ctx.fillRect(bx, by, tw + pad * 2, 22 * dpr);
-    ctx.fillStyle = '#12161c';
-    ctx.fillText(label, bx + pad, by + 11 * dpr);
+  ensureWorldMap().then(function() {
+    if (!(geoConfigured && geoPoints.length)) return;
+    drawGeoMarkers();
   });
 }
 

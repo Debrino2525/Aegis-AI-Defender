@@ -217,6 +217,7 @@
         esc(device.sample.id) + '">' + esc(device.sample.id) + "</a>.</p>";
     }
     html += postureBlock(device.posture);
+    html += loopBlock(inv.loop);
     html += assistBlock(inv.analyst_assist || inv);
     html += '<div class="block" id="evidence"><h3>Evidence timeline</h3>';
     var timeline = inv.timeline || [];
@@ -277,6 +278,27 @@
 
   function list(value) {
     return Array.isArray(value) ? value.filter(function (item) { return item != null && item !== ""; }) : [];
+  }
+
+  function loopBlock(loop) {
+    if (!loop || !loop.closed) {
+      return "";
+    }
+    var findings = list((loop.prevent || {}).findings);
+    var detections = list((loop.detect || {}).alerts);
+    var html = '<div class="block" id="loop"><h3>Prevent → Detect → Respond</h3>';
+    html += '<div class="loop-rail"><span class="loop-step">Prevent</span><span class="loop-arrow">→</span><span class="loop-step">Detect</span><span class="loop-arrow">→</span><span class="loop-step">Respond</span></div>';
+    html += '<p class="muted">Closed only when this enrolled host has a verified HIGH or KEV finding and a later behavioral sample.</p>';
+    findings.forEach(function (row) {
+      html += '<p class="related-row"><a class="sample-link" href="#sample-' + esc(row.id || "") + '">' +
+        esc(row.finding_id || row.id || "") + "</a> " + esc(row.title || "") + "</p>";
+    });
+    detections.forEach(function (row) {
+      html += '<p class="related-row"><a class="sample-link" href="#sample-' + esc(row.id || "") + '">' +
+        esc(row.id || "") + "</a> " + esc(row.pattern_id || "") + "</p>";
+    });
+    html += "</div>";
+    return html;
   }
 
   function assistBlock(assist) {

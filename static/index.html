@@ -80,6 +80,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex
 .routing-dot.on{background:var(--success);}
 .routing-cap{font-family:var(--mono);font-size:12px;font-weight:600;}
 .routing-cap span{color:var(--text-dim);font-weight:500;font-family:var(--font);}
+.loop-rail{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;}
+.loop-step{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--mono);font-size:12px;}
+.loop-arrow{color:var(--text-dim);font-family:var(--mono);font-size:11px;}
 
 /* METRIC CARDS */
 .mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:all .2s;position:relative;overflow:hidden;}
@@ -1288,7 +1291,7 @@ select option:checked, select option:hover {
         <div class="ct">Analyst Assist</div>
         <span style="font-size:11px;color:var(--text-dim)">Alerts grouped by host, time, and tactic. Hops only when sampled.</span>
       </div>
-      <div id="incidents-list"><div class="empty"><div class="ei"></div><div class="eh">No incidents yet</div><div class="ep">Incidents appear when the correlator groups alerts on a host in a time window</div></div></div>
+      <div id="incidents-list"><div class="empty"><div class="ei"></div><div class="eh">No incidents yet</div><div class="ep">Analyst Assist groups detections by host. A Prevent → Detect → Respond loop appears on that incident only when the enrolled host has a verified HIGH or KEV finding and later matches a behavioral pattern.</div></div></div>
     </div>
   </div>
 
@@ -3314,8 +3317,9 @@ async function executeIncidentAction(incId, actionType, target, btn) {
       body: JSON.stringify({ action_id: preview.action_id, confirm: true })
     });
     const data = await confRes.json().catch(function(){ return {}; });
-    if (confRes.ok && (data.applied || data.status === 'queued' || data.status === 'sent' || data.status === 'executed' || data.status === 'observed')) {
-      toast(data.message || data.status || 'Response recorded', 'ok');
+    if (confRes.ok && (data.applied || data.status === 'queued' || data.status === 'sent' || data.status === 'executed' || data.status === 'observed' || data.status === 'failed')) {
+      const pageNote = data.paging && data.paging.status ? ' · page ' + data.paging.status : '';
+      toast((data.message || data.status || 'Response recorded') + pageNote, data.applied || data.status === 'queued' ? 'ok' : '');
       if (typeof refreshMonitorData === 'function') refreshMonitorData();
     } else {
       toast(data.error || data.detail || 'Action was not applied', 'err');
@@ -3354,6 +3358,7 @@ function syncContainmentTarget(incId) {
   else if (action === 'block_ip') note.textContent = shown ? 'Firewall block uses the IP selected once.' : 'No remote IP on this incident.';
   else if (action === 'isolate_connections') note.textContent = shown ? 'Drops sockets to the IP selected once.' : 'No remote IP on this incident.';
   else if (action === 'terminate_process') note.textContent = shown ? 'Stops the process selected once.' : 'No process name on this incident.';
+  else if (action === 'quarantine_host') note.textContent = 'Recommend isolate. Confirm signs the audit and pages Slack, Teams, or email under the hourly cap.';
   else note.textContent = 'Choose one action. The target IP or process is selected once.';
 }
 
@@ -3366,6 +3371,12 @@ function executeSelectedIncidentAction(incId, btn) {
   }
   if (kind.value === 'resolve') {
     executeIncidentAction(incId, 'resolve', incId, btn);
+    return;
+  }
+  if (kind.value === 'quarantine_host') {
+    const card = document.getElementById('card-' + incId);
+    const asset = (card && card.dataset.asset) || '';
+    executeIncidentAction(incId, 'quarantine_host', asset, btn);
     return;
   }
   if (!target || !target.value) {
@@ -3420,6 +3431,20 @@ const incidentsUIState = {
   lastSignature: ''
 };
 
+function loopBits(inc){
+  const loop = inc.loop || {};
+  if (!loop.closed) return '';
+  const findings = ((loop.prevent || {}).findings || []).map(f => f.finding_id || f.id).filter(Boolean);
+  const patterns = ((loop.detect || {}).pattern_ids || []);
+  const host = ((loop.host || {}).hostname) || '';
+  return `<div class="loop-rail" style="margin-top:10px;">
+    <span class="loop-step">Prevent</span><span class="loop-arrow">→</span>
+    <span class="loop-step">Detect</span><span class="loop-arrow">→</span>
+    <span class="loop-step">Respond</span>
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);">${esc(host)} · findings ${esc(findings.join(', ') || 'none')} · detections ${esc(patterns.join(', ') || 'none')}</div>`;
+}
+
 function assistCardBits(inc){
   const assist = inc.analyst_assist || inc;
   const groups = assist.groups || [];
@@ -3427,6 +3452,8 @@ function assistCardBits(inc){
   const phases = assist.phases || [];
   const related = assist.related_detections || [];
   const bits = [];
+  const loopHtml = loopBits(inc);
+  if (loopHtml) bits.push(loopHtml);
   if (groups.length) {
     bits.push(`<div style="font-size:11px;color:var(--text-dim);margin-top:8px;">${groups.map(g => `${esc(g.tactic || 'Ungrouped')} · ${esc(g.host || '')}`).join(' · ')}</div>`);
   }
@@ -3449,7 +3476,7 @@ function renderIncidents(incidents){
   const el = document.getElementById('incidents-list');
   if(!el) return;
   if(!incidents || !incidents.length){
-    el.innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">No incidents detected</div><div class="ep">Analyst Assist groups behavioral alerts by host, time, and tactic when evidence exists</div></div>';
+    el.innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">No incidents detected</div><div class="ep">Analyst Assist groups behavioral alerts by host, time, and tactic when evidence exists. The Prevent → Detect loop stays empty until an enrolled host has a verified HIGH or KEV finding and a later detection.</div></div>';
     incidentsUIState.lastSignature = '';
     return;
   }
@@ -3508,7 +3535,7 @@ function renderIncidents(incidents){
     const isPbOpen = incidentsUIState.openDetails.has(detPbId);
 
     return `
-      <div class="inc-card ${sev}" id="card-${esc(inc.id)}" style="${isContained ? 'border-color:rgba(61,220,151,.4);background:rgba(61,220,151,.025);' : ''}">
+      <div class="inc-card ${sev}" id="card-${esc(inc.id)}" data-asset="${esc((inc.response && inc.response.asset_id) || (inc.loop && inc.loop.host && inc.loop.host.agent_id) || '')}" style="${isContained ? 'border-color:rgba(61,220,151,.4);background:rgba(61,220,151,.025);' : ''}">
         <div class="inc-hdr" style="flex-wrap:wrap;gap:8px;">
           <span class="inc-id">${esc(inc.id)}</span>
           <a class="inc-open" href="/incidents?id=${encodeURIComponent(inc.id)}">Workspace</a>
@@ -3534,6 +3561,7 @@ function renderIncidents(incidents){
           <div class="contain-bar">
             <select class="fsel" id="act-kind-${esc(inc.id)}" onchange="syncContainmentTarget('${esc(inc.id)}')">
               <option value="">Action</option>
+              ${(inc.loop && inc.loop.closed) ? `<option value="quarantine_host">Isolate host</option>` : ''}
               ${dests.length ? `<option value="block_ip">Firewall block</option><option value="isolate_connections">Drop sockets</option>` : ''}
               ${procs.length ? `<option value="terminate_process">Stop process</option>` : ''}
               <option value="resolve">Resolve</option>

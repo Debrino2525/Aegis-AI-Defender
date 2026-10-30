@@ -17,6 +17,7 @@ from aegis.assets.identity import normalize_host
 from aegis.assets.identity import value_hits as _value_hits
 from aegis.assets.posture import matching_scans, posture_for_keys
 from aegis.monitor.analyst_assist import build_analyst_assist
+from aegis.monitor.closed_loop import closed_loop_for_incident
 from aegis.monitor.remediation import PROTECTED_PROCESS_NAMES, preview_contain_action
 
 
@@ -571,11 +572,25 @@ def build_investigation(sources: DeviceSources, key: str) -> Optional[Dict[str, 
     if assist.get("hops"):
         sources_used.append("analyst_assist_hops")
 
+    loop = closed_loop_for_incident(
+        {
+            "id": inv_id,
+            "source_ips": sorted(keys),
+            "alerts": monitor_alerts + routed_alerts,
+            "analyst_assist": assist,
+        },
+        hosts=sources.hosts or ([device] if device_kind == "enrolled_host" and device else []),
+        scans=sources.scans or [],
+    )
+    if loop.get("closed"):
+        sources_used.append("closed_loop")
+
     return {
         "id": inv_id,
         "device": device,
         "device_kind": device_kind,
         "product": assist.get("product") or "Analyst Assist",
+        "loop": loop,
         "analyst_assist": assist,
         "claims": claims,
         "timeline": timeline,

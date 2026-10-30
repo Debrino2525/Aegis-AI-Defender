@@ -222,6 +222,156 @@ class AlertRouter:
                 if not platform_result.success:
                     self.cap.release_page()
 
+    async def page_closed_loop(self, incident: Dict[str, Any], action: Dict[str, Any]) -> Dict[str, Any]:
+        """Page Slack/Teams/email after an operator confirms isolate on a closed loop.
+
+        Uses the existing hourly cap. Dashboard still shows routing status only.
+        """
+        loop = incident.get("loop") if isinstance(incident.get("loop"), dict) else {}
+        picture = self.cap.snapshot()
+        base = {
+            "hourly_cap": picture["hourly_cap"],
+            "sent_this_hour": picture["sent_this_hour"],
+            "held_this_hour": picture["held_this_hour"],
+            "provider": None,
+        }
+        if not loop.get("closed"):
+            return {**base, "status": "skipped", "reason": "Incident is not a closed Prevent → Detect loop."}
+        if str(action.get("action") or "") != "quarantine_host":
+            return {**base, "status": "skipped", "reason": "Paging on confirm applies to isolate."}
+        if str(action.get("status") or "") == "observed":
+            return {**base, "status": "skipped", "reason": "Observe mode does not page."}
+        if str(action.get("confirmed_by") or action.get("actor") or "") == "auto":
+            return {**base, "status": "skipped", "reason": "Auto execution does not page; operator confirm does."}
+
+        connection = self.platforms.first_destination()
+        if connection is None:
+            return {
+                **base,
+                "status": "no_destination",
+                "reason": "No Slack, Teams, or email account is connected.",
+            }
+
+        finding_ids = [
+            str(row.get("finding_id") or row.get("id"))
+            for row in (loop.get("prevent") or {}).get("findings") or []
+            if row.get("finding_id") or row.get("id")
+        ]
+        pattern_ids = list((loop.get("detect") or {}).get("pattern_ids") or [])
+        host = (loop.get("host") or {}).get("hostname") or (incident.get("source_ips") or ["host"])[0]
+        incident_id = str(incident.get("id") or "")
+        action_id = str(action.get("action_id") or "")
+        alert_id = f"LOOP-{(action_id or incident_id)[-12:]}"
+        fingerprint = f"loop-isolate:{incident_id}:{action_id}"
+        title = f"Isolate confirmed · {incident_id}"
+        summary = (
+            f"Operator confirmed isolate ({action.get('rule_id')}) on {host}. "
+            f"Prevent findings: {', '.join(finding_ids) or 'none'}. "
+            f"Detect: {', '.join(pattern_ids) or 'none'}. "
+            f"Status {action.get('status')}. "
+            f"Audit {(action.get('audit') or {}).get('signature', '')[:16]}."
+        )
+        page_alert = CriticalAlert(
+            alert_id=alert_id,
+            fingerprint=fingerprint,
+            title=title,
+            severity=SeverityLevel.CRITICAL,
+            summary=summary,
+            source_ip=str((incident.get("source_ips") or ["unknown"])[0]),
+            metadata={
+                "incident_id": incident_id,
+                "action_id": action_id,
+                "finding_ids": finding_ids,
+                "pattern_ids": pattern_ids,
+                "loop": True,
+            },
+        )
+        self.queue.enqueue_alert(page_alert)
+        if self.queue.is_paged(alert_id):
+            held = self.cap.note_held(alert_id)
+            picture = self.cap.snapshot()
+            return {
+                **base,
+                "status": "held",
+                "reason": "Already paged for this isolate.",
+                "alert_id": alert_id,
+                "hourly_cap": picture["hourly_cap"],
+                "sent_this_hour": picture["sent_this_hour"],
+                "held_this_hour": picture["held_this_hour"],
+                "held_count": held,
+                "provider": connection.get("provider"),
+            }
+
+        slot = self.cap.reserve()
+        if slot == "hold":
+            self.cap.note_held(alert_id)
+            picture = self.cap.snapshot()
+            return {
+                **base,
+                "status": "hold",
+                "reason": "Hourly outside-message cap reached. Review this isolate in the console.",
+                "alert_id": alert_id,
+                "hourly_cap": picture["hourly_cap"],
+                "sent_this_hour": picture["sent_this_hour"],
+                "held_this_hour": picture["held_this_hour"],
+                "provider": connection.get("provider"),
+            }
+
+        link = f"{self.base_console_url}/incidents?id={incident_id}"
+        if slot == "summary":
+            self.cap.note_held(alert_id)
+            sent = await self._send_cap_summary(page_alert, OnCallContact(
+                contact_id="loop",
+                name="Loop",
+                phone="+00000000000",
+            ))
+            picture = self.cap.snapshot()
+            if not sent:
+                self.cap.release_summary()
+                return {
+                    **base,
+                    "status": "failed",
+                    "reason": "Cap summary could not be delivered.",
+                    "alert_id": alert_id,
+                    "provider": connection.get("provider"),
+                    "hourly_cap": picture["hourly_cap"],
+                    "sent_this_hour": picture["sent_this_hour"],
+                }
+            return {
+                **base,
+                "status": "summary",
+                "reason": "Hourly cap reached; one summary was sent.",
+                "alert_id": alert_id,
+                "provider": connection.get("provider"),
+                "hourly_cap": picture["hourly_cap"],
+                "sent_this_hour": picture["sent_this_hour"],
+                "held_this_hour": picture["held_this_hour"],
+            }
+
+        result = await deliver(connection, message_text(title, summary, link))
+        if result is None or not result.success:
+            self.cap.release_page()
+            return {
+                **base,
+                "status": "failed",
+                "reason": (result.error if result else "delivery failed") or "delivery failed",
+                "alert_id": alert_id,
+                "provider": connection.get("provider"),
+            }
+        self.queue.record_dispatch_audit(alert_id, result)
+        self.queue.mark_paged(alert_id)
+        self.queue.mark_dispatched(alert_id, "DELIVERED")
+        picture = self.cap.snapshot()
+        return {
+            "status": "page",
+            "provider": connection.get("provider"),
+            "alert_id": alert_id,
+            "hourly_cap": picture["hourly_cap"],
+            "sent_this_hour": picture["sent_this_hour"],
+            "held_this_hour": picture["held_this_hour"],
+            "destination_label": connection.get("account_label") or connection.get("provider"),
+        }
+
     def acknowledge_alert(self, alert_id: str, acknowledged_by: str) -> bool:
         """Acknowledges an alert, halting all active escalation timers."""
         return self.queue.acknowledge_alert(alert_id, acknowledged_by)

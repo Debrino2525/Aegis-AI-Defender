@@ -462,6 +462,29 @@ dialog dd { margin: 0 0 8px; font-family: var(--mono); font-size: 12px; }
   font-size: 13px;
 }
 
+.loop-rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.loop-step {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.loop-arrow {
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
 @media (max-width: 960px) {
   .workspace { grid-template-columns: 1fr; }
   .pane + .pane { border-left: 0; border-top: 1px solid var(--border); }

@@ -52,6 +52,18 @@ RESPONSE_RULES: List[Dict[str, Any]] = [
         "rollback_action": "unquarantine_host",
         "rollback_possible": True,
     },
+    {
+        "rule_id": "AEGIS-RSP-005",
+        "title": "Isolate host",
+        "action": "quarantine_host",
+        "target_kind": "asset",
+        "pattern_ids": (),
+        "tactics": (),
+        "min_severity": "HIGH",
+        "requires_closed_loop": True,
+        "rollback_action": "unquarantine_host",
+        "rollback_possible": True,
+    },
 ]
 
 
@@ -133,8 +145,20 @@ def match_rules(
     wanted_target = (target or "").strip() or None
 
     proposals: List[Dict[str, Any]] = []
+    loop = incident.get("loop") if isinstance(incident.get("loop"), dict) else {}
+    loop_closed = bool(loop.get("closed"))
+    loop_findings = []
+    if loop_closed:
+        loop_findings = [
+            str(row.get("finding_id") or row.get("id"))
+            for row in ((loop.get("prevent") or {}).get("findings") or [])
+            if row.get("finding_id") or row.get("id")
+        ]
+
     for rule in RESPONSE_RULES:
         if wanted_action and rule["action"] != wanted_action:
+            continue
+        if rule.get("requires_closed_loop") and not loop_closed:
             continue
         matching_alerts = alerts
         if rule.get("pattern_ids"):
@@ -190,10 +214,12 @@ def match_rules(
                 "rollback_possible": bool(rule.get("rollback_possible")),
                 "evidence": {
                     "alert_ids": evidence_ids,
+                    "finding_ids": loop_findings,
                     "pattern_ids": sorted({str(a.get("pattern_id") or "") for a in (matching_alerts or alerts) if a.get("pattern_id")}),
                     "tactics": sorted(tactics),
                     "incident_id": incident.get("id"),
                     "severity": top_sev,
+                    "loop_closed": loop_closed,
                 },
             })
     return proposals

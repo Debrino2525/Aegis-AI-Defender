@@ -42,6 +42,7 @@ from aegis.reporting.sarif_reporter import SARIFReporter
 from aegis.monitor.network_monitor import NetworkMonitor
 from aegis.monitor.ai_analyst import AIAnalyst
 from aegis.monitor.analyst_assist import hop_observations_from_sources
+from aegis.monitor.closed_loop import attach_closed_loop
 from datetime import timezone
 from aegis.core.verifier import FindingVerifier
 
@@ -242,30 +243,56 @@ def _console_ips() -> List[str]:
     return ips
 
 
+def _live_hosts() -> List[Dict[str, Any]]:
+    return get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or []
+
+
 def _incident_payload(incident_id: str) -> Optional[Dict[str, Any]]:
     inc = analyst.get_incident(incident_id)
     if not inc:
         return None
-    return inc.to_dict()
+    decorated = _decorate_incidents([inc.to_dict()], tick_auto=False)
+    return decorated[0] if decorated else None
 
 
 def _response_context() -> Dict[str, Any]:
     return {
-        "hosts": get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or [],
+        "hosts": _live_hosts(),
         "console_ips": _console_ips(),
         "get_incident": _incident_payload,
+        "page_isolate": _page_isolate_if_closed,
     }
 
 
 bind_response_context(_response_context)
 
 
-def _decorate_incidents(incidents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _decorate_incidents(incidents: List[Dict[str, Any]], tick_auto: bool = True) -> List[Dict[str, Any]]:
     engine = get_response_engine()
-    hosts = get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or []
+    hosts = _live_hosts()
     ips = _console_ips()
-    engine.tick_auto(incidents, hosts=hosts, console_ips=ips)
+    incidents = attach_closed_loop(incidents, hosts=hosts, scans=list(scans.values()))
+    if tick_auto:
+        engine.tick_auto(incidents, hosts=hosts, console_ips=ips)
     return engine.annotate_incidents(incidents, hosts=hosts, console_ips=ips)
+
+
+async def _page_isolate_if_closed(record: Dict[str, Any]) -> Dict[str, Any]:
+    """After operator confirm of isolate, page Slack/Teams/email under the hourly cap."""
+    if not isinstance(record, dict):
+        return record
+    if str(record.get("action") or "") != "quarantine_host":
+        return record
+    if str(record.get("status") or "") == "observed":
+        return record
+    if str(record.get("confirmed_by") or record.get("actor") or "") == "auto":
+        return record
+    incident = _incident_payload(str(record.get("incident_id") or ""))
+    if not incident or not (incident.get("loop") or {}).get("closed"):
+        return record
+    paging = await alert_router.page_closed_loop(incident, record)
+    record["paging"] = paging
+    return get_response_engine().store.save_action(record)
 
 
 def _analyst_hop_kwargs() -> Dict[str, Any]:
@@ -540,10 +567,40 @@ async def get_finding_instructions(finding_id: str, title: str, target: str, por
     return verifier.get_instructions(finding_id, title, target, port)
 
 
+def _stamp_finding_verification(finding_id: str, target: str, result: Dict[str, Any]) -> None:
+    """Persist a live re-test onto matching scan findings. Does not invent findings."""
+    from aegis.assets.identity import normalize_host, value_hits
+
+    wanted = str(finding_id or "").strip()
+    keys = {normalize_host(target)} if target else set()
+    stamp = {
+        "status": result.get("status"),
+        "is_vulnerable": bool(result.get("is_vulnerable")),
+        "timestamp": result.get("timestamp"),
+        "summary": result.get("summary") or "",
+    }
+    for scan in scans.values():
+        if not isinstance(scan, dict):
+            continue
+        for finding in scan.get("findings") or []:
+            if not isinstance(finding, dict):
+                continue
+            if str(finding.get("id") or "").strip() != wanted:
+                continue
+            if keys and not (
+                value_hits(finding.get("target"), keys) or value_hits(scan.get("target"), keys)
+            ):
+                continue
+            finding["verification"] = dict(stamp)
+
+
 @app.post("/api/findings/verify")
 async def verify_finding_live(req: VerifyFindingRequest):
     """Executes a real-time targeted automated re-test against the finding and returns proof."""
-    return await verifier.verify_finding(req.finding_id, req.title, req.target, req.port)
+    result = await verifier.verify_finding(req.finding_id, req.title, req.target, req.port)
+    if isinstance(result, dict):
+        _stamp_finding_verification(req.finding_id, req.target, result)
+    return result
 
 
 # ── REST: aggregated platform intelligence ───────────────────────────────────
@@ -1148,6 +1205,7 @@ async def execute_incident_action(req: IncidentActionRequest):
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
     inc.record_action(record)
+    record = await _page_isolate_if_closed(record)
     get_history_store().save_incident_states(analyst.export_operator_state())
     return record
 

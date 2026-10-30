@@ -1,0 +1,108 @@
+{
+  "nonstandard": [
+    {
+      "intended": "http",
+      "port": 18080,
+      "service_name": "unknown",
+      "product": null,
+      "version": null,
+      "banner": "HTTP/1.1 200 OK\r\nServer: nginx/1.24.0\r\nContent-Length: 32\r\nConnection: close\r\n\r\n<html><title>fake</title></html>",
+      "tls": false,
+      "identified_as_intended": false
+    },
+    {
+      "intended": "ssh",
+      "port": 18022,
+      "service_name": "ssh",
+      "product": "openssh",
+      "version": "9.2p1",
+      "banner": "SSH-2.0-OpenSSH_9.2p1 Ubuntu-0ubuntu0.1",
+      "tls": false,
+      "identified_as_intended": true
+    },
+    {
+      "intended": "ftp",
+      "port": 18021,
+      "service_name": "ftp",
+      "product": "proftpd",
+      "version": "1.3.8",
+      "banner": "220 ProFTPD 1.3.8 Server (Debian) [::ffff:127.0.0.1]",
+      "tls": false,
+      "identified_as_intended": true
+    },
+    {
+      "intended": "smtp",
+      "port": 18025,
+      "service_name": "unknown",
+      "product": null,
+      "version": null,
+      "banner": "220 mail.example.com ESMTP Postfix 3.7.10",
+      "tls": false,
+      "identified_as_intended": false
+    },
+    {
+      "intended": "mysql",
+      "port": 18036,
+      "service_name": "mysql",
+      "product": "mysql",
+      "version": "8.0.36-0ubuntu0",
+      "banner": "J\u0000\u0000\u0000\n8.0.36-0ubuntu0.22.04.1\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "tls": false,
+      "identified_as_intended": true
+    },
+    {
+      "intended": "redis",
+      "port": 18079,
+      "service_name": "unknown",
+      "product": null,
+      "version": null,
+      "banner": "",
+      "tls": false,
+      "identified_as_intended": false
+    }
+  ],
+  "standard_controls": [
+    {
+      "intended": "ssh_std",
+      "port": 22,
+      "error": "[Errno 13] error while attempting to bind on address ('127.0.0.1', 22): permission denied"
+    },
+    {
+      "intended": "ftp_std",
+      "port": 21,
+      "error": "[Errno 13] error while attempting to bind on address ('127.0.0.1', 21): permission denied"
+    },
+    {
+      "intended": "smtp_std",
+      "port": 25,
+      "error": "[Errno 13] error while attempting to bind on address ('127.0.0.1', 25): permission denied"
+    },
+    {
+      "intended": "mysql_std",
+      "port": 3306,
+      "service_name": "mysql",
+      "product": "mysql",
+      "version": "8.0.36-0ubuntu0",
+      "banner": "J\u0000\u0000\u0000\n8.0.36-0ubuntu0.22.04.1\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "tls": false
+    },
+    {
+      "intended": "redis_std",
+      "port": 6379,
+      "service_name": "redis",
+      "product": "redis",
+      "version": null,
+      "banner": "+PONG",
+      "tls": false
+    },
+    {
+      "intended": "http_std",
+      "port": 8080,
+      "service_name": "http",
+      "product": "nginx",
+      "version": "1.24.0",
+      "banner": "nginx/1.24.0",
+      "tls": false
+    }
+  ]
+}

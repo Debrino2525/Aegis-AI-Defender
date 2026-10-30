@@ -1,0 +1,27 @@
+{
+  "blocking_note": {
+    "settimeout_called": true,
+    "sock_sendto_requires_nonblocking": "asyncio docs: sock must be non-blocking",
+    "source_settimeout_line": "aegis/discovery/port_scanner.py:38",
+    "source_sock_sendto_line": "aegis/discovery/port_scanner.py:41"
+  },
+  "scan_udp_against_echo": {
+    "result": [],
+    "error": null,
+    "elapsed_s": 2.0025070789999972
+  },
+  "probe_udp_port_against_echo": {
+    "result": [
+      18053,
+      false
+    ],
+    "error": null,
+    "elapsed_s": 2.002318410999976
+  },
+  "ScanEngine.run_contains_scan_udp": false,
+  "ScanEngine.run_contains_scan_target": true,
+  "scan_target_scan_udp_param_used": false,
+  "scan_target_body_uses_udp_flag": true,
+  "scan_target_source_excerpt": "    async def scan_target(self, host: str, ports: List[int], scan_udp: bool = False) -> List[int]:\n        \"\"\"Scans the specified list of ports on the target host and returns open ports.\"\"\"\n        tasks = [self._probe_port(host, port) for port in ports]\n        results = await asyncio.gather(*tasks, return_exceptions=True)\n\n        open_ports: List[int] = []\n        for res in results:\n            if isinstance(res, tuple):\n                port, is_open = res\n                if is_open:\n                    open_ports.append(port)\n\n        return sorted(open_ports)\n",
+  "engine_run_udp_mentions": []
+}

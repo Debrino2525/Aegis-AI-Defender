@@ -1,0 +1,85 @@
+bind 172.30.0.2:18443
+baseline net_connections
+baseline nc 23 in 0.0034810369998012902s
+baseline sample
+baseline sample {'sample_s': 0.005182002999845281, 'timed_out': False, 'kept_connections': 12, 'n_alerts': 0, 'alert_ids': [], 'len_conn_history': 11}
+ws_before
+ws_before {'ws': {'elapsed_s': 0.011939635999851816, 'bytes': 38659, 'ok': True}, 'http_monitor': {'elapsed_s': 0.05026893800004473, 'status': 200, 'bytes': 38725}}
+opened 100 errors 0
+opened 200 errors 0
+opened 300 errors 0
+opened 400 errors 0
+opened 500 errors 0
+opened 600 errors 0
+opened 700 errors 0
+opened 800 errors 0
+opened 900 errors 0
+opened 1000 errors 0
+opened 1100 errors 0
+opened 1200 errors 0
+opened 1300 errors 0
+opened 1400 errors 0
+opened 1500 errors 0
+opened 1600 errors 0
+opened 1700 errors 0
+opened 1800 errors 0
+opened 1900 errors 0
+opened 2000 errors 0
+flood opened 2000 in 0.4174953120000282s errors 0
+loaded nc 4030 in 0.03828734700005043s
+loaded sample {'sample_s': 0.66531186300017, 'timed_out': False, 'kept_connections': 4012, 'n_alerts': 1, 'alert_ids': ['AEGIS-BEH-001'], 'len_conn_history': 2012}
+ws_after {'ws': {'elapsed_s': 0.0037663870000415045, 'bytes': 38659, 'ok': True}, 'http_monitor': {'elapsed_s': 0.018879225000091537, 'status': 200, 'bytes': 38725}}
+{
+  "bind_ip": "172.30.0.2",
+  "port": 18443,
+  "requested": 2000,
+  "opened": 2000,
+  "open_errors": 0,
+  "open_s": 0.4174953120000282,
+  "baseline_net_connections_s": 0.0034810369998012902,
+  "baseline_net_connections_n": 23,
+  "loaded_net_connections_s": 0.03828734700005043,
+  "loaded_net_connections_n": 4030,
+  "baseline_sample": {
+    "sample_s": 0.005182002999845281,
+    "timed_out": false,
+    "kept_connections": 12,
+    "n_alerts": 0,
+    "alert_ids": [],
+    "len_conn_history": 11
+  },
+  "loaded_sample": {
+    "sample_s": 0.66531186300017,
+    "timed_out": false,
+    "kept_connections": 4012,
+    "n_alerts": 1,
+    "alert_ids": [
+      "AEGIS-BEH-001"
+    ],
+    "len_conn_history": 2012
+  },
+  "ws_before": {
+    "ws": {
+      "elapsed_s": 0.011939635999851816,
+      "bytes": 38659,
+      "ok": true
+    },
+    "http_monitor": {
+      "elapsed_s": 0.05026893800004473,
+      "status": 200,
+      "bytes": 38725
+    }
+  },
+  "ws_after": {
+    "ws": {
+      "elapsed_s": 0.0037663870000415045,
+      "bytes": 38659,
+      "ok": true
+    },
+    "http_monitor": {
+      "elapsed_s": 0.018879225000091537,
+      "status": 200,
+      "bytes": 38725
+    }
+  }
+}

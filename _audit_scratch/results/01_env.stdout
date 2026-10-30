@@ -1,0 +1,449 @@
+{
+  "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "python_version_info": [
+    3,
+    12,
+    3,
+    "final",
+    0
+  ],
+  "platform": "Linux-6.12.94+-x86_64-with-glibc2.39",
+  "os_uname": [
+    "Linux",
+    "cursor",
+    "6.12.94+",
+    "#1 SMP PREEMPT_DYNAMIC Tue Oct 27 12:38:43 UTC 2026",
+    "x86_64"
+  ],
+  "executable": "/usr/bin/python3",
+  "cwd": "/workspace",
+  "admin_token_exists": false,
+  "import_results": [
+    {
+      "module": "server",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "run",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.monitor.network_monitor",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.monitor.behavioral_engine",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.monitor.threat_patterns",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.monitor.ai_analyst",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.monitor.remediation",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.discovery.port_scanner",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.discovery.fingerprint",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.discovery.cpe_matcher",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.database.db",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.database.sync",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.database.matcher",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.alerting.router",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.alerting.heartbeat",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.alerting.classifier",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.core.engine",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.credentialed.ssh_auditor",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.checks.template_engine",
+      "ok": true,
+      "error": null
+    },
+    {
+      "module": "aegis.scoring.risk_engine",
+      "ok": true,
+      "error": null
+    }
+  ],
+  "warnings": [
+    {
+      "category": "PydanticDeprecatedSince20",
+      "message": "Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.14/migration/",
+      "filename": "/workspace/aegis/core/config.py",
+      "lineno": 17
+    },
+    {
+      "category": "DeprecationWarning",
+      "message": "\n        on_event is deprecated, use lifespan event handlers instead.\n\n        Read more about it in the\n        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n        ",
+      "filename": "/workspace/server.py",
+      "lineno": 80
+    },
+    {
+      "category": "DeprecationWarning",
+      "message": "\n        on_event is deprecated, use lifespan event handlers instead.\n\n        Read more about it in the\n        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n        ",
+      "filename": "/home/ubuntu/.local/lib/python3.12/site-packages/fastapi/applications.py",
+      "lineno": 4723
+    },
+    {
+      "category": "DeprecationWarning",
+      "message": "\n        on_event is deprecated, use lifespan event handlers instead.\n\n        Read more about it in the\n        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n        ",
+      "filename": "/workspace/server.py",
+      "lineno": 87
+    },
+    {
+      "category": "DeprecationWarning",
+      "message": "\n        on_event is deprecated, use lifespan event handlers instead.\n\n        Read more about it in the\n        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n        ",
+      "filename": "/home/ubuntu/.local/lib/python3.12/site-packages/fastapi/applications.py",
+      "lineno": 4723
+    }
+  ],
+  "routes": [
+    {
+      "path": "/openapi.json",
+      "name": "openapi",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/docs",
+      "name": "swagger_ui_html",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/docs/oauth2-redirect",
+      "name": "swagger_ui_redirect",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/redoc",
+      "name": "redoc_html",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/static",
+      "name": "static",
+      "methods": []
+    },
+    {
+      "path": "/",
+      "name": "root",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/scans",
+      "name": "list_scans",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/scans/{scan_id}",
+      "name": "get_scan",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/scans/{scan_id}/download/{format}",
+      "name": "download_report",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/scans/{scan_id}",
+      "name": "delete_scan",
+      "methods": [
+        "DELETE"
+      ]
+    },
+    {
+      "path": "/api/reset",
+      "name": "reset_platform",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/findings/instructions",
+      "name": "get_finding_instructions",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/findings/verify",
+      "name": "verify_finding_live",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/intelligence",
+      "name": "get_intelligence",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/scans",
+      "name": "start_scan",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/threat/feeds",
+      "name": "get_threat_feeds",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/threat/feeds/sync",
+      "name": "sync_threat_feeds",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/update",
+      "name": "trigger_update",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/monitor",
+      "name": "get_monitor",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/monitor/start",
+      "name": "start_monitor",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/monitor/stop",
+      "name": "stop_monitor",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/monitor/alerts/{alert_id}/ack",
+      "name": "ack_alert",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/monitor/targets",
+      "name": "list_monitored_targets",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/monitor/targets",
+      "name": "add_monitored_target",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/monitor/targets/{target_id}",
+      "name": "remove_monitored_target",
+      "methods": [
+        "DELETE"
+      ]
+    },
+    {
+      "path": "/api/alerting/status",
+      "name": "get_alerting_status",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/alerting/alerts",
+      "name": "list_critical_alerts",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/alerting/alerts/{alert_id}/ack",
+      "name": "ack_critical_alert",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/alerting/triage/{token}",
+      "name": "verify_triage",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/alerting/test",
+      "name": "trigger_test_critical_alert",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/settings",
+      "name": "get_platform_settings",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/settings",
+      "name": "save_platform_settings",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/alerting/contacts",
+      "name": "list_oncall_contacts",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/alerting/contacts",
+      "name": "save_oncall_contact",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/alerting/contacts/{contact_id}",
+      "name": "delete_oncall_contact",
+      "methods": [
+        "DELETE"
+      ]
+    },
+    {
+      "path": "/api/alerting/mappings",
+      "name": "list_ownership_mappings",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/api/alerting/mappings",
+      "name": "save_ownership_mapping",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/alerting/mappings/{cidr_or_host:path}",
+      "name": "delete_ownership_mapping",
+      "methods": [
+        "DELETE"
+      ]
+    },
+    {
+      "path": "/api/settings/test-channel",
+      "name": "test_dispatch_channel",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/api/incidents/action",
+      "name": "execute_incident_action",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/ws/monitor",
+      "name": "ws_monitor",
+      "methods": []
+    },
+    {
+      "path": "/ws/scan/{scan_id}",
+      "name": "websocket_scan",
+      "methods": []
+    }
+  ]
+}

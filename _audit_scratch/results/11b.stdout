@@ -1,0 +1,34 @@
+{
+  "port_discovery_s": 0.0012138050001340162,
+  "port_err": null,
+  "open_ports": [
+    18080
+  ],
+  "fingerprint_sequential_s": 1.0192517250000037,
+  "fingerprint_gather_s": 1.0166490280000744,
+  "services": [
+    {
+      "port": 18080,
+      "service_name": "unknown",
+      "product": null,
+      "version": null,
+      "tls": false
+    }
+  ],
+  "http_s": 0.048910444000057396,
+  "http_findings": 15,
+  "http_targets": [
+    {
+      "port": 18080,
+      "name": "unknown"
+    }
+  ],
+  "tls_s": 3.0600017453252804e-07,
+  "tls_findings": 0,
+  "tls_targets": 0,
+  "templates_s": 7.764199995108356e-05,
+  "template_findings": 0,
+  "smb_s": 8.540000635548495e-07,
+  "dns_s": 2.7999999474559445e-07,
+  "total_s": 2.0918814389999625
+}

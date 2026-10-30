@@ -1,0 +1,36 @@
+{
+  "platform": "linux",
+  "is_running_as_admin": false,
+  "windll": {
+    "has_windll": false
+  },
+  "netsh": {
+    "error": "FileNotFoundError(2, 'No such file or directory')"
+  },
+  "taskkill": {
+    "error": "FileNotFoundError(2, 'No such file or directory')"
+  },
+  "com3_or_ttyusb0_exists": false,
+  "block_remote_ip_192.0.2.1": {
+    "success": true,
+    "message": "Rule staged in 'enforce_pending_containment.bat'. To enforce with 1 click directly in browser, right-click 'start_aegis_admin.bat' -> Run as Administrator.",
+    "action": "block_ip",
+    "target": "192.0.2.1",
+    "rule_name": "Aegis_Block_Out_192.0.2.1",
+    "staged_file": "/workspace/enforce_pending_containment.bat",
+    "timestamp": "2026-10-30T22:53:02.975093+00:00"
+  },
+  "terminate_missing_process": {
+    "success": false,
+    "error": "No active process matching 'definitely_not_a_real_aegis_audit_proc.exe' found running."
+  },
+  "isolate_192.0.2.1": {
+    "success": true,
+    "message": "No active socket connections found targeting 192.0.2.1 (already closed or dormant).",
+    "action": "isolate_connections",
+    "target": "192.0.2.1",
+    "terminated_pids": [],
+    "timestamp": "2026-10-30T22:53:02.980102+00:00"
+  },
+  "pending_bat_created": true
+}

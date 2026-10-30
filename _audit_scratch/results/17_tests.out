@@ -1,0 +1,10 @@
+[+] test_classifier_behavioral (C2): PASSED
+[+] test_classifier_behavioral (Benign): PASSED
+[+] test_classifier_scan_finding: PASSED
+[+] test_flap_damper_rate_limiting: PASSED
+[+] test_sqlite_alert_queue: PASSED
+[+] test_security_tokens: PASSED
+[+] test_escalation_manager: PASSED
+
+[=== ALL CRITICAL ALERT ROUTING TESTS PASSED ===]
+EXIT:0

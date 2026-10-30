@@ -1,0 +1,153 @@
+{
+  "ml_imports_in_ai_analyst": false,
+  "grouping": "by source_ip, then cluster if consecutive _timestamp delta <= CORRELATION_WINDOW (600s)",
+  "scoring": "confidence = min(len(alerts)*15,60) + min(crit*10,25) + min(n_tactics*5,15)",
+  "n_incidents": 1,
+  "incidents": [
+    {
+      "id": "INC-0001",
+      "alert_count": 3,
+      "source_ips": [
+        "10.0.0.8"
+      ],
+      "dest_ips": [
+        "203.0.113.50"
+      ],
+      "processes": [
+        "psexesvc.exe",
+        "svchost.exe"
+      ],
+      "tactics": [
+        "Command and Control",
+        "Discovery",
+        "Lateral Movement"
+      ],
+      "techniques": [
+        "T1021.002",
+        "T1046",
+        "T1071"
+      ],
+      "severity": "CRITICAL",
+      "confidence": 80,
+      "urgency": "CRITICAL",
+      "narrative": "A correlated sequence of 3 alerts from host 10.0.0.8 spans Command and Control, Discovery, Lateral Movement. This multi-stage pattern is consistent with an Advanced Persistent Threat (APT) kill chain: the adversary appears to have progressed from Discovery through to Command and Control. This represents a severe, active compromise requiring immediate incident response activation.",
+      "recommended_actions": [
+        "Immediately isolate the source host from the network",
+        "Block all outbound connections from source IP at the firewall",
+        "Capture a memory dump for forensic analysis",
+        "Search for scheduled tasks, startup entries, and registry run keys on the host",
+        "Run full AV/EDR scan and check for unsigned or newly created executables",
+        "Document all containment actions in incident registry (Incident ID: INC-0001)"
+      ],
+      "executable_actions": [
+        {
+          "id": "kill_psexesvc.exe",
+          "label": "Terminate Process: psexesvc.exe",
+          "action": "terminate_process",
+          "target": "psexesvc.exe",
+          "danger": true,
+          "description": "Terminate running instances of 'psexesvc.exe' locally on this machine."
+        },
+        {
+          "id": "kill_svchost.exe",
+          "label": "Terminate Process: svchost.exe",
+          "action": "terminate_process",
+          "target": "svchost.exe",
+          "danger": true,
+          "description": "Terminate running instances of 'svchost.exe' locally on this machine."
+        },
+        {
+          "id": "block_multiple internal",
+          "label": "Block IP: multiple internal",
+          "action": "block_ip",
+          "target": "multiple internal",
+          "danger": true,
+          "description": "Add Windows Defender Firewall rule to block all inbound and outbound traffic to multiple internal."
+        },
+        {
+          "id": "block_203.0.113.50",
+          "label": "Block IP: 203.0.113.50",
+          "action": "block_ip",
+          "target": "203.0.113.50",
+          "danger": true,
+          "description": "Add Windows Defender Firewall rule to block all inbound and outbound traffic to 203.0.113.50."
+        },
+        {
+          "id": "drop_multiple internal",
+          "label": "Drop Sockets to multiple internal",
+          "action": "isolate_connections",
+          "target": "multiple internal",
+          "danger": false,
+          "description": "Terminate any active network socket sessions connected to multiple internal."
+        },
+        {
+          "id": "drop_203.0.113.50",
+          "label": "Drop Sockets to 203.0.113.50",
+          "action": "isolate_connections",
+          "target": "203.0.113.50",
+          "danger": false,
+          "description": "Terminate any active network socket sessions connected to 203.0.113.50."
+        },
+        {
+          "id": "resolve_incident",
+          "label": "Mark Contained & Resolve Incident",
+          "action": "resolve",
+          "target": "INC-0001",
+          "danger": false,
+          "description": "Mark this security incident as contained and archive it from the active triage list."
+        }
+      ],
+      "actions_taken": [],
+      "first_seen": "2026-10-30T22:52:31.528691+00:00",
+      "last_seen": "2026-10-30T22:52:51.528707+00:00",
+      "duration_seconds": 20.0,
+      "status": "ACTIVE",
+      "alert_ids": [
+        "ALT-0001",
+        "ALT-0002",
+        "ALT-0003"
+      ],
+      "alerts": [
+        {
+          "id": "ALT-0001",
+          "pattern_id": "AEGIS-BEH-002",
+          "severity": "CRITICAL",
+          "title": "C2 Beaconing Detected: 10.0.0.8 \u2192 203.0.113.50",
+          "source_ip": "10.0.0.8",
+          "dest_ip": "203.0.113.50",
+          "dest_port": 443,
+          "process": "svchost.exe",
+          "evidence": "Interval: 30.1s \u00b1 0.4s over 8 connections",
+          "tactic": "Command and Control",
+          "technique": "T1071"
+        },
+        {
+          "id": "ALT-0002",
+          "pattern_id": "AEGIS-BEH-010",
+          "severity": "CRITICAL",
+          "title": "SMB Lateral Movement from 10.0.0.8",
+          "source_ip": "10.0.0.8",
+          "dest_ip": "multiple internal",
+          "dest_port": 445,
+          "process": "psexesvc.exe",
+          "evidence": "SMB (port 445) connections to 5 unique hosts from 10.0.0.8",
+          "tactic": "Lateral Movement",
+          "technique": "T1021.002"
+        },
+        {
+          "id": "ALT-0003",
+          "pattern_id": "AEGIS-BEH-001",
+          "severity": "HIGH",
+          "title": "Port Scan Detected from 10.0.0.8",
+          "source_ip": "10.0.0.8",
+          "dest_ip": "multiple",
+          "dest_port": 0,
+          "process": "",
+          "evidence": "Unique ports contacted: 22 | Sample ports: [22, 80, 443]",
+          "tactic": "Discovery",
+          "technique": "T1046"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "gettimeout": 2.0,
+  "debug": true,
+  "send": "Traceback (most recent call last):\n  File \"/workspace/_audit_scratch/05b_udp_debug.py\", line 18, in main\n    await loop.sock_sendto(sock, b\"\\x00\", (\"127.0.0.1\", 18053))\n  File \"/usr/lib/python3.12/asyncio/selector_events.py\", line 600, in sock_sendto\n    raise ValueError(\"the socket must be non-blocking\")\nValueError: the socket must be non-blocking\n",
+  "nonblocking_send_to_discard": "ok"
+}

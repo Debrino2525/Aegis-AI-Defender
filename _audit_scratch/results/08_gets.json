@@ -1,0 +1,997 @@
+{
+  "base": "http://127.0.0.1:8765",
+  "admin_token_file_present": false,
+  "admin_token_used": false,
+  "token_not_printed": true,
+  "results": [
+    {
+      "path": "/",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 13.179280000031213,
+      "shape": {
+        "non_json": true,
+        "content_type": "text/html; charset=utf-8",
+        "len": 230997
+      },
+      "error": null
+    },
+    {
+      "path": "/api/scans",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.7157190000034461,
+      "shape": [],
+      "error": null
+    },
+    {
+      "path": "/api/scans/DOESNOTEXIST",
+      "method": "GET",
+      "status": 404,
+      "elapsed_ms": 0.9277179999571672,
+      "shape": {
+        "detail": "str"
+      },
+      "error": null
+    },
+    {
+      "path": "/api/scans/DOESNOTEXIST/download/html",
+      "method": "GET",
+      "status": 404,
+      "elapsed_ms": 1.8218120000028648,
+      "shape": {
+        "detail": "str"
+      },
+      "error": null
+    },
+    {
+      "path": "/api/scans/DOESNOTEXIST/download/csv",
+      "method": "GET",
+      "status": 404,
+      "elapsed_ms": 0.8176590000061879,
+      "shape": {
+        "detail": "str"
+      },
+      "error": null
+    },
+    {
+      "path": "/api/scans/DOESNOTEXIST/download/sarif",
+      "method": "GET",
+      "status": 404,
+      "elapsed_ms": 0.6785560000253099,
+      "shape": {
+        "detail": "str"
+      },
+      "error": null
+    },
+    {
+      "path": "/api/scans/DOESNOTEXIST/download/json",
+      "method": "GET",
+      "status": 404,
+      "elapsed_ms": 0.5819809999820791,
+      "shape": {
+        "detail": "str"
+      },
+      "error": null
+    },
+    {
+      "path": "/api/findings/instructions?finding_id=CVE-1&title=t&target=127.0.0.1&port=80",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.3563030000227627,
+      "shape": {
+        "method": "str",
+        "curl_command": "str",
+        "powershell_command": "str",
+        "tool": "str",
+        "steps": [
+          "str"
+        ],
+        "expected_vulnerable": "str",
+        "expected_remediated": "str"
+      },
+      "error": null
+    },
+    {
+      "path": "/api/intelligence",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.6512799999759409,
+      "shape": {
+        "risk_score": "int",
+        "risk_label": "str",
+        "total_assets": "int",
+        "total_findings": "int",
+        "severity_totals": {
+          "CRITICAL": "int",
+          "HIGH": "int",
+          "MEDIUM": "int",
+          "LOW": "int",
+          "INFO": "int"
+        },
+        "business_risk": {
+          "estimated_breach_cost": "int",
+          "formatted": "str",
+          "kev_count": "int",
+          "critical_count": "int"
+        },
+        "contributing_factors": [
+          {
+            "name": "str",
+            "count": "int",
+            "color": "str",
+            "pct": "float"
+          }
+        ],
+        "attack_summary": {
+          "tactic_counts": {},
+          "technique_hits": [],
+          "ransomware_cves": [],
+          "tactic_colors": {
+            "Initial Access": "str",
+            "Execution": "str",
+            "Persistence": "str",
+            "Privilege Escalation": "str",
+            "Defense Evasion": "str",
+            "Credential Access": "str",
+            "Discovery": "str",
+            "Lateral Movement": "str",
+            "Collection": "str",
+            "Exfiltration": "str",
+            "Impact": "str",
+            "Command and Control": "str"
+          }
+        },
+        "top_insights": [],
+        "tech_categories": {},
+        "hosts": []
+      },
+      "error": null
+    },
+    {
+      "path": "/api/threat/feeds",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 17.00888999999961,
+      "shape": [
+        {
+          "id": "str",
+          "name": "str",
+          "provider": "str",
+          "type": "str",
+          "status": "str",
+          "auth_required": "bool",
+          "has_key": "bool",
+          "record_count": "int",
+          "description": "str",
+          "signup_url": "str",
+          "docs": "str"
+        }
+      ],
+      "error": null
+    },
+    {
+      "path": "/api/monitor",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.2328380000212746,
+      "shape": {
+        "running": "bool",
+        "started_at": "float",
+        "uptime_seconds": "int",
+        "stats": {
+          "total_connections_seen": "int",
+          "alerts_generated": "int",
+          "hosts_profiled": "int",
+          "packets_analyzed": "int",
+          "uptime_seconds": "int"
+        },
+        "alerts": [],
+        "connections": [
+          {
+            "local_ip": "str",
+            "remote_ip": "str",
+            "remote_port": "int",
+            "status": "str",
+            "pid": null,
+            "process": "str",
+            "is_internal": "bool",
+            "port_label": "str",
+            "timestamp": "str"
+          }
+        ],
+        "monitored_targets": [],
+        "graph": {
+          "nodes": [
+            {
+              "id": "str",
+              "type": "str",
+              "connections": "int",
+              "last_seen": "float",
+              "is_suspicious": "bool"
+            }
+          ],
+          "edges": [
+            {
+              "source": "str",
+              "target": "str",
+              "port": "int",
+              "process": "str",
+              "suspicious": "bool",
+              "last_seen": "float"
+            }
+          ]
+        },
+        "baselines": [
+          {
+            "host": "str",
+            "first_seen": "float",
+            "last_seen": "float",
+            "baseline_samples": "int",
+            "avg_conn_rate": "float",
+            "avg_bytes_sent": "float",
+            "known_destinations": "int",
+            "known_ports": "int",
+            "anomaly_score": "float",
+            "alert_count": "int",
+            "established": "bool"
+          }
+        ],
+        "connection_history": [
+          {
+            "timestamp": "float",
+            "count": "int"
+          }
+        ],
+        "alert_summary": {
+          "CRITICAL": "int",
+          "HIGH": "int",
+          "MEDIUM": "int",
+          "LOW": "int",
+          "unacknowledged": "int"
+        },
+        "incidents": []
+      },
+      "error": null
+    },
+    {
+      "path": "/api/monitor/targets",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 0.7163919999584323,
+      "shape": [],
+      "error": null
+    },
+    {
+      "path": "/api/alerting/status",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.0754749999932756,
+      "shape": {
+        "running": "bool",
+        "total_recent_critical_alerts": "int",
+        "unacknowledged_critical_count": "int",
+        "contacts_count": "int",
+        "channels": {
+          "sms_local_arkesel": "bool",
+          "sms_local_hubtel": "bool",
+          "telegram": "bool",
+          "whatsapp": "bool",
+          "generic_webhook": "bool",
+          "modem_oob_configured": "bool"
+        },
+        "canary_heartbeat": {
+          "canary_configured": "bool",
+          "ping_interval_seconds": "int",
+          "last_successful_ping": null,
+          "total_pings_sent": "int"
+        }
+      },
+      "error": null
+    },
+    {
+      "path": "/api/alerting/alerts",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.1698960000217085,
+      "shape": [
+        {
+          "alert_id": "str",
+          "fingerprint": "str",
+          "title": "str",
+          "severity": "str",
+          "summary": "str",
+          "source_ip": "str",
+          "dest_ip": "str",
+          "dest_port": "int",
+          "process": "str",
+          "tactic": "str",
+          "technique": "str",
+          "cve_id": null,
+          "cvss_score": null,
+          "epss_score": null,
+          "is_cisa_kev": "int",
+          "zt_pillars": [
+            "str"
+          ],
+          "created_at": "str",
+          "status": "str",
+          "acknowledged": "int",
+          "acknowledged_at": null,
+          "acknowledged_by": null,
+          "escalation_level": "int",
+          "occurrence_count": "int",
+          "last_occurrence": "str",
+          "retry_count": "int",
+          "next_retry_at": "float",
+          "metadata": {
+            "raw_pattern_id": "str",
+            "evidence": "str",
+            "environment": "str",
+            "primary_contact_id": "str"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "path": "/api/alerting/triage/invalidtoken",
+      "method": "GET",
+      "status": 403,
+      "elapsed_ms": 0.7941290000417212,
+      "shape": {
+        "detail": "str"
+      },
+      "error": null
+    },
+    {
+      "path": "/api/settings",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 0.8903909999844473,
+      "shape": {
+        "threat_intel": {
+          "nvd_api_key": "str",
+          "abuseipdb_api_key": "str",
+          "otx_api_key": "str",
+          "virustotal_api_key": "str",
+          "has_nvd": "bool",
+          "has_abuseipdb": "bool",
+          "has_otx": "bool",
+          "has_virustotal": "bool"
+        },
+        "alerting": {
+          "arkesel_api_key": "str",
+          "arkesel_sender_id": "str",
+          "hubtel_client_id": "str",
+          "hubtel_client_secret": "str",
+          "hubtel_sender_id": "str",
+          "telegram_bot_token": "str",
+          "telegram_chat_id": "str",
+          "whatsapp_api_token": "str",
+          "whatsapp_phone_number_id": "str",
+          "critical_alert_webhook_url": "str",
+          "modem_serial_port": "str",
+          "modem_baudrate": "int",
+          "canary_heartbeat_url": "str",
+          "aegis_console_url": "str"
+        }
+      },
+      "error": null
+    },
+    {
+      "path": "/api/alerting/contacts",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.0597189999543843,
+      "shape": [
+        {
+          "contact_id": "str",
+          "name": "str",
+          "role": "str",
+          "phone": "str",
+          "email": null,
+          "telegram_chat_id": "str",
+          "whatsapp_number": "str",
+          "is_active": "int"
+        }
+      ],
+      "error": null
+    },
+    {
+      "path": "/api/alerting/mappings",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 1.214861999983441,
+      "shape": [
+        {
+          "cidr_or_host": "str",
+          "environment": "str",
+          "owner_team": "str",
+          "primary_contact_id": "str",
+          "escalation_contact_id": "str",
+          "escalation_timeout_mins": "int"
+        }
+      ],
+      "error": null
+    },
+    {
+      "path": "/static/index.html",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 5.145447000018066,
+      "shape": {
+        "non_json": true,
+        "content_type": "text/html; charset=utf-8",
+        "len": 230997
+      },
+      "error": null
+    },
+    {
+      "path": "/docs",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 0.9047849999888058,
+      "shape": {
+        "non_json": true,
+        "content_type": "text/html; charset=utf-8",
+        "len": 1026
+      },
+      "error": null
+    },
+    {
+      "path": "/openapi.json",
+      "method": "GET",
+      "status": 200,
+      "elapsed_ms": 17.236312000022735,
+      "shape": {
+        "openapi": "str",
+        "info": {
+          "title": "str",
+          "version": "str"
+        },
+        "paths": {
+          "/": {
+            "get": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/scans": {
+            "get": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            },
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/scans/{scan_id}": {
+            "get": {
+              "summary": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            },
+            "delete": {
+              "summary": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/scans/{scan_id}/download/{format}": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/reset": {
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/findings/instructions": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/findings/verify": {
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/intelligence": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/threat/feeds": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/threat/feeds/sync": {
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/update": {
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/monitor": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/monitor/start": {
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/monitor/stop": {
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/monitor/alerts/{alert_id}/ack": {
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/monitor/targets": {
+            "get": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            },
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/monitor/targets/{target_id}": {
+            "delete": {
+              "summary": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/alerting/status": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/alerting/alerts": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            }
+          },
+          "/api/alerting/alerts/{alert_id}/ack": {
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/alerting/triage/{token}": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/alerting/test": {
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/settings": {
+            "get": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            },
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/alerting/contacts": {
+            "get": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            },
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/alerting/contacts/{contact_id}": {
+            "delete": {
+              "summary": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/alerting/mappings": {
+            "get": {
+              "summary": "str",
+              "operationId": "str",
+              "responses": {
+                "200": "..."
+              }
+            },
+            "post": {
+              "summary": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/alerting/mappings/{cidr_or_host}": {
+            "delete": {
+              "summary": "str",
+              "operationId": "str",
+              "parameters": [
+                "..."
+              ],
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/settings/test-channel": {
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          },
+          "/api/incidents/action": {
+            "post": {
+              "summary": "str",
+              "description": "str",
+              "operationId": "str",
+              "requestBody": {
+                "content": "...",
+                "required": "..."
+              },
+              "responses": {
+                "200": "...",
+                "422": "..."
+              }
+            }
+          }
+        },
+        "components": {
+          "schemas": {
+            "AddTargetRequest": {
+              "properties": {
+                "target": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            },
+            "ChannelTestPayload": {
+              "properties": {
+                "channel": "...",
+                "recipient": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            },
+            "ContactPayload": {
+              "properties": {
+                "contact_id": "...",
+                "name": "...",
+                "role": "...",
+                "phone": "...",
+                "email": "...",
+                "telegram_chat_id": "...",
+                "whatsapp_number": "...",
+                "is_active": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            },
+            "HTTPValidationError": {
+              "properties": {
+                "detail": "..."
+              },
+              "type": "str",
+              "title": "str"
+            },
+            "IncidentActionRequest": {
+              "properties": {
+                "incident_id": "...",
+                "action_type": "...",
+                "target": "...",
+                "pid": "...",
+                "note": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            },
+            "MappingPayload": {
+              "properties": {
+                "cidr_or_host": "...",
+                "environment": "...",
+                "owner_team": "...",
+                "primary_contact_id": "...",
+                "escalation_contact_id": "...",
+                "escalation_timeout_mins": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            },
+            "ScanRequest": {
+              "properties": {
+                "target": "...",
+                "ports": "...",
+                "concurrency": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            },
+            "SettingsPayload": {
+              "properties": {
+                "threat_intel": "...",
+                "alerting": "..."
+              },
+              "type": "str",
+              "title": "str"
+            },
+            "TestAlertRequest": {
+              "properties": {
+                "title": "...",
+                "target": "..."
+              },
+              "type": "str",
+              "title": "str"
+            },
+            "ValidationError": {
+              "properties": {
+                "loc": "...",
+                "msg": "...",
+                "type": "...",
+                "input": "...",
+                "ctx": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            },
+            "VerifyFindingRequest": {
+              "properties": {
+                "finding_id": "...",
+                "title": "...",
+                "target": "...",
+                "port": "..."
+              },
+              "type": "str",
+              "required": [
+                "..."
+              ],
+              "title": "str"
+            }
+          }
+        }
+      },
+      "error": null
+    }
+  ]
+}

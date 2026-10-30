@@ -1,0 +1,60 @@
+{
+  "temp_db": "/tmp/aegis-audit-sync-d3be20ev/vdb.sqlite3",
+  "nvd_api_key_present": false,
+  "endpoints": {
+    "CISA_KEV_URL": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+    "NVD_CVE_URL": "https://services.nvd.nist.gov/rest/json/cves/2.0",
+    "EPSS_API_URL": "https://api.first.org/data/v1/epss",
+    "THREATFOX_URL": "https://threatfox-api.abuse.ch/api/v1/",
+    "ABUSEIPDB_CHECK_URL": "https://api.abuseipdb.com/api/v2/check"
+  },
+  "http": {
+    "cisa_kev": {
+      "status": 200,
+      "elapsed_s": 0.12607372299999042,
+      "bytes": 1826755,
+      "catalog_version": "2026.10.30",
+      "n_vulnerabilities": 1766
+    },
+    "nvd_keyword_openssh_2": {
+      "status": 200,
+      "elapsed_s": 0.0969667920000461,
+      "bytes": 6289,
+      "totalResults": 203,
+      "returned": 2,
+      "extract_cpe_info_on_first": {},
+      "first_cpeMatch_keys": null,
+      "first_cpeMatch": null
+    },
+    "epss_one_cve": {
+      "status": 200,
+      "elapsed_s": 0.06996656200004736,
+      "bytes": 203,
+      "json_trim": {
+        "status": "OK",
+        "status-code": 200,
+        "version": "1.0",
+        "access": "public",
+        "total": 1,
+        "offset": 0,
+        "limit": 100,
+        "data": [
+          {
+            "cve": "CVE-2021-41773",
+            "epss": "0.999920000",
+            "percentile": "0.999860000",
+            "date": "2026-10-30"
+          }
+        ]
+      }
+    },
+    "threatfox_get_iocs_1day": {
+      "status": 401,
+      "elapsed_s": 0.23384140899997874,
+      "bytes": 25,
+      "body_trim": "{\"error\": \"Unauthorized\"}"
+    }
+  },
+  "sync_cisa_kev_writes_min_max_none": true,
+  "full_nvd_sync": "NOT RUN: sync_nvd_recent(days=60, max_results=200) + 5 keyword pages; too large/slow and mutates global VDB; bounded probe above instead"
+}

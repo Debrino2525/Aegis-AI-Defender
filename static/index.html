@@ -1312,6 +1312,7 @@ select option:checked, select option:hover {
       <button class="btn btn-g btn-sm" onclick="document.getElementById('platform-setup').style.display='none'">Cancel</button>
     </div>
     <p id="platform-setup-help" style="font-size:12px;color:var(--text-dim);line-height:1.45;margin:0 0 12px"></p>
+    <p style="font-size:12px;margin:0 0 12px"><a id="platform-setup-create" href="#" target="_blank" rel="noopener">Open the provider to create the app</a></p>
     <div class="fl">Redirect URI — register this on the provider app</div>
     <input class="fi" id="platform-setup-redirect" readonly style="margin-bottom:10px"/>
     <div class="fl">Client ID</div>
@@ -1902,8 +1903,17 @@ async function connectPlatform(provider, contactId){
     if(data.setup_required){
       _platformSetup = {provider: provider, contactId: contactId || ''};
       const names = {slack:'Slack', teams:'Microsoft Teams', email_microsoft:'Microsoft email', email_google:'Google email'};
-      document.getElementById('platform-setup-title').textContent = 'Connect ' + (names[provider] || 'account');
-      document.getElementById('platform-setup-help').textContent = 'Register this redirect URI on the provider app, then enter the client ID and secret. Aegis stores them on this machine and opens the provider sign-in. The account stays not connected until that sign-in finishes.';
+      const createUrls = {
+        slack: 'https://api.slack.com/apps?new_app=1',
+        teams: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
+        email_microsoft: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
+        email_google: 'https://console.cloud.google.com/auth/clients'
+      };
+      document.getElementById('platform-setup-title').textContent = 'One-time setup for ' + (names[provider] || 'this platform');
+      document.getElementById('platform-setup-help').textContent = 'Responders never fill this in. After this console has an app, Connect opens the provider in the browser and they sign in there. Google, Slack, and Microsoft only show that sign-in for an app that already exists, so this machine needs the client ID and secret once. Paste them, then Continue opens the sign-in page. The next Connect skips this form.';
+      const createLink = document.getElementById('platform-setup-create');
+      createLink.href = createUrls[provider] || 'https://developers.google.com';
+      createLink.textContent = 'Open ' + (names[provider] || 'the provider') + ' to create the app';
       document.getElementById('platform-setup-redirect').value = data.redirect_uri || '';
       document.getElementById('platform-setup-id').value = '';
       document.getElementById('platform-setup-secret').value = '';

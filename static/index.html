@@ -799,7 +799,7 @@ select option:checked, select option:hover {
   <div class="sb-item" onclick="showPage('history')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">Reports</span></div>
   <div class="sb-item" onclick="showPage('settings')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="lbl">Settings</span></div>
   <div class="rail-spacer"></div>
-  <div class="sb-item" onclick="toast('Aegis AI Documentation &amp; Support online','ok')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></span><span class="lbl">Help</span></div>
+  <div class="sb-item" onclick="toast('Documentation is not available in this console')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></span><span class="lbl">Help</span></div>
 </div></aside>
 
 <!-- MAIN -->
@@ -811,7 +811,7 @@ select option:checked, select option:hover {
   <div class="dt-launchers-wrap">
     <div class="dt-launchers-header">
       <span>Live Security Platform</span>
-      <span style="color:var(--text-dim);font-weight:500;"><span class="dt-status-dot" style="display:inline-block;margin-right:6px"></span>Product Status: Active</span>
+      <span style="color:var(--text-dim);font-weight:500;">Local console</span>
     </div>
     <div class="dt-launchers-grid">
       <!-- Behavioral Telemetry Engine -->
@@ -838,8 +838,8 @@ select option:checked, select option:hover {
           </svg>
         </div>
         <div class="dt-card-info">
-          <div class="dt-card-title">Threat Visualizer <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,87,34,.15);color:var(--attention)">LIVE HUD</span></div>
-          <div class="dt-card-desc">Real-time force-directed 3D network topology graph, packet streams &amp; socket telemetry</div>
+          <div class="dt-card-title">Threat Visualizer</div>
+          <div class="dt-card-desc">Host topology from live socket telemetry. Geographic placement is not configured.</div>
         </div>
         <div class="dt-card-action">Launch &rarr;</div>
       </div>
@@ -911,9 +911,6 @@ select option:checked, select option:hover {
       <div>
         <div class="ct">Critical Alert Routing &amp; DoD Zero Trust Dispatcher</div>
         <div style="font-size:11px;color:var(--text-dim)">Autonomous cascading notification (ChatOps &rarr; Local Ghana SMS &rarr; Cellular Out-of-Band) with dead-man escalation</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-g btn-sm" onclick="sendTestCriticalAlert()">&#9889; Trigger Simulated Critical Alert</button>
       </div>
     </div>
     <div class="g4" id="alert-channels-grid" style="margin-top:12px;margin-bottom:16px">
@@ -1084,18 +1081,9 @@ select option:checked, select option:hover {
     </div>
 
     <div class="tv-playback-block">
-      <div class="tv-live-time" id="tv-live-clock">Saturday Oct 24 2026 · Accra +00:00</div>
+      <div class="tv-live-time" id="tv-live-clock">—</div>
       <div class="tv-timeline-ctrls">
-        <button class="tv-tbtn" onclick="jumpTvTime('1d')">1d</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('1h')">1h</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('10m')">10m</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('1m')">1m</button>
-        <button class="tv-tbtn tv-play active" id="tv-play-btn" onclick="toggleTvPlay()">► Live</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+1m')">1m</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+10m')">10m</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+1h')">1h</button>
-        <button class="tv-tbtn" onclick="jumpTvTime('+1d')">1d</button>
-        <button class="tv-tbtn" onclick="refreshMonitorData()" title="Reload telemetry">⟳</button>
+        <button class="tv-tbtn" onclick="refreshMonitorData()" title="Reload telemetry">⟳ Refresh</button>
       </div>
     </div>
   </div>
@@ -1104,7 +1092,7 @@ select option:checked, select option:hover {
   <div id="mon-statsbar">
     <div class="mstat"><div class="mstat-lbl">Uptime</div><div class="mstat-val" id="ms-uptime">0s</div><div class="mstat-sub">Telemetry active</div></div>
     <div class="mstat"><div class="mstat-lbl">Connections Seen</div><div class="mstat-val" id="ms-conns">0</div><div class="mstat-sub">Live TCP sockets</div></div>
-    <div class="mstat"><div class="mstat-lbl">Alerts Generated</div><div class="mstat-val" id="ms-alerts">0</div><div class="mstat-sub">Model detections</div></div>
+    <div class="mstat"><div class="mstat-lbl">Alerts Generated</div><div class="mstat-val" id="ms-alerts">0</div><div class="mstat-sub">Behavioral alerts</div></div>
     <div class="mstat"><div class="mstat-lbl">Hosts Profiled</div><div class="mstat-val" id="ms-hosts">0</div><div class="mstat-sub">Baselines active</div></div>
     <div class="mstat"><div class="mstat-lbl">Active Incidents</div><div class="mstat-val" id="ms-incidents">0</div><div class="mstat-sub">Behavioral Engine</div></div>
     <div class="mstat">
@@ -1122,8 +1110,8 @@ select option:checked, select option:hover {
   <div class="tv-stage-wrap">
     <div class="tv-stage-header">
       <div class="tv-view-tabs">
-        <button class="tv-view-tab active" id="tab-view-map" onclick="switchTvView('map')">Global Threat Map</button>
-        <button class="tv-view-tab" id="tab-view-graph" onclick="switchTvView('graph')">3D Topology Physics</button>
+        <button class="tv-view-tab" id="tab-view-map" onclick="switchTvView('map')">Global Threat Map</button>
+        <button class="tv-view-tab active" id="tab-view-graph" onclick="switchTvView('graph')">Site topology</button>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
         <span id="tv-threat-summary-pill" style="font-size:10px;color:var(--text-dim)">No active threats</span>
@@ -1134,14 +1122,17 @@ select option:checked, select option:hover {
 
     <div class="tv-stage-viewport" id="tv-stage-viewport">
       <!-- 1. Global Threat Map Layer -->
-      <div id="tv-map-view" class="tv-view-layer active" style="position:relative;width:100%;height:100%;background:#06080d;overflow:hidden;">
-        <!-- Real Geographically Accurate World Map SVG -->
-        <img src="/static/world_map.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;opacity:0.92;" alt="World Map"/>
-        <canvas id="tv-world-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+      <div id="tv-map-view" class="tv-view-layer" style="position:relative;width:100%;height:100%;background:var(--bg);overflow:hidden;">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:32px;text-align:center;">
+          <div style="max-width:420px;">
+            <div style="font-size:14px;font-weight:650;margin-bottom:8px;">GeoIP is not configured</div>
+            <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">This console does not place hosts on a map. Open Site topology for connections observed on this host.</div>
+          </div>
+        </div>
       </div>
 
-      <!-- 2. 3D Topology Physics Layer -->
-      <div id="tv-graph-view" class="tv-view-layer">
+      <!-- 2. Site topology from live sockets -->
+      <div id="tv-graph-view" class="tv-view-layer active">
         <canvas id="mon-graph-canvas"></canvas>
         <div id="graph-tooltip"></div>
       </div>
@@ -1181,9 +1172,6 @@ select option:checked, select option:hover {
             <div id="tv-host-anomalies" class="tv-hud-anomaly-list">
               <div style="font-size:11px;color:var(--text-dim);">Loading...</div>
             </div>
-            <div style="margin-top:12px;">
-              <button class="fv-test-btn" style="width:100%;padding:6px 12px;font-size:11px;" onclick="openFVByRef('ftbody',0)">Run Live Audit / PoC</button>
-            </div>
           </div>
         </div>
       </div>
@@ -1195,10 +1183,9 @@ select option:checked, select option:hover {
     <div class="dt-ribbon-bar">
       <div style="display:flex;align-items:center;gap:12px;">
         <button class="dt-filter-pill">Filters</button>
-        <span class="dt-alerts-count-label"><b id="dt-model-count">0</b> Total Model Alerts</span>
+        <span class="dt-alerts-count-label"><b id="dt-model-count">0</b> Behavioral alerts</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <span class="dt-auto-resp-badge">Response: Passive Monitor</span>
         <span class="dt-sys-badge" id="dt-sys-badge">Live telemetry</span>
       </div>
     </div>
@@ -1349,8 +1336,8 @@ select option:checked, select option:hover {
         <div class="ch"><div class="ct">Cellular Out-of-Band Serial Modem</div><span class="badge badge-running">Hardware</span></div>
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Air-gapped 4G LTE emergency dispatch via physical serial connection (AT+CMGS).</div>
         <div class="g2">
-          <div><div class="fl">Serial Device / COM Port</div><input class="fi" id="cfg-modem-port" placeholder="COM3 or /dev/ttyUSB0" value="COM3"/></div>
-          <div><div class="fl">Baud Rate</div><input class="fi" id="cfg-modem-baud" placeholder="115200" value="115200"/></div>
+          <div><div class="fl">Serial Device / COM Port</div><input class="fi" id="cfg-modem-port" placeholder="/dev/ttyUSB0" value=""/></div>
+          <div><div class="fl">Baud Rate</div><input class="fi" id="cfg-modem-baud" placeholder="115200" value=""/></div>
         </div>
       </div>
       <!-- Dead-Man Canary Heartbeat -->
@@ -1424,7 +1411,7 @@ select option:checked, select option:hover {
   <div class="settings-tab-pane" id="stab-threat" style="display:none">
     <div class="card">
       <div class="ch"><div class="ct">Threat Intelligence Feeds &amp; CVE Enrichment API Keys</div></div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">Power real-time CVE enrichment, CVSS scoring, CISA Known Exploited Vulnerabilities catalog, and live C2 indicator matching.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. AbuseIPDB, OTX, and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
       <div class="g2">
         <div>
           <div class="fl">NIST National Vulnerability Database (NVD 2.0) API Key</div>
@@ -1433,17 +1420,17 @@ select option:checked, select option:hover {
         </div>
         <div>
           <div class="fl">AbuseIPDB Threat Intelligence API Key</div>
-          <input class="fi" type="password" id="cfg-abuse-key" placeholder="AbuseIPDB API Key (1,000 lookups/day)"/>
+          <input class="fi" type="password" id="cfg-abuse-key" placeholder="Stored only. Lookups are not implemented."/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.abuseipdb.com/register" target="_blank" style="color:var(--accent)">abuseipdb.com &rarr;</a></div>
         </div>
         <div>
           <div class="fl">AlienVault Open Threat Exchange (OTX) API Key</div>
-          <input class="fi" type="password" id="cfg-otx-key" placeholder="AlienVault OTX API Key..."/>
+          <input class="fi" type="password" id="cfg-otx-key" placeholder="Stored only. Lookups are not implemented."/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://otx.alienvault.com" target="_blank" style="color:var(--accent)">otx.alienvault.com &rarr;</a></div>
         </div>
         <div>
           <div class="fl">VirusTotal API Key (Optional)</div>
-          <input class="fi" type="password" id="cfg-vt-key" placeholder="VirusTotal API Key (500 lookups/day)"/>
+          <input class="fi" type="password" id="cfg-vt-key" placeholder="Stored only. Lookups are not implemented."/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.virustotal.com/gui/join-us" target="_blank" style="color:var(--accent)">virustotal.com &rarr;</a></div>
         </div>
       </div>
@@ -1566,18 +1553,15 @@ function showPage(n){
   if(n==='settings') loadSettings();
   if(n==='monitor'){
     initMonitor();
-    // Init or reinit TV engine (canvas needs page visible for sizing)
     setTimeout(() => {
-      if(!tvWorldRafId) initWorldMapCanvas();
-      else {
-        const cvs = document.getElementById('tv-world-canvas');
-        if(cvs) {
-          const dpr = window.devicePixelRatio || 1;
-          const rect = cvs.parentElement ? cvs.parentElement.getBoundingClientRect() : cvs.getBoundingClientRect();
-          if(rect.width && rect.height) {
-            cvs.width = Math.round(rect.width * dpr);
-            cvs.height = Math.round(rect.height * dpr);
-          }
+      if(typeof initGraphEngine === 'function') initGraphEngine();
+      const cvs = document.getElementById('mon-graph-canvas');
+      if(cvs) {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = cvs.getBoundingClientRect();
+        if(rect.width && rect.height) {
+          cvs.width = Math.round(rect.width * dpr);
+          cvs.height = Math.round(rect.height * dpr);
         }
       }
     }, 50);
@@ -1846,19 +1830,19 @@ async function loadAlertingState(){
       const canaryOk = (status.canary_heartbeat || {}).canary_configured;
       chGrid.innerHTML = `
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Local SMS (Ghana)</span><span class="badge ${smsOk?'badge-done':'badge-queued'}">${smsOk?'ACTIVE':'READY'}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Local SMS (Ghana)</span><span class="badge ${smsOk?'badge-done':'badge-queued'}">${smsOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
           <div style="font-size:11px;color:var(--text-dim)">Arkesel / Hubtel Ghana Gateway (MTN, Telecel, AT)</div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">ChatOps Dispatch</span><span class="badge ${chatOk?'badge-done':'badge-queued'}">${chatOk?'ACTIVE':'CONFIG READY'}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">ChatOps Dispatch</span><span class="badge ${chatOk?'badge-done':'badge-queued'}">${chatOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
           <div style="font-size:11px;color:var(--text-dim)">Telegram Bot &amp; WhatsApp Cloud API</div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Cellular Out-of-Band</span><span class="badge ${oobOk?'badge-done':'badge-queued'}">${oobOk?'PORT COM3':'AIR-GAP STANDBY'}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Cellular Out-of-Band</span><span class="badge ${oobOk?'badge-done':'badge-queued'}">${oobOk?'CONFIGURED':'NOT CONFIGURED'}</span></div>
           <div style="font-size:11px;color:var(--text-dim)">Hardware Serial 4G LTE Modem</div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Dead-Man Canary</span><span class="badge ${canaryOk?'badge-done':'badge-queued'}">${canaryOk?'ACTIVE':'MONITORED'}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Dead-Man Canary</span><span class="badge ${canaryOk?'badge-done':'badge-queued'}">${canaryOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
           <div style="font-size:11px;color:var(--text-dim)">Off-Premises Tamper Heartbeat Watchdog</div>
         </div>`;
     }
@@ -2024,20 +2008,21 @@ async function loadFeedConnectors(){
     const grid=document.getElementById('feed-connectors-grid');
     if(!grid)return;
     grid.innerHTML=feeds.map(f=>{
-      const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':'var(--high)';
-      const statusBg=f.status==='ACTIVE'?'rgba(0,200,150,.08)':f.status==='RATE_LIMITED'?'rgba(255,159,10,.08)':'rgba(255,45,85,.08)';
-      const statusIcon=f.status==='ACTIVE'?'&#10003;':f.status==='RATE_LIMITED'?'&#9888;':'&#128274;';
+      const unwired=f.record_count==null||f.status==='NOT_WIRED'||f.status==='UNAVAILABLE';
+      const statusLabel=unwired?'NOT WIRED':f.status;
+      const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':'var(--text-dim)';
+      const statusBg=f.status==='ACTIVE'?'rgba(0,200,150,.08)':f.status==='RATE_LIMITED'?'rgba(255,159,10,.08)':'transparent';
+      const countLabel=unwired?'—':Number(f.record_count).toLocaleString();
       return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px">`
         +`<div style="display:flex;justify-content:space-between;align-items:center">`
         +`<span style="font-weight:700;font-size:13px;color:var(--text)">${f.name}</span>`
-        +`<span style="background:${statusBg};color:${statusColor};padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700">${statusIcon} ${f.status}</span>`
+        +`<span style="background:${statusBg};color:${statusColor};padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;border:1px solid var(--border)">${statusLabel}</span>`
         +`</div>`
         +`<div style="font-size:11px;color:var(--text-dim);line-height:1.4">${f.description}</div>`
         +`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)">`
-        +`<span style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)">${(f.record_count||0).toLocaleString()}</span>`
+        +`<span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${unwired?'var(--text-dim)':'var(--accent)'}">${countLabel}</span>`
         +`<span style="font-size:10px;color:var(--text-dim)">${f.type}</span>`
         +`</div>`
-        +(f.status==='KEY_REQUIRED'?`<a href="${f.signup_url}" target="_blank" rel="noopener" style="font-size:10px;color:var(--accent);text-decoration:none">Get free API key &rarr;</a>`:'')
         +`</div>`;
     }).join('');
   }catch(e){console.warn("Feed status load failed:",e);}
@@ -3584,7 +3569,7 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeFV(); });
 
 
 // ── THREAT VISUALIZER WORLD MAP & ALERTS ENGINE ────────────────────────────
-let tvCurrentView = 'map';
+let tvCurrentView = 'graph';
 let monLocalIp = null; // Set from live WebSocket state
 let tvWorldRaf = null;
 let tvLivePlaying = true;
@@ -3596,7 +3581,7 @@ function initTvEngine() {
   renderModelAlertsCarousel();
   updateTvClock();
   setInterval(updateTvClock, 1000);
-  initWorldMapCanvas();
+  if (typeof initGraphEngine === 'function') initGraphEngine();
 }
 
 function updateTvClock() {
@@ -3605,8 +3590,12 @@ function updateTvClock() {
   const d = new Date();
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const timeStr = d.toTimeString().split(' ')[0];
-  el.textContent = `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()} ${d.getFullYear()} ${timeStr} · Accra +00:00`;
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const stamp = new Intl.DateTimeFormat(undefined, {
+    weekday:'long', month:'short', day:'numeric', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  }).format(d);
+  el.textContent = `${stamp} · ${zone}`;
 }
 
 function switchTvView(view) {
@@ -3697,16 +3686,13 @@ function renderModelAlertsCarousel(liveAlerts) {
   if(!container) return;
 
   const sevMap = { 'CRITICAL': 'crit', 'HIGH': 'high', 'MEDIUM': 'med', 'LOW': 'low', 'INFO': 'low' };
-  const scoreMap = { 'CRITICAL': 89, 'HIGH': 74, 'MEDIUM': 58, 'LOW': 38, 'INFO': 20 };
 
   const list = (Array.isArray(liveAlerts) && liveAlerts.length > 0)
     ? liveAlerts.map(a => ({
-        score: scoreMap[a.severity] || 50,
         sev: sevMap[a.severity] || 'low',
+        severity: a.severity || 'INFO',
         title: a.title || 'Behavioral Alert',
-        cat: (a.source_ip ? a.source_ip + ' → ' : '') + (a.alert_type || 'Network'),
-        tag: (a.severity === 'CRITICAL' || a.severity === 'HIGH') ? 'Suspicious' : 'Informational',
-        count: 1
+        cat: (a.source_ip ? a.source_ip + ' → ' : '') + (a.dest_ip || a.alert_type || 'Network')
       }))
     : [];
 
@@ -3722,8 +3708,7 @@ function renderModelAlertsCarousel(liveAlerts) {
     <div class="dt-model-card">
       <div>
         <div class="dt-card-top">
-          <span class="dt-score-pill ${item.sev}">\u25b2 ${item.score}%</span>
-          <span class="dt-count-pill">${item.count}</span>
+          <span class="dt-score-pill ${item.sev}">${esc(item.severity)}</span>
         </div>
         <div class="dt-alert-title">${esc(item.title)}</div>
         <div class="dt-alert-cat">${esc(item.cat)}</div>
@@ -3739,16 +3724,15 @@ function renderModelAlertsCarousel(liveAlerts) {
 function onAlertCardClick(str) {
   try {
     const item = typeof str === 'string' ? JSON.parse(str) : str;
-    const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '10.103.198.26';
-    const cCount = (typeof monConns !== 'undefined' && Array.isArray(monConns)) ? monConns.length : (simNodes.length || 0);
+    const ip = item.host || item.source_ip || '';
+    if (!ip) return;
+    const cCount = (typeof monConns !== 'undefined' && Array.isArray(monConns)) ? monConns.length : 0;
     selectInspectorHost({
-      ip: item.host || lip,
-      loc: 'Accra Gateway (Local Host)',
-      score: item.score ? item.score + '%' : (item.severity || 'Normal'),
+      ip: ip,
+      loc: 'Observed host',
       conns: cCount,
-      alerts: [{ severity: item.severity || 'HIGH', title: item.title || 'Model Alert' }]
+      alerts: [{ severity: item.severity || 'INFO', title: item.title || 'Alert' }]
     });
-    toast(`Selected: ${item.title || 'Alert'}`, 'ok');
   } catch(e) { console.warn(e); }
 }
 
@@ -3759,28 +3743,19 @@ function onTvSearch(q) {
   if(match) {
     selectInspectorHost({
       ip: match.ip || match.id,
-      loc: match.type === 'local' ? 'Accra Gateway (Local Host)' : 'Remote Endpoint',
+      loc: match.type === 'local' ? 'This host' : 'Remote host',
       score: match.suspicious ? 'Alert' : 'Normal',
       conns: match.conns || 1,
       alerts: match.alerts || []
     });
   } else {
-    selectInspectorHost({ ip: q, loc: 'Searched Host', score: 'Unprofiled', conns: 0, alerts: [] });
+    toast('No live host matches that search');
   }
 }
 
-function toggleTvPlay() {
-  tvLivePlaying = !tvLivePlaying;
-  const btn = document.getElementById('tv-play-btn');
-  if(btn) {
-    btn.textContent = tvLivePlaying ? '► Live' : '❚❚ Paused';
-    btn.classList.toggle('active', tvLivePlaying);
-  }
-}
+function toggleTvPlay() {}
 
-function jumpTvTime(step) {
-  toast(`Timeline scrubber shifted ${step}`, 'ok');
-}
+function jumpTvTime() {}
 
 // ── CINEMATIC WORLD MAP: dot-matrix land, severity-aware arcs, lit beacon ────
 let tvWorldRafId = null;
@@ -3821,6 +3796,7 @@ function ensureDots(w, h) {
 }
 
 function initWorldMapCanvas() {
+  return;
   const cvs = document.getElementById('tv-world-canvas');
   if (!cvs) return;
   function resizeMap() {
@@ -3841,8 +3817,9 @@ function initWorldMapCanvas() {
     const mx = (e.clientX - rect.left) * dpr, my = (e.clientY - rect.top) * dpr;
     const hx = ((-0.187 + 180) / 360) * cvs.width, hy = ((90 - 5.6037) / 180) * cvs.height;
     if (Math.hypot(mx - hx, my - hy) < 50 * dpr) {
-      const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '10.103.198.26';
-      selectInspectorHost({ ip: lip, loc: 'Accra Gateway (Local Host)', score: 'Normal', conns: (simNodes.length || 1) });
+      const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '';
+      if (!lip) return;
+      selectInspectorHost({ ip: lip, loc: 'This host', score: 'Normal', conns: (simNodes.length || 1) });
     }
   });
   if (!tvWorldRafId) tvWorldRafId = requestAnimationFrame(renderWorldMapLoop);
@@ -3851,6 +3828,7 @@ function initWorldMapCanvas() {
 // TODO: Replace with server-side GeoIP database lookup from /api/monitor
 // Derives equirectangular coordinates deterministically from real IP address bytes
 function resolveHostGeo(ip, index, total) {
+  return null;
   if (!ip) return { lon: 0, lat: 20 };
   const parts = String(ip).split('.').map(p => parseInt(p, 10) || 0);
   if (parts.length === 4) {
@@ -3863,6 +3841,8 @@ function resolveHostGeo(ip, index, total) {
 }
 
 function renderWorldMapLoop() {
+  if (tvWorldRafId) { cancelAnimationFrame(tvWorldRafId); tvWorldRafId = null; }
+  return;
   tvWorldRafId = requestAnimationFrame(renderWorldMapLoop);
   const cvs = document.getElementById('tv-world-canvas');
   if (!cvs || document.querySelector('.page.active')?.id !== 'page-monitor' || tvCurrentView !== 'map') return;
@@ -3968,8 +3948,9 @@ function renderWorldMapLoop() {
   ctx.beginPath(); ctx.arc(hx, hy, 4.5 * dpr, 0, 6.2832);
   ctx.fillStyle = '#fff'; ctx.shadowColor = '#5EEAD4'; ctx.shadowBlur = 16 * dpr; ctx.fill(); ctx.shadowBlur = 0;
 
-  const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '10.103.198.26';
-  const txt = `Gateway  ${lip}`;
+  const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '';
+  if (!lip) return;
+  const txt = `This host  ${lip}`;
   ctx.font = `500 ${Math.round(11 * dpr)}px 'JetBrains Mono', monospace`;
   const tw = ctx.measureText(txt).width, pw = tw + 22 * dpr, ph3 = 26 * dpr;
   const px = hx - pw / 2, py = hy + 22 * dpr;
@@ -4028,8 +4009,8 @@ async function loadSettings(){
     document.getElementById('cfg-wa-token').value = al.whatsapp_api_token || '';
     document.getElementById('cfg-wa-phone-id').value = al.whatsapp_phone_number_id || '';
     document.getElementById('cfg-webhook-url').value = al.critical_alert_webhook_url || '';
-    document.getElementById('cfg-modem-port').value = al.modem_serial_port || 'COM3';
-    document.getElementById('cfg-modem-baud').value = al.modem_baudrate || 115200;
+    document.getElementById('cfg-modem-port').value = al.modem_serial_port || '';
+    document.getElementById('cfg-modem-baud').value = al.modem_baudrate || '';
     document.getElementById('cfg-canary-url').value = al.canary_heartbeat_url || '';
 
     // Status Badges

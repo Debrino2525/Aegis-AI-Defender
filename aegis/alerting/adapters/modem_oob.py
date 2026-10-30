@@ -22,7 +22,7 @@ class ModemOOBAdapter(BaseAlertAdapter):
     """
 
     def __init__(self):
-        self.port = os.getenv("MODEM_SERIAL_PORT", "COM3").strip()
+        self.port = os.getenv("MODEM_SERIAL_PORT", "").strip()
         self.baudrate = int(os.getenv("MODEM_BAUDRATE", "115200"))
 
     @property
@@ -32,7 +32,16 @@ class ModemOOBAdapter(BaseAlertAdapter):
     async def send(self, alert: CriticalAlert, contact: OnCallContact, triage_url: str) -> DispatchResult:
         start_time = time.time()
         recipient_phone = contact.phone.strip()
-        
+        if not self.port:
+            latency = (time.time() - start_time) * 1000
+            return DispatchResult(
+                channel=ChannelType.MODEM_OOB,
+                success=False,
+                recipient=recipient_phone,
+                error="No modem serial port configured",
+                latency_ms=round(latency, 2)
+            )
+
         # Check if pyserial is available
         try:
             import serial

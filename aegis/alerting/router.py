@@ -95,10 +95,15 @@ class AlertRouter:
         # 2. Resolve on-call responder for this target
         primary_contact, lead_contact, env_label, timeout_mins = self.escalation.resolve_contacts_for_target(alert.source_ip)
         alert.metadata["environment"] = env_label
-        alert.metadata["primary_contact_id"] = primary_contact.contact_id
+        alert.metadata["primary_contact_id"] = primary_contact.contact_id if primary_contact else None
 
         # 3. Enqueue in persistent SQLite queue
         is_new = self.queue.enqueue_alert(alert)
+
+        if primary_contact is None:
+            if allow_dispatch:
+                self.queue.mark_retry(alert.alert_id, "No on-call contact configured")
+            return alert
 
         if not allow_dispatch:
             # Suppressed by rate limiter / flap damper

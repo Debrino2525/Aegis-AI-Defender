@@ -654,24 +654,12 @@ class TestAlertRequest(BaseModel):
 
 @app.post("/api/alerting/test")
 async def trigger_test_critical_alert(req: TestAlertRequest):
-    """Triggers an end-to-end critical alert routing simulation to test channels and adapters."""
-    test_alert = {
-        "pattern_id": "AEGIS-BEH-010",
-        "title": req.title,
-        "severity": "CRITICAL",
-        "source_ip": req.target,
-        "dest_ip": "10.0.0.254",
-        "dest_port": 445,
-        "process": "test_simulator.exe",
-        "tactic": "Lateral Movement",
-        "evidence": "Simulated multi-host SMB propagation test"
-    }
-    routed = await alert_router.route_behavioral_alert(test_alert)
-    return {
-        "ok": True,
-        "alert_id": routed.alert_id if routed else None,
-        "status": "Routed through critical delivery channels"
-    }
+    """Refuses to enqueue a simulated incident. Observed alerts only."""
+    del req
+    raise HTTPException(
+        status_code=410,
+        detail="Simulated alerts are unavailable. This console does not invent incidents.",
+    )
 
 
 # ── WebSocket: real-time monitor stream ─────────────────────────────────────
@@ -732,8 +720,8 @@ async def get_platform_settings():
             "hubtel_sender_id": os.getenv("HUBTEL_SENDER_ID", "AegisAI"),
             "telegram_chat_id": os.getenv("TELEGRAM_CHAT_ID", ""),
             "whatsapp_phone_number_id": os.getenv("WHATSAPP_PHONE_NUMBER_ID", ""),
-            "modem_serial_port": os.getenv("MODEM_SERIAL_PORT", "COM3"),
-            "modem_baudrate": int(os.getenv("MODEM_BAUDRATE", "115200") or "115200"),
+            "modem_serial_port": os.getenv("MODEM_SERIAL_PORT", "").strip(),
+            "modem_baudrate": int(_baud) if (_baud := os.getenv("MODEM_BAUDRATE", "").strip()).isdigit() else None,
             "aegis_console_url": os.getenv("AEGIS_CONSOLE_URL", "http://127.0.0.1:8000"),
             "alert_signing_key": mask_secret(signing),
             "alert_signing_key_source": signing_key_source(),
@@ -795,7 +783,7 @@ async def save_platform_settings(payload: SettingsPayload):
     alert_router.adapter_webhook.whatsapp_token = os.getenv("WHATSAPP_API_TOKEN", "").strip()
     alert_router.adapter_webhook.whatsapp_phone_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip()
     alert_router.adapter_webhook.generic_webhook_url = os.getenv("CRITICAL_ALERT_WEBHOOK_URL", "").strip()
-    alert_router.adapter_modem.port = os.getenv("MODEM_SERIAL_PORT", "COM3").strip()
+    alert_router.adapter_modem.port = os.getenv("MODEM_SERIAL_PORT", "").strip()
     alert_router.heartbeat.canary_url = os.getenv("CANARY_HEARTBEAT_URL", "").strip()
     alert_router.base_console_url = os.getenv("AEGIS_CONSOLE_URL", "http://localhost:8000").rstrip("/")
     return {"ok": True, "message": "Settings successfully saved and reloaded!"}

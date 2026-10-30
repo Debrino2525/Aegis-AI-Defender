@@ -100,46 +100,60 @@ class ThreatFeedSync:
                 "signup_url": "https://www.first.org/epss/",
                 "docs": "Open access. No API key needed."
             },
-            {
-                "id": "threatfox",
-                "name": "Abuse.ch ThreatFox C2 & Payload IOCs",
-                "provider": "Abuse.ch Security Research",
-                "type": "Malware C2 & Payload Hashes",
-                "status": "ACTIVE",
-                "auth_required": False,
-                "has_key": True,
-                "record_count": 1250,
-                "description": "Real-time indicators of compromise (IOCs) associated with malware campaigns, botnets, and ransomware C2.",
-                "signup_url": "https://threatfox.abuse.ch/",
-                "docs": "Open access. No API key needed."
-            },
-            {
-                "id": "abuseipdb",
-                "name": "AbuseIPDB Threat Intelligence",
-                "provider": "AbuseIPDB Project",
-                "type": "IP Reputation & Malicious Host Scoring",
-                "status": "ACTIVE" if self.abuseipdb_api_key else "KEY_REQUIRED",
-                "auth_required": True,
-                "has_key": bool(self.abuseipdb_api_key),
-                "record_count": "Live Lookup" if self.abuseipdb_api_key else 0,
-                "description": "Crowdsourced and security-validated IP reputation database flagging brute force, scanner, and spam hosts.",
-                "signup_url": "https://www.abuseipdb.com/register",
-                "docs": "Free tier includes 1,000 lookups/day. Add ABUSEIPDB_API_KEY to .env."
-            },
-            {
-                "id": "alienvault_otx",
-                "name": "AlienVault Open Threat Exchange (OTX)",
-                "provider": "AT&T Cybersecurity",
-                "type": "Global Threat Pulses & C2",
-                "status": "ACTIVE" if self.otx_api_key else "KEY_REQUIRED",
-                "auth_required": True,
-                "has_key": bool(self.otx_api_key),
-                "record_count": "Live Lookup" if self.otx_api_key else 0,
-                "description": "Community-generated threat intelligence pulses, attacker infrastructure indicators, and APT campaign tracking.",
-                "signup_url": "https://otx.alienvault.com",
-                "docs": "Free account with unlimited pulse access. Add OTX_API_KEY to .env."
-            }
+            self._unwired_feed(
+                feed_id="threatfox",
+                name="Abuse.ch ThreatFox C2 & Payload IOCs",
+                provider="Abuse.ch Security Research",
+                feed_type="Malware C2 & Payload Hashes",
+                description="Not connected. Aegis does not sync ThreatFox, so no indicator count is available.",
+                signup_url="https://threatfox.abuse.ch/",
+                has_key=False,
+            ),
+            self._unwired_feed(
+                feed_id="abuseipdb",
+                name="AbuseIPDB Threat Intelligence",
+                provider="AbuseIPDB Project",
+                feed_type="IP Reputation & Malicious Host Scoring",
+                description="Not connected. A stored key does not run lookups; this connector has no client.",
+                signup_url="https://www.abuseipdb.com/register",
+                has_key=bool(self.abuseipdb_api_key),
+            ),
+            self._unwired_feed(
+                feed_id="alienvault_otx",
+                name="AlienVault Open Threat Exchange (OTX)",
+                provider="AT&T Cybersecurity",
+                feed_type="Global Threat Pulses & C2",
+                description="Not connected. A stored key does not pull pulses; this connector has no client.",
+                signup_url="https://otx.alienvault.com",
+                has_key=bool(self.otx_api_key),
+            ),
+            self._unwired_feed(
+                feed_id="virustotal",
+                name="VirusTotal",
+                provider="VirusTotal",
+                feed_type="File and URL reputation",
+                description="Not connected. A stored key does not run lookups; this connector has no client.",
+                signup_url="https://www.virustotal.com/gui/join-us",
+                has_key=bool(self.virustotal_api_key),
+            ),
         ]
+
+    @staticmethod
+    def _unwired_feed(feed_id: str, name: str, provider: str, feed_type: str, description: str, signup_url: str, has_key: bool) -> Dict[str, Any]:
+        """A connector that is not implemented. Never invent a record count."""
+        return {
+            "id": feed_id,
+            "name": name,
+            "provider": provider,
+            "type": feed_type,
+            "status": "NOT_WIRED",
+            "auth_required": True,
+            "has_key": has_key,
+            "record_count": None,
+            "description": description,
+            "signup_url": signup_url,
+            "docs": "Unavailable. No live sync or lookup is implemented.",
+        }
 
     async def sync_all(self) -> Dict[str, int]:
         """Runs multi-source feed synchronization."""

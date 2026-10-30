@@ -72,6 +72,28 @@ _WEB_EDGE_CIDRS = (
     "198.41.128.0/17",
     # Fastly
     "151.101.0.0/16",
+    # Akamai CDN
+    "2.16.0.0/13",
+    "23.32.0.0/11",
+    "23.192.0.0/11",
+    "95.100.0.0/15",
+    "184.24.0.0/13",
+    "184.50.0.0/15",
+    "184.84.0.0/14",
+    # Amazon CloudFront
+    "13.32.0.0/15",
+    "13.35.0.0/16",
+    "52.84.0.0/15",
+    "54.182.0.0/16",
+    "54.192.0.0/16",
+    "54.230.0.0/16",
+    "99.84.0.0/16",
+    "108.156.0.0/16",
+    "130.176.0.0/16",
+    "143.204.0.0/16",
+    # Microsoft 365 service front ends, not customer virtual networks
+    "52.96.0.0/14",
+    "52.100.0.0/14",
 )
 WEB_EDGE_NETWORKS = tuple(ipaddress.ip_network(cidr) for cidr in _WEB_EDGE_CIDRS)
 WEB_EDGE_PORTS = {80, 443, 8080, 8443}
@@ -100,6 +122,78 @@ def is_routine_web_edge_beacon(alert: dict) -> bool:
     if not isinstance(alert, dict) or alert.get("pattern_id") != "AEGIS-BEH-002":
         return False
     return is_routine_web_edge_traffic(alert.get("dest_ip") or "", alert.get("dest_port") or 0)
+
+
+# One workstation opening many regular web flows is a browser, not a C2 channel.
+FANOUT_WEB_DESTS = 4
+
+
+def suppress_web_beacon(dest_ip: str, dest_port, sibling_web_dests: int = 1) -> bool:
+    """True when this beacon must not be shown or routed as command-and-control."""
+    try:
+        port_n = int(dest_port) if dest_port not in (None, "") else 0
+    except (TypeError, ValueError):
+        port_n = 0
+    if port_n and port_n not in WEB_EDGE_PORTS:
+        return False
+    check_port = port_n or 443
+    if is_routine_web_edge_traffic(str(dest_ip or ""), check_port):
+        return True
+    return sibling_web_dests >= FANOUT_WEB_DESTS
+
+
+def hidden_queued_beacon_ids(rows: List[Dict[str, Any]]) -> set:
+    """Alert ids that are routine web beacons and must leave the operator queue."""
+    groups: Dict[str, set] = {}
+    beacons = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        meta = row.get("metadata") or {}
+        if not isinstance(meta, dict):
+            meta = {}
+        pattern = str(meta.get("raw_pattern_id") or row.get("pattern_id") or "")
+        title = str(row.get("title") or "")
+        if pattern != "AEGIS-BEH-002" and "Beaconing" not in title:
+            continue
+        beacons.append(row)
+        try:
+            port_n = int(row.get("dest_port")) if row.get("dest_port") not in (None, "") else 0
+        except (TypeError, ValueError):
+            port_n = 0
+        if port_n in WEB_EDGE_PORTS or port_n == 0:
+            groups.setdefault(str(row.get("source_ip") or ""), set()).add(str(row.get("dest_ip") or ""))
+    hidden = set()
+    for row in beacons:
+        siblings = len(groups.get(str(row.get("source_ip") or ""), ()))
+        if suppress_web_beacon(row.get("dest_ip") or "", row.get("dest_port"), siblings):
+            alert_id = row.get("alert_id")
+            if alert_id:
+                hidden.add(alert_id)
+    return hidden
+
+
+def visible_monitor_alerts(alerts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Drop routine web beacons. Other alerts stay."""
+    groups: Dict[str, set] = {}
+    for alert in alerts or []:
+        if not isinstance(alert, dict) or alert.get("pattern_id") != "AEGIS-BEH-002":
+            continue
+        port = alert.get("dest_port") or 0
+        try:
+            port_n = int(port)
+        except (TypeError, ValueError):
+            port_n = 0
+        if port_n in WEB_EDGE_PORTS or port_n == 0:
+            groups.setdefault(str(alert.get("source_ip") or ""), set()).add(str(alert.get("dest_ip") or ""))
+    kept = []
+    for alert in alerts or []:
+        if isinstance(alert, dict) and alert.get("pattern_id") == "AEGIS-BEH-002":
+            siblings = len(groups.get(str(alert.get("source_ip") or ""), ()))
+            if suppress_web_beacon(alert.get("dest_ip") or "", alert.get("dest_port"), siblings):
+                continue
+        kept.append(alert)
+    return kept
 
 # Connection state patterns
 THREAT_PATTERNS: List[Dict[str, Any]] = [

@@ -49,6 +49,58 @@ def test_non_google_beacon_still_alerts():
     assert mon.alerts[0]["severity"] == "CRITICAL"
 
 
+def test_cdn_and_microsoft_365_https_is_not_a_c2_beacon():
+    assert is_well_known_web_edge("108.156.221.54")
+    assert is_well_known_web_edge("2.21.98.40")
+    assert is_well_known_web_edge("52.98.22.2")
+    mon = NetworkMonitor()
+    now = time.time()
+    src = "10.103.198.27"
+    for dst in ("108.156.221.54", "2.21.98.40", "52.98.22.2"):
+        _seed(mon, src, dst, 443, now)
+        mon._check_beaconing(src, {dst}, now)
+    assert mon.alerts == []
+
+
+def test_browser_fanout_is_not_a_c2_beacon():
+    mon = NetworkMonitor()
+    now = time.time()
+    src = "10.103.198.27"
+    dests = ["45.33.32.10", "45.33.32.11", "45.33.32.12", "45.33.32.13"]
+    for dst in dests:
+        _seed(mon, src, dst, 443, now)
+    mon._check_beaconing(src, set(dests), now)
+    assert mon.alerts == []
+    _seed(mon, src, "45.33.32.10", 4444, now)
+    mon._check_beaconing(src, {"45.33.32.10"}, now)
+    assert len(mon.alerts) == 1
+    assert mon.alerts[0]["dest_port"] == 4444
+
+
+def test_queued_fanout_beacons_are_hidden():
+    from aegis.monitor.threat_patterns import hidden_queued_beacon_ids
+    rows = []
+    for idx, dest in enumerate(("45.33.32.10", "45.33.32.11", "45.33.32.12", "45.33.32.13")):
+        rows.append({
+            "alert_id": f"CALT-{idx}",
+            "title": f"C2 Beaconing Detected: 10.1.1.1 → {dest}",
+            "source_ip": "10.1.1.1",
+            "dest_ip": dest,
+            "dest_port": 443,
+            "metadata": {"raw_pattern_id": "AEGIS-BEH-002"},
+        })
+    rows.append({
+        "alert_id": "CALT-REAL",
+        "title": "C2 Beaconing Detected: 10.1.1.8 → 203.0.113.9",
+        "source_ip": "10.1.1.8",
+        "dest_ip": "203.0.113.9",
+        "dest_port": 4444,
+        "metadata": {"raw_pattern_id": "AEGIS-BEH-002"},
+    })
+    hidden = hidden_queued_beacon_ids(rows)
+    assert hidden == {"CALT-0", "CALT-1", "CALT-2", "CALT-3"}
+
+
 def test_google_non_web_port_still_alerts():
     mon = NetworkMonitor()
     now = time.time()

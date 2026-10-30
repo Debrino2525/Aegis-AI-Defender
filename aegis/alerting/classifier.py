@@ -8,6 +8,7 @@ import hashlib
 import uuid
 from typing import Dict, Any, Optional, Tuple, List
 from aegis.alerting.models import CriticalAlert, SeverityLevel, DoDZTPillar
+from aegis.monitor.threat_patterns import suppress_web_beacon
 
 
 class AlertClassifier:
@@ -39,8 +40,10 @@ class AlertClassifier:
         is_critical = False
         zt_pillars: List[DoDZTPillar] = [DoDZTPillar.VISIBILITY_ANALYTICS]
 
-        # Rule 1: Command and Control Beaconing
+        # Rule 1: Command and Control Beaconing. Routine web traffic is not C2.
         if pattern_id == "AEGIS-BEH-002" or "Beaconing" in title:
+            if suppress_web_beacon(dest_ip or "", dest_port, 1):
+                return None
             is_critical = True
             zt_pillars.extend([DoDZTPillar.NETWORK_ENVIRONMENT, DoDZTPillar.DEVICE])
 

@@ -180,3 +180,8 @@ def test_map_does_not_invent_coordinates():
     assert "GeoIP database is missing" in html
     assert "function resolveHostGeo" in html
     assert "geoip.points" in html or "data.geoip" in html
+    assert "/static/world_map.svg" in html
+    assert "tv-world-markers" in html
+    assert "for (let lon = -180" not in html
+    assert "geo-heartbeat" in html
+    assert 'html[data-theme="light"] .tv-stage-wrap' in html

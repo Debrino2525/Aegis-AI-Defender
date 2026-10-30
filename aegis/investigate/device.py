@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 from urllib.parse import unquote
 
+from aegis.monitor.analyst_assist import build_analyst_assist
 from aegis.monitor.remediation import PROTECTED_PROCESS_NAMES, preview_contain_action
 
 
@@ -211,6 +212,7 @@ def _telemetry_sample(host: Dict[str, Any]) -> Dict[str, Any]:
         process_count=host.get("process_count"),
         cpu_percent=host.get("cpu_percent"),
         memory_percent=host.get("memory_percent"),
+        hop_connections=list(host.get("hop_connections") or [])[:32],
     )
 
 
@@ -624,10 +626,22 @@ def build_investigation(sources: DeviceSources, key: str) -> Optional[Dict[str, 
         if not claim.get("sample") or not claim.get("sample_id"):
             raise ValueError("investigation assembler emitted a claim without a sample")
 
+    assist = build_analyst_assist(
+        [alert for alert in (monitor_alerts + routed_alerts)],
+        connections=sources.connections,
+        conn_history=sources.conn_history,
+        hosts=sources.hosts,
+        focus_hosts=keys,
+    )
+    if assist.get("hops"):
+        sources_used.append("analyst_assist_hops")
+
     return {
         "id": inv_id,
         "device": device,
         "device_kind": device_kind,
+        "product": assist.get("product") or "Analyst Assist",
+        "analyst_assist": assist,
         "claims": claims,
         "timeline": timeline,
         "related_alerts": related,
@@ -643,8 +657,10 @@ def build_investigation(sources: DeviceSources, key: str) -> Optional[Dict[str, 
             "related_alerts": len(related),
             "sockets": len(sockets),
             "findings": finding_count,
+            "assist_groups": len(assist.get("groups") or []),
+            "assist_hops": len(assist.get("hops") or []),
         },
-        "gaps": gaps,
+        "gaps": gaps + list(assist.get("gaps") or []),
         "sources_used": sorted(set(sources_used)),
         "assembled_at": _now_iso(),
     }

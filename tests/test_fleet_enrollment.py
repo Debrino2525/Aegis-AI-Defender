@@ -211,6 +211,7 @@ def test_collect_telemetry_is_this_host(client):
     assert payload["hostname"]
     assert payload["os_name"]
     assert "listening_tcp" in payload
+    assert isinstance(payload.get("hop_connections"), list)
     assert isinstance(payload["telemetry_errors"], list)
 
 

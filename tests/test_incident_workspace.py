@@ -61,6 +61,12 @@ def test_shell_links_workspace_and_keeps_unlock(client):
         "/api/fleet/hosts",
     ):
         assert path in body
+    assert "Analyst Assist" in body
+    assert "assistBlock" in body
+    assert "Observed hops" in body
+    assert "world_map.svg" not in body
+    assert "Antigena" not in body
+    assert "Patterns of Life" not in body
 
     assert client.get("/api/monitor").status_code == 401
     assert client.get("/api/scans").status_code == 401

@@ -5,12 +5,14 @@ from __future__ import annotations
 import platform
 import socket
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from aegis import __version__ as AGENT_VERSION
 
 _LINK_LOCAL_V4_PREFIX = "169.254."
 _LOOPBACK = {"127.0.0.1", "::1", "0.0.0.0", "::"}
+# RDP / SMB / SSH only — hop evidence for Analyst Assist, not a packet tap.
+_HOP_PORTS = {22, 139, 445, 3389}
 
 
 def collect_telemetry() -> Dict[str, Any]:
@@ -26,6 +28,7 @@ def collect_telemetry() -> Dict[str, Any]:
         "listen_count": 0,
         "established_in": 0,
         "established_out": 0,
+        "hop_connections": [],
         "connection_count": 0,
         "process_count": None,
         "cpu_percent": None,
@@ -108,6 +111,7 @@ def _fill_psutil(payload: Dict[str, Any]) -> None:
         payload["telemetry_errors"].append(f"net_connections: {exc}")
         return
     listening = []
+    hop_connections = []
     established_in = 0
     established_out = 0
     for conn in conns:
@@ -120,12 +124,58 @@ def _fill_psutil(payload: Dict[str, Any]) -> None:
             listening.append({"ip": ip, "port": port})
         elif status == "ESTABLISHED":
             lip = getattr(laddr, "ip", "") if laddr else ""
+            rip = getattr(raddr, "ip", "") if raddr else ""
+            lport = getattr(laddr, "port", None) if laddr else None
+            rport = getattr(raddr, "port", None) if raddr else None
             if lip in _LOOPBACK or (isinstance(lip, str) and lip.startswith("127.")):
                 established_in += 1
             else:
                 established_out += 1
+            hop = _hop_connection(lip, lport, rip, rport)
+            if hop:
+                hop_connections.append(hop)
     payload["listening_tcp"] = listening[:64]
     payload["listen_count"] = len(listening)
     payload["established_in"] = established_in
     payload["established_out"] = established_out
+    payload["hop_connections"] = hop_connections[:32]
     payload["connection_count"] = len(conns)
+
+
+def _hop_connection(lip: str, lport: Any, rip: str, rport: Any) -> Optional[Dict[str, Any]]:
+    """One ESTABLISHED RDP/SMB/SSH edge this agent can see. Empty if not a hop port."""
+    lip = (lip or "").split("%", 1)[0]
+    rip = (rip or "").split("%", 1)[0]
+    if not lip or not rip:
+        return None
+    if lip in _LOOPBACK or rip in _LOOPBACK:
+        return None
+    if isinstance(lip, str) and lip.startswith("127."):
+        return None
+    if isinstance(rip, str) and rip.startswith("127."):
+        return None
+    try:
+        remote_port = int(rport) if rport is not None else None
+    except (TypeError, ValueError):
+        remote_port = None
+    try:
+        local_port = int(lport) if lport is not None else None
+    except (TypeError, ValueError):
+        local_port = None
+    if remote_port in _HOP_PORTS:
+        return {
+            "local_ip": lip,
+            "remote_ip": rip,
+            "remote_port": remote_port,
+            "local_port": local_port,
+            "status": "ESTABLISHED",
+        }
+    if local_port in _HOP_PORTS:
+        return {
+            "local_ip": rip,
+            "remote_ip": lip,
+            "remote_port": local_port,
+            "local_port": remote_port,
+            "status": "ESTABLISHED",
+        }
+    return None

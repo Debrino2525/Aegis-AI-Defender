@@ -389,10 +389,10 @@
     html += "</div>";
     if (inc.narrative) {
       html += '<p class="narrative">' + esc(inc.narrative) + "</p>";
-      if (alerts.length) html += '<p class="muted">The narrative is correlator text. Each alert below is evidence from this incident.</p>';
     } else {
-      html += '<p class="muted">No narrative returned.</p>';
+      html += '<p class="muted">No Analyst Assist summary returned.</p>';
     }
+    html += assistBlock(inc.analyst_assist || inc);
     html += '<div class="block"><h3>Facts</h3><ul class="facts">';
     html += fact("Sources", list(inc.source_ips).join(", "));
     html += fact("Destinations", list(inc.dest_ips).join(", "));
@@ -584,6 +584,80 @@
     });
     html += "</tbody></table>";
     if (findings.length > 20) html += '<p class="muted">Showing 20 of ' + findings.length + " findings returned.</p>";
+    return html;
+  }
+
+  function assistBlock(assist) {
+    if (!assist) return "";
+    var groups = list(assist.groups);
+    var phases = list(assist.phases);
+    var hops = list(assist.hops);
+    var related = list(assist.related_detections);
+    var gaps = list(assist.gaps);
+    var html = '<div class="block"><h3>Analyst Assist</h3>';
+    html += '<p class="assist-note">Grouped by host, time, and tactic. Phases and hops appear only when a sample exists.</p>';
+    if (assist.product) html += '<p class="muted">' + esc(assist.product) + (assist.evidence_linked ? " · every claim below has a sample." : " · claims without a sample are omitted.") + "</p>";
+    html += "<h3>Groups</h3>";
+    if (!groups.length) html += '<p class="muted">No host + time + tactic group.</p>';
+    groups.forEach(function (group) {
+      html += '<div class="group-row"><div class="g-h">';
+      html += '<span class="chip">' + esc(group.tactic || "Ungrouped") + "</span>";
+      html += '<span class="mono">' + esc(group.host || "") + "</span>";
+      html += '<span class="muted">' + esc((group.alert_ids || []).length + " alerts") + "</span>";
+      html += "</div>";
+      list(group.pattern_ids).forEach(function (pid) {
+        html += '<span class="chip">' + esc(pid) + "</span>";
+      });
+      list(group.evidence).forEach(function (item) {
+        html += '<p class="related-row"><span class="mono">' + esc(item.alert_id || item.sample_id || "") + "</span> " +
+          esc(item.title || "") + "</p>";
+      });
+      html += "</div>";
+    });
+    if (phases.length) {
+      html += '<h3>Phases</h3><div class="phase-list">';
+      phases.forEach(function (phase, index) {
+        if (index) html += '<span class="phase-arrow">→</span>';
+        html += '<span class="phase">' + esc(phase.phase) + " · " + esc((phase.tactics || []).join(", ")) + "</span>";
+      });
+      html += "</div>";
+      phases.forEach(function (phase) {
+        list(phase.evidence).forEach(function (item) {
+          html += '<p class="related-row"><span class="mono">' + esc(item.alert_id || item.sample_id || "") + "</span> " +
+            esc(phase.phase) + " · " + esc(item.tactic || "") + "</p>";
+        });
+      });
+    }
+    if (hops.length) {
+      html += "<h3>Observed hops</h3>";
+      hops.forEach(function (hop) {
+        html += '<div class="hop-path">';
+        list(hop.path).forEach(function (node, index) {
+          if (index) {
+            var edge = (hop.edges || [])[index - 1] || {};
+            html += '<span class="hop-edge">' + esc((edge.protocol || "") + ":" + (edge.port || "") + " →") + "</span>";
+          }
+          html += '<span class="hop-node">' + esc(node) + "</span>";
+        });
+        html += "</div>";
+        list(hop.edges).forEach(function (edge) {
+          html += '<p class="related-row"><span class="mono">' + esc(edge.sample_id || "") + "</span> " +
+            esc(edge.protocol || "") + " " + esc(edge.src || "") + " → " + esc(edge.dst || "") + ":" +
+            esc(edge.port || "") + " · " + esc(edge.seen_by || "") + "</p>";
+        });
+      });
+    }
+    html += "<h3>Related detections</h3>";
+    if (!related.length) html += '<p class="muted">No other pattern IDs on this host in the window.</p>';
+    related.forEach(function (row) {
+      html += '<p class="related-row"><span class="mono">' + esc(row.pattern_id || "") + "</span> " +
+        esc(row.title || "") + " · " + esc((row.alert_ids || []).join(", ")) + "</p>";
+    });
+    if (gaps.length) {
+      html += "<h3>Gaps</h3>";
+      gaps.forEach(function (gap) { html += '<p class="muted">' + esc(gap) + "</p>"; });
+    }
+    html += "</div>";
     return html;
   }
 

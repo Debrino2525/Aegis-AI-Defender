@@ -214,6 +214,7 @@
       html += '<p class="muted">Identity is the last agent heartbeat <a class="sample-link" href="#sample-' +
         esc(device.sample.id) + '">' + esc(device.sample.id) + "</a>.</p>";
     }
+    html += assistBlock(inv.analyst_assist || inv);
     html += '<div class="block" id="evidence"><h3>Evidence timeline</h3>';
     var timeline = inv.timeline || [];
     if (!timeline.length) {
@@ -268,6 +269,79 @@
       html += '<li><span class="k">' + esc(key) + "</span> " + esc(value) + "</li>";
     });
     html += "</ul>";
+    return html;
+  }
+
+  function list(value) {
+    return Array.isArray(value) ? value.filter(function (item) { return item != null && item !== ""; }) : [];
+  }
+
+  function assistBlock(assist) {
+    if (!assist) return "";
+    var groups = list(assist.groups);
+    var phases = list(assist.phases);
+    var hops = list(assist.hops);
+    var related = list(assist.related_detections);
+    var html = '<div class="block"><h3>Analyst Assist</h3>';
+    html += '<p class="assist-note">Grouped by host, time, and tactic. Phases and hops appear only when a sample exists.</p>';
+    if (!groups.length && !phases.length && !hops.length && !related.length) {
+      html += '<p class="muted">No grouped detections on this host yet.</p>';
+      list(assist.gaps).forEach(function (gap) { html += '<p class="gap">' + esc(gap) + "</p>"; });
+      html += "</div>";
+      return html;
+    }
+    if (groups.length) {
+      html += "<h3>Groups</h3>";
+      groups.forEach(function (group) {
+        html += '<div class="group-row"><div class="g-h">';
+        html += '<span class="chip">' + esc(group.tactic || "Ungrouped") + "</span>";
+        html += '<span class="mono">' + esc(group.host || "") + "</span>";
+        html += "</div>";
+        list(group.pattern_ids).forEach(function (pid) {
+          html += '<span class="chip">' + esc(pid) + "</span>";
+        });
+        list(group.evidence).forEach(function (item) {
+          html += '<p class="related-row"><a class="sample-link" href="#sample-' + esc(item.sample_id || item.alert_id || "") + '">' +
+            esc(item.alert_id || item.sample_id || "") + "</a> " + esc(item.title || "") + "</p>";
+        });
+        html += "</div>";
+      });
+    }
+    if (phases.length) {
+      html += '<h3>Phases</h3><div class="phase-list">';
+      phases.forEach(function (phase, index) {
+        if (index) html += '<span class="phase-arrow">→</span>';
+        html += '<span class="phase">' + esc(phase.phase) + " · " + esc((phase.tactics || []).join(", ")) + "</span>";
+      });
+      html += "</div>";
+    }
+    if (hops.length) {
+      html += "<h3>Observed hops</h3>";
+      hops.forEach(function (hop) {
+        html += '<div class="hop-path">';
+        list(hop.path).forEach(function (node, index) {
+          if (index) {
+            var edge = (hop.edges || [])[index - 1] || {};
+            html += '<span class="hop-edge">' + esc((edge.protocol || "") + ":" + (edge.port || "") + " →") + "</span>";
+          }
+          html += '<span class="hop-node">' + esc(node) + "</span>";
+        });
+        html += "</div>";
+        list(hop.edges).forEach(function (edge) {
+          html += '<p class="related-row"><a class="sample-link" href="#sample-' + esc(edge.sample_id || "") + '">' +
+            esc(edge.sample_id || "") + "</a> " + esc(edge.protocol || "") + " " +
+            esc(edge.src || "") + " → " + esc(edge.dst || "") + ":" + esc(edge.port || "") + "</p>";
+        });
+      });
+    }
+    if (related.length) {
+      html += "<h3>Related detections</h3>";
+      related.forEach(function (row) {
+        html += '<p class="related-row"><span class="mono">' + esc(row.pattern_id || "") + "</span> " +
+          esc(row.title || "") + "</p>";
+      });
+    }
+    html += "</div>";
     return html;
   }
 

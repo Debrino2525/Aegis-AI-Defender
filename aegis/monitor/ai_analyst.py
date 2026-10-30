@@ -1,15 +1,21 @@
 """
-Aegis AI Analyst — Incident Correlation & Narrative Generation Engine.
+Analyst Assist — incident correlation with evidence-linked output.
 
-Correlates raw behavioral alerts into coherent security incidents,
-generates natural language summaries, recommends response actions,
-and tracks executed containment actions.
+Keeps the correlator (host + time window). Output is grouped by host + time +
+tactic. Multi-phase lists and hop paths are omitted unless samples exist.
+The product name is Analyst Assist until every claim points at a sample.
 """
 
 import time
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Sequence, Set
 from collections import defaultdict
 from datetime import datetime, timezone
+
+from aegis.monitor.analyst_assist import (
+    PRODUCT_NAME,
+    build_analyst_assist,
+    cluster_alerts_by_time,
+)
 
 
 # ── Tactic severity weights ───────────────────────────────────────────────────
@@ -134,14 +140,17 @@ class Incident:
         self.tactics: Set[str] = set()
         self.techniques: Set[str] = set()
         self.severities: List[str] = []
-        self.first_seen: float = time.time()
-        self.last_seen: float = time.time()
+        self.first_seen: float = 0.0
+        self.last_seen: float = 0.0
         self.narrative: str = ""
         self.confidence: int = 0      # 0–100
         self.urgency: str = "LOW"     # LOW / MEDIUM / HIGH / CRITICAL
         self.recommended_actions: List[str] = []
         self.actions_taken: List[Dict[str, Any]] = []
         self.status: str = "ACTIVE"   # ACTIVE / CONTAINED / RESOLVED
+        self._hop_observations: List[Dict[str, Any]] = []
+        self._hop_hosts: List[Dict[str, Any]] = []
+        self._conn_history: Dict[Any, Any] = {}
 
     def add_alert(self, alert: Dict):
         self.alerts.append(alert)
@@ -157,9 +166,15 @@ class Incident:
         if alert.get("technique"):
             self.techniques.add(alert["technique"])
         self.severities.append(alert.get("severity", "LOW"))
-        ts = alert.get("_timestamp", time.time())
-        self.last_seen = max(self.last_seen, ts)
-        self.first_seen = min(self.first_seen, ts)
+        ts = alert.get("_timestamp")
+        if ts is None:
+            ts = time.time()
+        if len(self.alerts) == 1:
+            self.first_seen = ts
+            self.last_seen = ts
+        else:
+            self.last_seen = max(self.last_seen, ts)
+            self.first_seen = min(self.first_seen, ts)
 
     def record_action(self, action_result: Dict[str, Any]):
         """Records an action execution result onto the incident."""
@@ -225,8 +240,17 @@ class Incident:
         sev_order = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "INFO": 0}
         top_sev = max(self.severities, key=lambda s: sev_order.get(s, 0)) if self.severities else "LOW"
 
+        assist = build_analyst_assist(
+            self.alerts,
+            hop_observations=self._hop_observations,
+            hosts=self._hop_hosts,
+            conn_history=self._conn_history,
+            focus_hosts=list(self.source_ips | self.dest_ips),
+        )
+        narrative = assist.get("summary") or self.narrative
         return {
             "id": self.id,
+            "product": PRODUCT_NAME,
             "alert_count": len(self.alerts),
             "source_ips": sorted(self.source_ips - {"", "localhost", "external"}),
             "dest_ips": sorted(self.dest_ips - {"", "multiple", "multiple internal"}),
@@ -236,7 +260,7 @@ class Incident:
             "severity": top_sev,
             "confidence": self.confidence,
             "urgency": self.urgency,
-            "narrative": self.narrative,
+            "narrative": narrative,
             "recommended_actions": self.recommended_actions,
             "executable_actions": self._build_executable_actions(),
             "actions_taken": self.actions_taken,
@@ -246,13 +270,19 @@ class Incident:
             "status": self.status,
             "alert_ids": [a.get("id") for a in self.alerts],
             "alerts": [{k: v for k, v in a.items() if not k.startswith('_')} for a in self.alerts[-25:]],
+            "analyst_assist": assist,
+            "groups": assist["groups"],
+            "phases": assist["phases"],
+            "hops": assist["hops"],
+            "related_detections": assist["related_detections"],
+            "evidence_linked": assist["evidence_linked"],
         }
 
 
 class AIAnalyst:
     """
     Correlates behavioral alerts into incidents, maintains state across cycles,
-    generates summaries, and supports direct action containment.
+    and emits Analyst Assist (groups, phases, hops, related detections).
     """
 
     CORRELATION_WINDOW = 600   # 10 minutes
@@ -260,9 +290,12 @@ class AIAnalyst:
 
     def __init__(self):
         self._incidents_by_id: Dict[str, Incident] = {}
-        self._src_to_incident: Dict[str, str] = {}
+        self._src_to_incidents: Dict[str, List[str]] = defaultdict(list)
         self._inc_counter = 0
         self._pending_restore: List[Dict] = []
+        self._hop_observations: List[Dict[str, Any]] = []
+        self._hop_hosts: List[Dict[str, Any]] = []
+        self._conn_history: Dict[Any, Any] = {}
 
     @property
     def incidents(self) -> Dict[str, Incident]:
@@ -270,9 +303,12 @@ class AIAnalyst:
 
     def clear(self):
         self._incidents_by_id.clear()
-        self._src_to_incident.clear()
+        self._src_to_incidents.clear()
         self._inc_counter = 0
         self._pending_restore.clear()
+        self._hop_observations = []
+        self._hop_hosts = []
+        self._conn_history = {}
 
     def restore_operator_state(self, rows: List[Dict]) -> None:
         """Reattach containment actions after a process restart, keyed by source IP."""
@@ -280,18 +316,19 @@ class AIAnalyst:
 
     def export_operator_state(self) -> List[Dict]:
         rows = []
-        for src, inc_id in self._src_to_incident.items():
-            inc = self._incidents_by_id.get(inc_id)
-            if not inc:
-                continue
-            if inc.status == "ACTIVE" and not inc.actions_taken:
-                continue
-            rows.append({
-                "source_ip": src,
-                "incident_id": inc.id,
-                "status": inc.status,
-                "actions_taken": list(inc.actions_taken),
-            })
+        for src, inc_ids in self._src_to_incidents.items():
+            for inc_id in inc_ids:
+                inc = self._incidents_by_id.get(inc_id)
+                if not inc:
+                    continue
+                if inc.status == "ACTIVE" and not inc.actions_taken:
+                    continue
+                rows.append({
+                    "source_ip": src,
+                    "incident_id": inc.id,
+                    "status": inc.status,
+                    "actions_taken": list(inc.actions_taken),
+                })
         return rows
 
     def _apply_pending_restore(self, inc: Incident, src_ip: str) -> None:
@@ -316,50 +353,57 @@ class AIAnalyst:
     def get_incident(self, incident_id: str) -> Optional[Incident]:
         return self._incidents_by_id.get(incident_id)
 
-    def analyze(self, alerts: List[Dict]) -> List[Dict]:
+    def analyze(
+        self,
+        alerts: List[Dict],
+        hop_observations: Optional[Sequence[Dict[str, Any]]] = None,
+        hosts: Optional[Sequence[Dict[str, Any]]] = None,
+        conn_history: Optional[Dict[Any, Any]] = None,
+    ) -> List[Dict]:
         """
-        Main entry point. Correlates alerts into persistent incidents,
-        updating existing incidents without erasing analyst action history.
+        Correlate alerts into persistent incidents (host + time window).
+        Output groups by host + time + tactic via Analyst Assist.
         """
-        if not alerts:
-            # Return any previously tracked incidents
-            return [inc.to_dict() for inc in self._incidents_by_id.values()]
+        if hop_observations is not None:
+            self._hop_observations = list(hop_observations)
+        if hosts is not None:
+            self._hop_hosts = list(hosts)
+        if conn_history is not None:
+            self._conn_history = dict(conn_history)
 
-        # Group alerts by source IP
-        by_source: Dict[str, List[Dict]] = defaultdict(list)
-        for alert in alerts:
-            src = alert.get("source_ip", "unknown")
-            by_source[src].append(alert)
+        if alerts:
+            by_source: Dict[str, List[Dict]] = defaultdict(list)
+            for alert in alerts:
+                src = alert.get("source_ip", "unknown")
+                by_source[src].append(alert)
 
-        for src_ip, src_alerts in by_source.items():
-            if not src_alerts:
-                continue
-
-            src_alerts.sort(key=lambda a: a.get("_timestamp", 0))
-            clusters = self._cluster_by_time(src_alerts, self.CORRELATION_WINDOW)
-
-            for cluster in clusters:
-                if not cluster:
+            for src_ip, src_alerts in by_source.items():
+                if not src_alerts:
                     continue
 
-                # Check if we already have an incident for this source
-                existing_id = self._src_to_incident.get(src_ip)
-                if existing_id and existing_id in self._incidents_by_id:
-                    inc = self._incidents_by_id[existing_id]
-                    # Update alerts if new ones arrived
-                    existing_alert_ids = {a.get("id") for a in inc.alerts}
-                    for a in cluster:
-                        if a.get("id") not in existing_alert_ids:
-                            inc.add_alert(a)
-                    # Re-score confidence
-                    self._update_scores(inc, src_ip)
-                else:
-                    inc = self._build_incident(src_ip, cluster)
-                    self._incidents_by_id[inc.id] = inc
-                    self._src_to_incident[src_ip] = inc.id
-                self._apply_pending_restore(inc, src_ip)
+                src_alerts.sort(key=lambda a: a.get("_timestamp", 0) or 0)
+                clusters = cluster_alerts_by_time(src_alerts, self.CORRELATION_WINDOW)
 
-        # Sort by status (ACTIVE first), urgency, confidence
+                for cluster in clusters:
+                    if not cluster:
+                        continue
+                    inc = self._incident_for_cluster(src_ip, cluster)
+                    if inc is not None:
+                        existing_alert_ids = {a.get("id") for a in inc.alerts}
+                        for a in cluster:
+                            if a.get("id") not in existing_alert_ids:
+                                inc.add_alert(a)
+                        self._update_scores(inc, src_ip)
+                    else:
+                        inc = self._build_incident(src_ip, cluster)
+                        self._incidents_by_id[inc.id] = inc
+                        self._src_to_incidents[src_ip].append(inc.id)
+                    self._bind_hop_sources(inc)
+                    self._apply_pending_restore(inc, src_ip)
+
+        for inc in self._incidents_by_id.values():
+            self._bind_hop_sources(inc)
+
         status_order = {"ACTIVE": 2, "CONTAINED": 1, "RESOLVED": 0}
         urg_order = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
         sorted_incs = sorted(
@@ -374,18 +418,25 @@ class AIAnalyst:
 
         return [inc.to_dict() for inc in sorted_incs[:self.MAX_INCIDENTS]]
 
+    def _bind_hop_sources(self, inc: Incident) -> None:
+        inc._hop_observations = self._hop_observations
+        inc._hop_hosts = self._hop_hosts
+        inc._conn_history = self._conn_history
+
+    def _incident_for_cluster(self, src_ip: str, cluster: List[Dict]) -> Optional[Incident]:
+        ids = self._src_to_incidents.get(src_ip) or []
+        if not ids:
+            return None
+        last = self._incidents_by_id.get(ids[-1])
+        if not last:
+            return None
+        cluster_first = min((a.get("_timestamp", 0) or 0) for a in cluster)
+        if cluster_first - last.last_seen <= self.CORRELATION_WINDOW:
+            return last
+        return None
+
     def _cluster_by_time(self, alerts: List[Dict], window: float) -> List[List[Dict]]:
-        if not alerts:
-            return []
-        clusters: List[List[Dict]] = [[alerts[0]]]
-        for alert in alerts[1:]:
-            last_ts = clusters[-1][-1].get("_timestamp", 0)
-            curr_ts = alert.get("_timestamp", 0)
-            if curr_ts - last_ts <= window:
-                clusters[-1].append(alert)
-            else:
-                clusters.append([alert])
-        return clusters
+        return cluster_alerts_by_time(alerts, window)
 
     def _update_scores(self, inc: Incident, src_ip: str):
         """Updates confidence and urgency for an updated incident."""

@@ -1255,7 +1255,7 @@ select option:checked, select option:hover {
     </div>
   </div>
 
-  <!-- Live connections table & AI Analyst grid -->
+  <!-- Live connections table & Analyst Assist grid -->
   <div class="g2">
     <!-- Live connections table -->
     <div id="mon-conns-wrap" class="card">
@@ -1279,13 +1279,13 @@ select option:checked, select option:hover {
       </div>
     </div>
 
-    <!-- AI Analyst Incidents -->
+    <!-- Analyst Assist incidents -->
     <div class="card" id="mon-incidents-wrap">
       <div class="ch">
-        <div class="ct">Correlated Alert Incidents</div>
-        <span style="font-size:11px;color:var(--text-dim)">Behavioral alerts clustered into incidents</span>
+        <div class="ct">Analyst Assist</div>
+        <span style="font-size:11px;color:var(--text-dim)">Alerts grouped by host, time, and tactic. Hops only when sampled.</span>
       </div>
-      <div id="incidents-list"><div class="empty"><div class="ei"></div><div class="eh">No incidents yet</div><div class="ep">Incidents appear when multiple correlated alerts are detected</div></div></div>
+      <div id="incidents-list"><div class="empty"><div class="ei"></div><div class="eh">No incidents yet</div><div class="ep">Incidents appear when the correlator groups alerts on a host in a time window</div></div></div>
     </div>
   </div>
 
@@ -3198,7 +3198,7 @@ function renderTimeline(history){
   ctx.fillText(`${lastVal} active`, w - 10*dpr, padTop + 12*dpr);
 }
 
-// ── AI Analyst Incidents & Containment Actions ──────────────────────────────
+// ── Analyst Assist incidents & containment actions ──────────────────────────
 async function executeIncidentAction(incId, actionType, target, btn) {
   if (btn) {
     btn.disabled = true;
@@ -3325,11 +3325,36 @@ const incidentsUIState = {
   lastSignature: ''
 };
 
+function assistCardBits(inc){
+  const assist = inc.analyst_assist || inc;
+  const groups = assist.groups || [];
+  const hops = assist.hops || [];
+  const phases = assist.phases || [];
+  const related = assist.related_detections || [];
+  const bits = [];
+  if (groups.length) {
+    bits.push(`<div style="font-size:11px;color:var(--text-dim);margin-top:8px;">${groups.map(g => `${esc(g.tactic || 'Ungrouped')} · ${esc(g.host || '')}`).join(' · ')}</div>`);
+  }
+  if (phases.length) {
+    bits.push(`<div style="font-size:11px;margin-top:6px;">Phases: ${phases.map(p => esc(p.phase)).join(' → ')}</div>`);
+  }
+  if (hops.length) {
+    bits.push(hops.map(h => {
+      const path = (h.path || []).join(' → ');
+      return `<div class="hop-path" style="margin-top:6px;"><span class="mono">${esc(path)}</span></div>`;
+    }).join(''));
+  }
+  if (related.length) {
+    bits.push(`<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Related detections: ${related.map(r => esc(r.pattern_id || '')).filter(Boolean).join(', ')}</div>`);
+  }
+  return bits.join('');
+}
+
 function renderIncidents(incidents){
   const el = document.getElementById('incidents-list');
   if(!el) return;
   if(!incidents || !incidents.length){
-    el.innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">No incidents detected</div><div class="ep">AI Analyst continuously correlates behavioral alerts into full incident narratives</div></div>';
+    el.innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">No incidents detected</div><div class="ep">Analyst Assist groups behavioral alerts by host, time, and tactic when evidence exists</div></div>';
     incidentsUIState.lastSignature = '';
     return;
   }
@@ -3399,6 +3424,7 @@ function renderIncidents(incidents){
           <span style="font-size:10px;color:var(--purple);margin-left:auto">${(inc.tactics || []).join(' &rarr; ')}</span>
         </div>
         <div class="inc-narr">${esc(inc.narrative)}</div>
+        ${assistCardBits(inc)}
 
         <!-- Sleek Incident-Level Action Dropdown Bar -->
         <div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid var(--border);">

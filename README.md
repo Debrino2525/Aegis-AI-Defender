@@ -32,7 +32,7 @@ Aegis AI is an enterprise-grade cyber defense and vulnerability management platf
   - `AEGIS-BEH-008`: Anonymous Proxy & Tor Egress
   - `AEGIS-BEH-010`: SMB Ransomware Propagation
   - `AEGIS-BEH-012`: Target DNS Drift Detection
-- **AI Analyst Incident Correlation**: Groups behavioral alerts by MITRE ATT&CK tactics into correlated security incident narratives.
+- **Analyst Assist**: Groups behavioral alerts by host, time, and tactic. Multi-phase lists and hop paths appear only when a sample exists. Related detections are other pattern IDs on that host.
 
 ### 3. ⚡ Respond: Host-Level Containment & Remediation
 - **Process Termination**: Instantly halts malicious or suspicious processes while safeguarding core Windows system processes.

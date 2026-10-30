@@ -18,10 +18,10 @@ body::after {
   border-bottom: 1px solid var(--border);
 }
 
-.brand-mark {
-  border-radius: var(--radius-sm) !important;
-  background: var(--surface2) !important;
-  box-shadow: none !important;
+.brand-logo {
+  height: 88px;
+  width: auto;
+  display: block;
 }
 
 .wordmark i {

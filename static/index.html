@@ -484,8 +484,9 @@ body::after{
 ::selection{background:rgba(94,234,212,.28)}
 
 /* ── TOP BAR ─────────────────────────────────────────────────────── */
-#topnav{height:60px;padding:0 24px 0 18px;gap:20px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
+#topnav{height:100px;padding:0 24px 0 18px;gap:20px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
 .brand{border:none;margin:0;padding:0;gap:12px}
+.brand-logo{height:88px;width:auto;display:block;}
 .brand-mark{width:32px;height:32px;border-radius:4px;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--border2);box-shadow:none}
 .wordmark{font-weight:600;font-size:15px;letter-spacing:.01em;color:var(--text)}
 .wordmark i{font-style:normal;font-weight:400;color:var(--accent2);margin-left:5px}
@@ -801,16 +802,7 @@ select option:checked, select option:hover {
 <!-- TOP BAR -->
 <nav id="topnav">
   <div class="brand">
-    <div class="brand-mark" title="Globitech">
-      <svg width="22" height="22" viewBox="0 0 120 120" fill="none" role="img" aria-label="Globitech mark">
-        <path d="M18 78C34 70 48 52 58 28C62 42 72 58 92 68C70 66 48 70 18 78Z" fill="#F7941D"/>
-        <path d="M22 62C42 52 58 34 68 10C74 28 88 46 112 54C86 54 58 56 22 62Z" fill="#8DC63F"/>
-        <path d="M28 46C50 36 66 20 74 0C82 18 98 34 120 40C92 42 62 42 28 46Z" fill="#00AEEF"/>
-        <path d="M14 90C28 84 40 72 48 54C52 66 60 78 78 86C58 84 38 86 14 90Z" fill="#F7941D"/>
-        <path d="M10 102C22 98 32 90 38 76C42 86 50 96 66 102C48 100 30 100 10 102Z" fill="#F7941D" opacity="0.9"/>
-      </svg>
-    </div>
-    <div class="wordmark">Aegis<i>AI</i> <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:4px;letter-spacing:0.5px">by Globitech</span></div>
+    <img class="brand-logo" src="/static/globitech-logo.png" alt="Globitech Ghana"/>
   </div>
   <div class="crumb"><span>Platform</span><span style="opacity:.4">/</span><b id="crumb-page">Dashboard</b></div>
   <button class="cmdk" onclick="openCmdK()">

@@ -67,6 +67,11 @@ class AlertQueue:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_fingerprint ON critical_alerts(fingerprint)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_status ON critical_alerts(status)")
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(critical_alerts)")}
+            if "held_count" not in columns:
+                conn.execute("ALTER TABLE critical_alerts ADD COLUMN held_count INTEGER NOT NULL DEFAULT 0")
+            if "paged" not in columns:
+                conn.execute("ALTER TABLE critical_alerts ADD COLUMN paged INTEGER NOT NULL DEFAULT 0")
 
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS dispatch_audit (
@@ -159,6 +164,18 @@ class AlertQueue:
     def mark_dispatched(self, alert_id: str, new_status: str = "DELIVERED"):
         with self._get_conn() as conn:
             conn.execute("UPDATE critical_alerts SET status = ? WHERE alert_id = ?", (new_status, alert_id))
+
+    def is_paged(self, alert_id: str) -> bool:
+        with self._get_conn() as conn:
+            row = conn.execute(
+                "SELECT paged FROM critical_alerts WHERE alert_id = ?",
+                (alert_id,),
+            ).fetchone()
+        return bool(row and row["paged"])
+
+    def mark_paged(self, alert_id: str) -> None:
+        with self._get_conn() as conn:
+            conn.execute("UPDATE critical_alerts SET paged = 1 WHERE alert_id = ?", (alert_id,))
 
     def record_dispatch_audit(self, alert_id: str, result: DispatchResult):
         with self._get_conn() as conn:

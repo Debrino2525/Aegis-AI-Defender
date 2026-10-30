@@ -730,6 +730,7 @@ async def get_platform_settings():
             "alert_signing_key": mask_secret(signing),
             "alert_signing_key_source": signing_key_source(),
             "alert_signing_key_rejected_default": signing_key_is_public_default(),
+            "alert_hourly_cap": alert_router.cap.hourly_cap(),
         }),
     }
 
@@ -770,6 +771,7 @@ async def save_platform_settings(payload: SettingsPayload):
     _take_plain(al, "modem_serial_port", "MODEM_SERIAL_PORT")
     _take_plain(al, "modem_baudrate", "MODEM_BAUDRATE")
     _take_plain(al, "aegis_console_url", "AEGIS_CONSOLE_URL")
+    _take_plain(al, "alert_hourly_cap", "ALERT_HOURLY_CAP")
 
     # Apply to os.environ and write to .env. Masked echoes were dropped above.
     if updates:
@@ -791,6 +793,9 @@ async def save_platform_settings(payload: SettingsPayload):
     alert_router.adapter_modem.port = os.getenv("MODEM_SERIAL_PORT", "").strip()
     alert_router.heartbeat.canary_url = os.getenv("CANARY_HEARTBEAT_URL", "").strip()
     alert_router.base_console_url = os.getenv("AEGIS_CONSOLE_URL", "http://localhost:8000").rstrip("/")
+    raw_cap = os.getenv("ALERT_HOURLY_CAP", "").strip()
+    if raw_cap.isdigit():
+        alert_router.cap.set_hourly_cap(int(raw_cap))
     from aegis.monitor.geoip import reload_geoip
     reload_geoip()
     return {"ok": True, "message": "Settings successfully saved and reloaded!"}

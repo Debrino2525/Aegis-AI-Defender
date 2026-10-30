@@ -953,6 +953,7 @@ select option:checked, select option:hover {
       <div>
         <div class="ct">Critical alert routing</div>
         <div style="font-size:11px;color:var(--text-dim)">Chat, then SMS, then a cellular modem. A dead-man canary is separate and does not notify a person.</div>
+        <div id="dispatch-cap-note" style="font-size:12px;color:var(--text);margin-top:6px"></div>
       </div>
     </div>
     <div class="g4" id="alert-channels-grid" style="margin-top:12px;margin-bottom:16px">
@@ -1363,6 +1364,9 @@ select option:checked, select option:hover {
           <div><div class="fl">WhatsApp Phone Number ID</div><input class="fi" id="cfg-wa-phone-id" placeholder="1045239..."/></div>
           <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Enterprise Webhook (Slack / Teams / SIEM)</div></div>
           <div><div class="fl">Critical Alert Webhook URL</div><input class="fi" id="cfg-webhook-url" placeholder="https://hooks.slack.com/services/... or https://siem.corp/webhook"/></div>
+          <div><div class="fl">Outside messages per hour</div><input class="fi" id="cfg-alert-hourly-cap" inputmode="numeric" placeholder="10" value="10"/>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:4px">After this many messages in an hour, outside channels get one summary. Further alerts stay on the incident.</div>
+          </div>
           <!-- Test ChatOps Box -->
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
             <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test ChatOps</div>
@@ -1884,6 +1888,11 @@ async function loadAlertingState(){
       const chatOk = ch.telegram || ch.whatsapp || ch.generic_webhook;
       const oobOk = ch.modem_oob_configured;
       const canaryOk = (status.canary_heartbeat || {}).canary_configured;
+      const cap = status.dispatch_cap || {};
+      const capNote = document.getElementById('dispatch-cap-note');
+      if (capNote && cap.hourly_cap) {
+        capNote.textContent = `${cap.sent_this_hour} of ${cap.hourly_cap} outside messages sent this hour. ${cap.held_this_hour} held on the console.`;
+      }
       chGrid.innerHTML = `
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">SMS</span><span class="badge ${smsOk?'badge-done':'badge-queued'}">${smsOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
@@ -1912,14 +1921,17 @@ async function loadAlertingState(){
           const pillars = (a.zt_pillars||[]).map(p=>`<span style="background:rgba(94,234,212,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-right:4px">${esc(p)}</span>`).join('') || '—';
           const escBadge = a.escalation_level > 0 ? `<span class="badge badge-error">Level ${a.escalation_level} Escalated</span>` : `<span class="badge badge-running">Level 0 Primary</span>`;
           const ackBtn = a.acknowledged ? `<span style="color:var(--success);font-weight:700;font-size:11px">&#10003; Acknowledged</span>` : `<button class="btn btn-p btn-sm" onclick="event.stopPropagation(); ackCriticalAlert('${id}')">Acknowledge</button>`;
+          const held = Number(a.held_count || 0);
+          const countCell = `x${a.occurrence_count||1}` + (held ? `<div style="font-size:10px;color:var(--text-dim);font-weight:500">${held} held</div>` : '');
           const summary = esc(String(a.summary||'').replace(/\s*\|\s*Key:[\s\S]*$/,''));
+          const heldLine = held ? `<div style="margin-top:8px;font-size:12px">Held from outside channels: ${held}. They stay on this incident.</div>` : '';
           const detail = `<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;font-size:11px">`
             + `<div><div style="color:var(--text-dim)">Destination</div><div style="font-family:var(--mono)">${esc(a.dest_ip||'—')}${a.dest_port?':'+esc(a.dest_port):''}</div></div>`
             + `<div><div style="color:var(--text-dim)">Tactic</div><div>${esc(a.tactic||'—')}</div></div>`
             + `<div><div style="color:var(--text-dim)">Technique</div><div style="font-family:var(--mono)">${esc(a.technique||'—')}</div></div>`
             + `<div><div style="color:var(--text-dim)">Last seen</div><div>${esc(a.last_occurrence||a.created_at||'—')}</div></div>`
-            + `</div><div style="margin-top:8px;line-height:1.45">${summary||'No additional detail was recorded.'}</div>`;
-          return `<tr style="cursor:pointer" onclick="toggleAlertDetail('${id}')"><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${esc(id)}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">x${a.occurrence_count||1}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`
+            + `</div><div style="margin-top:8px;line-height:1.45">${summary||'No additional detail was recorded.'}</div>${heldLine}`;
+          return `<tr style="cursor:pointer" onclick="toggleAlertDetail('${id}')"><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${esc(id)}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">${countCell}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`
             + `<tr id="adet-${id}" style="display:none"><td colspan="7" style="background:var(--surface2);padding:12px 14px">${detail}</td></tr>`;
         }).join('');
         aWrap.innerHTML = `<table class="ft"><thead><tr><th>ID</th><th>Incident</th><th>Source</th><th>Zero Trust</th><th>Count</th><th>Escalation</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -4026,6 +4038,8 @@ async function loadSettings(){
     document.getElementById('cfg-wa-token').value = al.whatsapp_api_token || '';
     document.getElementById('cfg-wa-phone-id').value = al.whatsapp_phone_number_id || '';
     document.getElementById('cfg-webhook-url').value = al.critical_alert_webhook_url || '';
+    const capField = document.getElementById('cfg-alert-hourly-cap');
+    if (capField) capField.value = al.alert_hourly_cap || 10;
     document.getElementById('cfg-modem-port').value = al.modem_serial_port || '';
     document.getElementById('cfg-modem-baud').value = al.modem_baudrate || '';
     document.getElementById('cfg-canary-url').value = al.canary_heartbeat_url || '';
@@ -4068,6 +4082,7 @@ async function saveCurrentSettingsTab(){
       whatsapp_api_token: document.getElementById('cfg-wa-token').value.trim(),
       whatsapp_phone_number_id: document.getElementById('cfg-wa-phone-id').value.trim(),
       critical_alert_webhook_url: document.getElementById('cfg-webhook-url').value.trim(),
+      alert_hourly_cap: (document.getElementById('cfg-alert-hourly-cap') || {value:''}).value.trim(),
       modem_serial_port: document.getElementById('cfg-modem-port').value.trim(),
       modem_baudrate: +document.getElementById('cfg-modem-baud').value || 115200,
       canary_heartbeat_url: document.getElementById('cfg-canary-url').value.trim()

@@ -188,6 +188,7 @@ from aegis.alerting.security import (
 )
 from aegis.persistence.history_store import get_history_store
 from aegis.runtime import all_interfaces_warning, listen_host, listen_port
+from aegis.fleet.tls import install_peer_cert_hook, tls_enabled, uvicorn_ssl_kwargs
 from aegis.security.console_auth import console_auth
 from aegis.security.masking import (
     ALERTING_SECRETS,
@@ -200,6 +201,7 @@ from aegis.fleet.api import router as fleet_router
 from aegis.fleet.service import get_fleet_service
 
 app.include_router(fleet_router)
+install_peer_cert_hook()
 
 def _env_file_path() -> Path:
     override = os.getenv("AEGIS_ENV_FILE", "").strip()
@@ -1333,11 +1335,22 @@ if __name__ == "__main__":
     warning = all_interfaces_warning(host)
     if warning:
         print(warning, file=sys.stderr)
-    else:
-        print(f"[AEGIS] Listening on http://{host}:{port}", file=sys.stderr)
+    ssl_kwargs = uvicorn_ssl_kwargs()
+    scheme = "https" if ssl_kwargs else "http"
+    print(f"[AEGIS] Listening on {scheme}://{host}:{port}", file=sys.stderr)
+    if ssl_kwargs:
+        reqs = ssl_kwargs.get("ssl_cert_reqs")
+        print(
+            "[AEGIS] TLS is on. Agent heartbeats require a verified client certificate "
+            f"(ssl_cert_reqs={reqs}). Enroll uses the one-time token over HTTPS.",
+            file=sys.stderr,
+        )
+    elif tls_enabled():
+        print("[AEGIS] AEGIS_TLS is set but TLS files were not loaded.", file=sys.stderr)
     uvicorn.run(
         app,
         host=host,
         port=port,
         log_level=os.getenv("AEGIS_LOG_LEVEL", "info"),
+        **ssl_kwargs,
     )

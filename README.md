@@ -144,6 +144,65 @@ python -m aegis.agent run
 
 Cert files land in `~/.aegis/agent/` (`ca.crt`, `client.crt`, `client.key`). The site CA lives on the console under `~/.aegis/ca/`. Lab bootstrap can set `AEGIS_ENROLLMENT_TOKEN` in `.env` instead of minting; that value is reusable until rotated. This is not NDR: the agent sends identity, host health, and listen-port counts — not pcap.
 
+Keep the agent running:
+
+```bash
+# Linux (systemd). Enroll first.
+./scripts/aegis-agent.sh enroll --url https://CONSOLE:8000 --token PASTE --ca /path/to/ca.crt
+sudo ./scripts/aegis-agent.sh install --enable
+# or, without root: ./scripts/aegis-agent.sh install --user --enable
+
+# Windows. Enroll first, then register a startup task.
+scripts\aegis-agent.bat enroll --url https://CONSOLE:8000 --token PASTE --ca C:\path\ca.crt
+scripts\aegis-agent.bat install
+scripts\aegis-agent.bat start
+```
+
+`scripts/aegis-agent.service` is the unit template. For a real Windows service, copy `scripts/aegis-agent.winsw.xml` next to [WinSW](https://github.com/winsw/winsw) renamed `aegis-agent.exe` and run `aegis-agent.exe install`.
+
+Revoke or re-enroll a host from **Assets** or **Settings → Host agents**. A revoked client certificate fails heartbeat. Re-enroll mints a one-time token that reissues a cert for the same agent id; the old fingerprint stays revoked.
+
+### Enable HTTPS and mTLS
+
+HTTP labs still authenticate heartbeats with the signed client PEM. Production should serve HTTPS and require a TLS client certificate on heartbeat.
+
+1. Leave the site CA at `~/.aegis/ca/` (created on console start).
+2. Set `AEGIS_TLS=1` in `.env` and point `AEGIS_CONSOLE_URL` at `https://…`.
+3. Restart: `python server.py` listens with
+   - `--ssl-certfile ~/.aegis/ca/server.crt`
+   - `--ssl-keyfile ~/.aegis/ca/server.key`
+   - `--ssl-ca-certs ~/.aegis/ca/ca.crt`
+   - `ssl_cert_reqs = CERT_OPTIONAL` (handshake still allows the browser and first enroll; TLS 1.2 so the server can request a client certificate without failing clients that do not have one)
+4. `/api/fleet/heartbeat` then **requires** a verified client certificate (`CERT_REQUIRED` for the agent). Enroll still uses the one-time token over HTTPS.
+5. On the host, copy the site CA and enroll with `--ca`:
+   `python -m aegis.agent enroll --url https://CONSOLE:8000 --token PASTE --ca ca.crt`
+
+Optional env:
+
+| Variable | Purpose |
+|---|---|
+| `AEGIS_TLS_CERTFILE` / `AEGIS_TLS_KEYFILE` | Let's Encrypt (or other) server cert instead of the site CA server cert. Client certs are still verified against the site CA. |
+| `AEGIS_TLS_CA_CERTS` | CA used to verify agent client certs. Defaults to `~/.aegis/ca/ca.crt`. |
+| `AEGIS_TLS_CERT_REQS=required` | Handshake-level `ssl.CERT_REQUIRED` (`--ssl-cert-reqs 2`). Agent-only port: the browser and first enroll cannot connect without a client cert. |
+| `AEGIS_TLS_PROXY=1` | Trust `X-SSL-Client-Cert` / `X-SSL-Client-Verify` from nginx. Do not set this unless TLS is terminated in front of Aegis. |
+
+nginx snippet for heartbeat-only `ssl_verify_client on` (CERT_REQUIRED at the terminator):
+
+```nginx
+location /api/fleet/heartbeat {
+    ssl_verify_client on;
+    proxy_set_header X-SSL-Client-Cert $ssl_client_escaped_cert;
+    proxy_set_header X-SSL-Client-Verify $ssl_client_verify;
+    proxy_pass http://127.0.0.1:8000;
+}
+location /api/fleet/enroll {
+    ssl_verify_client off;
+    proxy_pass http://127.0.0.1:8000;
+}
+```
+
+Set `AEGIS_TLS_PROXY=1` when using that terminator. The default site server certificate SAN is `localhost`, `127.0.0.1`, and the console hostname — use `AEGIS_TLS_CERTFILE` for a real DNS name.
+
 ---
 
 ## ⚙️ Configuration & Settings

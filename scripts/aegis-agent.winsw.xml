@@ -1,0 +1,17 @@
+<service>
+  <id>aegis-agent</id>
+  <name>Aegis Host Agent</name>
+  <description>Thin Aegis collector. Heartbeats to the console with this host's client certificate. Enroll before starting the service.</description>
+  <executable>python</executable>
+  <arguments>-m aegis.agent run</arguments>
+  <workingdirectory>%BASE%\..</workingdirectory>
+  <stoptimeout>15 sec</stoptimeout>
+  <onfailure action="restart" delay="5 sec"/>
+  <resetfailure>1 hour</resetfailure>
+  <env name="PYTHONUNBUFFERED" value="1"/>
+  <env name="PYTHONPATH" value="%BASE%\.."/>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+</service>

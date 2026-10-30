@@ -47,6 +47,9 @@ def test_assets_empty_without_heartbeats(client):
     assert "No hosts have enrolled a heartbeat" in html
     assert "sample-dc01" not in html
     assert "demo-host" not in html
+    assert "revokeFleetHost" in html
+    assert "reenrollFleetHost" in html
+    assert "AEGIS_TLS" in html
 
 
 def test_enroll_requires_token_not_admin_session(client):
@@ -213,3 +216,5 @@ def test_collect_telemetry_is_this_host(client):
 
 def test_mint_token_requires_admin(client):
     assert client.post("/api/fleet/tokens").status_code == 401
+    assert client.post("/api/fleet/hosts/agt_missing/revoke").status_code == 401
+    assert client.post("/api/fleet/hosts/agt_missing/reenroll").status_code == 401

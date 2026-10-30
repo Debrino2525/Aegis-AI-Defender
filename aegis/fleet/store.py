@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,7 +40,8 @@ class FleetStore:
                     expires_at TEXT NOT NULL,
                     used_at TEXT,
                     used_by_agent_id TEXT,
-                    label TEXT
+                    label TEXT,
+                    replaces_agent_id TEXT
                 )
                 """
             )
@@ -59,7 +59,8 @@ class FleetStore:
                     enrolled_at TEXT NOT NULL,
                     last_seen TEXT,
                     last_telemetry_json TEXT,
-                    remote_ip TEXT
+                    remote_ip TEXT,
+                    revoked_at TEXT
                 )
                 """
             )
@@ -71,15 +72,41 @@ class FleetStore:
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS revoked_certs (
+                    fingerprint TEXT PRIMARY KEY,
+                    agent_id TEXT,
+                    revoked_at TEXT NOT NULL,
+                    reason TEXT
+                )
+                """
+            )
+            self._ensure_column(conn, "enrollment_tokens", "replaces_agent_id", "TEXT")
+            self._ensure_column(conn, "hosts", "revoked_at", "TEXT")
 
-    def insert_token(self, token_id: str, token_hash: str, expires_at: str, label: str = "") -> None:
+    def _ensure_column(self, conn: sqlite3.Connection, table: str, column: str, decl: str) -> None:
+        rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+        names = {str(r[1]) for r in rows}
+        if column not in names:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+
+    def insert_token(
+        self,
+        token_id: str,
+        token_hash: str,
+        expires_at: str,
+        label: str = "",
+        replaces_agent_id: Optional[str] = None,
+    ) -> None:
         with self._conn() as conn:
             conn.execute(
                 """
-                INSERT INTO enrollment_tokens (id, token_hash, created_at, expires_at, label)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO enrollment_tokens
+                    (id, token_hash, created_at, expires_at, label, replaces_agent_id)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (token_id, token_hash, _now(), expires_at, label),
+                (token_id, token_hash, _now(), expires_at, label, replaces_agent_id),
             )
 
     def unused_token_count(self) -> int:
@@ -120,8 +147,8 @@ class FleetStore:
                 INSERT INTO hosts (
                     agent_id, hostname, os_name, os_version, arch, agent_version,
                     cert_fingerprint, cert_pem, enrolled_at, last_seen,
-                    last_telemetry_json, remote_ip
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    last_telemetry_json, remote_ip, revoked_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(agent_id) DO UPDATE SET
                     hostname = excluded.hostname,
                     os_name = excluded.os_name,
@@ -147,8 +174,46 @@ class FleetStore:
                     row.get("last_seen"),
                     row.get("last_telemetry_json"),
                     row.get("remote_ip"),
+                    row.get("revoked_at"),
                 ),
             )
+
+    def mark_host_revoked(self, agent_id: str, revoked_at: str) -> bool:
+        with self._conn() as conn:
+            cur = conn.execute(
+                "UPDATE hosts SET revoked_at = ? WHERE agent_id = ?",
+                (revoked_at, agent_id),
+            )
+            return cur.rowcount == 1
+
+    def clear_host_revocation(self, agent_id: str) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE hosts SET revoked_at = NULL WHERE agent_id = ?",
+                (agent_id,),
+            )
+
+    def revoke_fingerprint(self, fingerprint: str, agent_id: str, reason: str = "operator") -> None:
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO revoked_certs (fingerprint, agent_id, revoked_at, reason)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(fingerprint) DO UPDATE SET
+                    agent_id = excluded.agent_id,
+                    revoked_at = excluded.revoked_at,
+                    reason = excluded.reason
+                """,
+                (fingerprint, agent_id, _now(), reason),
+            )
+
+    def is_revoked_fingerprint(self, fingerprint: str) -> bool:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM revoked_certs WHERE fingerprint = ?",
+                (fingerprint,),
+            ).fetchone()
+        return row is not None
 
     def get_host(self, agent_id: str) -> Optional[Dict[str, Any]]:
         with self._conn() as conn:
@@ -175,6 +240,16 @@ class FleetStore:
             ).fetchall()
         return [dict(r) for r in rows]
 
+    def list_all_hosts(self) -> List[Dict[str, Any]]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM hosts
+                ORDER BY (last_seen IS NULL OR last_seen = ''), last_seen DESC, enrolled_at DESC
+                """
+            ).fetchall()
+        return [dict(r) for r in rows]
+
     def enrolled_count(self) -> int:
         with self._conn() as conn:
             row = conn.execute("SELECT COUNT(*) AS n FROM hosts").fetchone()
@@ -186,6 +261,16 @@ class FleetStore:
                 """
                 SELECT COUNT(*) AS n FROM hosts
                 WHERE last_seen IS NOT NULL AND last_seen != ''
+                """
+            ).fetchone()
+        return int(row["n"] if row else 0)
+
+    def revoked_count(self) -> int:
+        with self._conn() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM hosts
+                WHERE revoked_at IS NOT NULL AND revoked_at != ''
                 """
             ).fetchone()
         return int(row["n"] if row else 0)
@@ -214,6 +299,7 @@ class FleetStore:
             conn.execute("DELETE FROM enrollment_tokens")
             conn.execute("DELETE FROM hosts")
             conn.execute("DELETE FROM heartbeat_nonces")
+            conn.execute("DELETE FROM revoked_certs")
 
 
 _store: Optional[FleetStore] = None

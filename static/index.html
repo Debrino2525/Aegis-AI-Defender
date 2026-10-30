@@ -1464,6 +1464,7 @@ select option:checked, select option:hover {
           <div id="fleet-host-counts" style="font-size:13px;font-weight:600">0</div>
         </div>
       </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px" id="fleet-tls-note">HTTPS is off. Set AEGIS_TLS=1 to serve the site CA and require a client certificate on heartbeats.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="btn btn-p btn-sm" type="button" onclick="mintEnrollmentToken()">Mint one-time token</button>
         <span style="font-size:11px;color:var(--text-dim)" id="fleet-token-meta">Tokens expire in 24 hours and are consumed on enroll.</span>
@@ -1474,6 +1475,11 @@ select option:checked, select option:hover {
         <div class="fl" style="margin-top:8px">Enroll command</div>
         <pre id="fleet-enroll-cmd" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap"></pre>
       </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">Enrolled hosts</div></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Revoke stops the current client certificate. Re-enroll mints a replacement token for the same agent id. Assets still lists only hosts that have heartbeated.</div>
+      <div id="fleet-hosts-tbl"><div class="empty"><div class="eh">No enrolled hosts</div></div></div>
     </div>
   </div>
 </div>
@@ -2026,7 +2032,15 @@ async function loadThreat(){
 function fleetStatusColor(status){
   if(status==='online') return 'var(--success)';
   if(status==='stale') return 'var(--medium)';
+  if(status==='revoked') return 'var(--critical)';
   return 'var(--text-dim)';
+}
+function fleetHostActions(h){
+  const id = JSON.stringify(h.agent_id || '');
+  const revoke = h.revoked || h.status==='revoked'
+    ? `<button class="btn btn-g btn-sm" type="button" disabled>Revoked</button>`
+    : `<button class="btn btn-d btn-sm" type="button" onclick='revokeFleetHost(${id})'>Revoke</button>`;
+  return `<span style="display:flex;gap:6px;flex-wrap:wrap">${revoke}<button class="btn btn-g btn-sm" type="button" onclick='reenrollFleetHost(${id})'>Re-enroll</button></span>`;
 }
 async function loadAssets(){
   const wrap=document.getElementById('assets-wrap');
@@ -2063,10 +2077,12 @@ async function loadAssets(){
         <td style="color:var(--text-dim);font-size:11px">${esc(h.last_seen||'—')}</td>
         <td style="color:var(--text-dim)">${h.listen_count!=null?h.listen_count:'—'}</td>
         <td style="color:var(--text-dim)">${h.cpu_percent!=null?h.cpu_percent+'%':'—'}</td>
+        <td>${fleetHostActions(h)}</td>
       </tr>`;
     }).join('');
+    html+=`<div id="assets-reenroll-wrap" style="display:none;margin-bottom:12px" class="card"><div class="ch"><div class="ct">Re-enroll token</div></div><div class="fl">Copy this token now. It is not shown again.</div><input class="fi" id="assets-reenroll-token" readonly spellcheck="false"/><pre id="assets-reenroll-cmd" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap;margin-top:8px"></pre></div>`;
     html+=`<div class="card"><div class="ch"><div class="ct">Enrolled hosts</div></div>
-      <table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>OS</th><th>Addresses</th><th>Status</th><th>Last seen</th><th>Listen</th><th>CPU</th></tr></thead>
+      <table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>OS</th><th>Addresses</th><th>Status</th><th>Last seen</th><th>Listen</th><th>CPU</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
   }
   if(scanned.length){
@@ -4133,11 +4149,22 @@ function loadFleetSettingsFrom(fl){
   const fp = document.getElementById('fleet-ca-fingerprint');
   if (fp) fp.textContent = fl.ca_fingerprint || '—';
   const counts = document.getElementById('fleet-host-counts');
-  if (counts) counts.textContent = `${fl.heartbeated_hosts || 0} with heartbeat · ${fl.enrolled_hosts || 0} enrolled`;
+  if (counts) counts.textContent = `${fl.heartbeated_hosts || 0} with heartbeat · ${fl.enrolled_hosts || 0} enrolled · ${fl.revoked_hosts || 0} revoked`;
   const note = document.getElementById('fleet-env-token-note');
   if (note) note.textContent = fl.has_env_enrollment_token
     ? 'A reusable env token is set. Leave the masked value unchanged to keep it. Prefer one-time tokens for production hosts.'
     : 'Leave blank to keep the stored value. Prefer one-time tokens below for real servers.';
+  const tls = document.getElementById('fleet-tls-note');
+  if (tls) {
+    if (fl.tls_enabled) {
+      tls.textContent = 'HTTPS is on. Heartbeats require a verified client certificate (CERT_REQUIRED on /api/fleet/heartbeat). Enroll still uses the one-time token. Copy ~/.aegis/ca/ca.crt onto the host and pass --ca when the server cert is the site CA.';
+    } else if (fl.tls_proxy) {
+      tls.textContent = 'AEGIS_TLS_PROXY is on. Heartbeats trust a verified nginx client certificate header.';
+    } else {
+      tls.textContent = 'HTTPS is off. Set AEGIS_TLS=1 to serve ~/.aegis/ca/server.crt and require a client certificate on heartbeats.';
+    }
+  }
+  loadFleetHostsTable();
 }
 
 async function loadFleetSettings(){
@@ -4150,24 +4177,95 @@ async function loadFleetSettings(){
   }
 }
 
+function fleetConsoleUrl(){
+  const urlField = document.getElementById('cfg-fleet-console-url');
+  let url = ((urlField && urlField.value) || 'http://127.0.0.1:8000').replace(/\/$/, '');
+  const tlsOn = ((_settingsData.fleet || {}).tls_enabled);
+  if (tlsOn && url.indexOf('http://') === 0) url = 'https://' + url.slice('http://'.length);
+  return url;
+}
+function fleetEnrollCommand(token){
+  const url = fleetConsoleUrl();
+  const tlsOn = ((_settingsData.fleet || {}).tls_enabled);
+  let cmd = 'python -m aegis.agent enroll --url ' + url + ' --token ' + (token || '');
+  if (tlsOn) cmd += ' --ca ~/.aegis/ca/ca.crt';
+  cmd += '\npython -m aegis.agent run';
+  return cmd;
+}
+function showFleetToken(token, metaText){
+  const wrap = document.getElementById('fleet-token-once-wrap');
+  const field = document.getElementById('fleet-token-once');
+  const cmd = document.getElementById('fleet-enroll-cmd');
+  if (wrap) wrap.style.display = 'block';
+  if (field) field.value = token || '';
+  if (cmd) cmd.textContent = fleetEnrollCommand(token);
+  const meta = document.getElementById('fleet-token-meta');
+  if (meta && metaText) meta.textContent = metaText;
+}
 async function mintEnrollmentToken(){
   try {
     const res = await fetch('/api/fleet/tokens', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({label:'settings'})});
     const data = await res.json().catch(function(){ return {}; });
     if (!res.ok) { toast(data.detail || 'Could not mint token', 'err'); return; }
-    const wrap = document.getElementById('fleet-token-once-wrap');
-    const field = document.getElementById('fleet-token-once');
-    const cmd = document.getElementById('fleet-enroll-cmd');
-    const urlField = document.getElementById('cfg-fleet-console-url');
-    const url = ((urlField && urlField.value) || 'http://127.0.0.1:8000').replace(/\/$/, '');
-    if (wrap) wrap.style.display = 'block';
-    if (field) field.value = data.token || '';
-    if (cmd) cmd.textContent = 'python -m aegis.agent enroll --url ' + url + ' --token ' + (data.token || '') + '\npython -m aegis.agent run';
-    const meta = document.getElementById('fleet-token-meta');
-    if (meta) meta.textContent = 'Expires ' + (data.expires_at || 'in 24 hours') + '. Copy it onto the host now.';
+    showFleetToken(data.token, 'Expires ' + (data.expires_at || 'in 24 hours') + '. Copy it onto the host now.');
     toast('One-time enrollment token minted', 'ok');
   } catch (e) {
     toast('Could not mint token', 'err');
+  }
+}
+async function loadFleetHostsTable(){
+  const wrap = document.getElementById('fleet-hosts-tbl');
+  if (!wrap) return;
+  try {
+    const res = await fetch('/api/fleet/hosts?all=1');
+    const data = await res.json().catch(function(){ return {hosts:[]}; });
+    const hosts = data.hosts || [];
+    if (!hosts.length) {
+      wrap.innerHTML = '<div class="empty"><div class="eh">No enrolled hosts</div></div>';
+      return;
+    }
+    const rows = hosts.map(h => `<tr>
+      <td style="font-weight:600">${esc(h.hostname)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(h.agent_id)}</td>
+      <td style="color:${fleetStatusColor(h.status)};font-weight:600">${esc(h.status||'offline')}</td>
+      <td style="color:var(--text-dim);font-size:11px">${esc(h.last_seen||'never')}</td>
+      <td>${fleetHostActions(h)}</td>
+    </tr>`).join('');
+    wrap.innerHTML = `<table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>Status</th><th>Last seen</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = '<div class="empty"><div class="eh">Could not load hosts</div></div>';
+  }
+}
+async function revokeFleetHost(agentId){
+  if (!confirm('Revoke this host? Its client certificate will fail heartbeat until you re-enroll.')) return;
+  try {
+    const res = await fetch('/api/fleet/hosts/' + encodeURIComponent(agentId) + '/revoke', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason:'operator'})});
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) { toast(data.detail || 'Could not revoke host', 'err'); return; }
+    toast('Host revoked. Heartbeats with that certificate will fail.', 'ok');
+    loadAssets();
+    loadFleetSettings();
+  } catch (e) {
+    toast('Could not revoke host', 'err');
+  }
+}
+async function reenrollFleetHost(agentId){
+  try {
+    const res = await fetch('/api/fleet/hosts/' + encodeURIComponent(agentId) + '/reenroll', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) { toast(data.detail || 'Could not mint a re-enroll token', 'err'); return; }
+    showFleetToken(data.token, 'Re-enroll token for ' + (data.hostname || data.agent_id || 'host') + '. Expires ' + (data.expires_at || 'in 24 hours') + '.');
+    toast('Re-enroll token minted. Copy it onto the host now.', 'ok');
+    await loadAssets();
+    const assetsWrap = document.getElementById('assets-reenroll-wrap');
+    const assetsField = document.getElementById('assets-reenroll-token');
+    const assetsCmd = document.getElementById('assets-reenroll-cmd');
+    if (assetsWrap) assetsWrap.style.display = 'block';
+    if (assetsField) assetsField.value = data.token || '';
+    if (assetsCmd) assetsCmd.textContent = fleetEnrollCommand(data.token);
+    loadFleetSettings();
+  } catch (e) {
+    toast('Could not mint a re-enroll token', 'err');
   }
 }
 

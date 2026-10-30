@@ -34,5 +34,6 @@ def all_interfaces_warning(host: str) -> Optional[str]:
         "[AEGIS] WARNING: AEGIS_HOST is "
         f"{host}, so the console listens on all interfaces. "
         "Authentication is required, but anyone who can route to this machine can reach the port. "
-        "Prefer 127.0.0.1 unless you explicitly intend to expose the console."
+        "Prefer 127.0.0.1 unless you explicitly intend to expose the console. "
+        "Set AEGIS_TLS=1 before exposing the port so agents use HTTPS and mTLS."
     )

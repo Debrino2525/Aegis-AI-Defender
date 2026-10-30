@@ -6,6 +6,7 @@ import base64
 import json
 import os
 import secrets
+import signal
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -78,11 +79,45 @@ def save_identity(payload: Dict[str, Any], console_url: str, root: Optional[Path
     return base
 
 
+def _httpx_kwargs(
+    timeout: float,
+    ca_path: Optional[Path] = None,
+    client_paths: Optional[Dict[str, Path]] = None,
+    use_client_cert: bool = False,
+) -> Dict[str, Any]:
+    # httpx 0.28 ignores cert= when verify is a file path. Load both onto one SSLContext.
+    import ssl
+
+    kwargs: Dict[str, Any] = {"timeout": timeout}
+    ctx: Optional[ssl.SSLContext] = None
+    if ca_path is not None and ca_path.is_file():
+        ctx = ssl.create_default_context(cafile=str(ca_path))
+    if use_client_cert and client_paths:
+        cert = client_paths.get("cert")
+        key = client_paths.get("key")
+        if cert is not None and key is not None and cert.is_file() and key.is_file():
+            if ctx is None:
+                ctx = ssl.create_default_context()
+            ctx.load_cert_chain(str(cert), str(key))
+    if ctx is not None:
+        kwargs["verify"] = ctx
+    return kwargs
+
+
+def _ca_hint(exc: BaseException, console_url: str) -> str:
+    return (
+        f"{exc}. If the console uses the site CA for HTTPS, copy "
+        "~/.aegis/ca/ca.crt from the console host and pass --ca PATH "
+        f"(url was {console_url})."
+    )
+
+
 def enroll(
     console_url: str,
     token: str,
     root: Optional[Path] = None,
     timeout: float = 20.0,
+    ca: Optional[str] = None,
 ) -> Dict[str, Any]:
     telemetry = collect_telemetry()
     url = urljoin(console_url.rstrip("/") + "/", "api/fleet/enroll")
@@ -94,8 +129,12 @@ def enroll(
         "arch": telemetry.get("arch") or "",
         "agent_version": telemetry.get("agent_version") or "",
     }
-    with httpx.Client(timeout=timeout) as client:
-        response = client.post(url, json=body)
+    ca_path = Path(ca).expanduser() if ca else None
+    try:
+        with httpx.Client(**_httpx_kwargs(timeout, ca_path=ca_path)) as client:
+            response = client.post(url, json=body)
+    except httpx.RequestError as exc:
+        raise RuntimeError(_ca_hint(exc, console_url)) from exc
     if response.status_code >= 400:
         detail = _detail(response)
         raise RuntimeError(f"Enroll failed ({response.status_code}): {detail}")
@@ -121,16 +160,39 @@ def heartbeat(root: Optional[Path] = None, timeout: float = 20.0) -> Dict[str, A
     }
     path = identity.get("heartbeat_path") or "/api/fleet/heartbeat"
     url = urljoin(identity["console_url"].rstrip("/") + "/", path.lstrip("/"))
-    with httpx.Client(timeout=timeout) as client:
-        response = client.post(url, json=body)
+    paths = identity_paths(root)
+    use_client_cert = str(identity.get("console_url") or "").lower().startswith("https://")
+    try:
+        with httpx.Client(
+            **_httpx_kwargs(
+                timeout,
+                ca_path=paths["ca"],
+                client_paths=paths,
+                use_client_cert=use_client_cert,
+            )
+        ) as client:
+            response = client.post(url, json=body)
+    except httpx.RequestError as exc:
+        raise RuntimeError(_ca_hint(exc, identity.get("console_url") or url)) from exc
     if response.status_code >= 400:
         raise RuntimeError(f"Heartbeat failed ({response.status_code}): {_detail(response)}")
     return response.json()
 
 
 def run_loop(interval: float = 30.0, root: Optional[Path] = None) -> None:
+    stop = {"value": False}
+
+    def _stop(_signum: int, _frame: Any) -> None:
+        stop["value"] = True
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            signal.signal(sig, _stop)
+        except (ValueError, OSError):
+            pass
+
     backoff = 5.0
-    while True:
+    while not stop["value"]:
         started = time.monotonic()
         try:
             result = heartbeat(root=root)
@@ -145,7 +207,9 @@ def run_loop(interval: float = 30.0, root: Optional[Path] = None) -> None:
             print(f"[AEGIS-AGENT] heartbeat error: {exc}", flush=True)
             sleep_for = backoff
             backoff = min(60.0, backoff * 2)
-        time.sleep(sleep_for)
+        deadline = time.monotonic() + sleep_for
+        while not stop["value"] and time.monotonic() < deadline:
+            time.sleep(min(1.0, deadline - time.monotonic()))
 
 
 def _detail(response: httpx.Response) -> str:

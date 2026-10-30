@@ -24,6 +24,11 @@ def main(argv: list[str] | None = None) -> int:
         default=os.getenv("AEGIS_ENROLLMENT_TOKEN", ""),
         help="One-time token from Settings, or AEGIS_ENROLLMENT_TOKEN",
     )
+    enroll_p.add_argument(
+        "--ca",
+        default=os.getenv("AEGIS_SITE_CA", ""),
+        help="Site CA PEM used to verify HTTPS (copy of the console ~/.aegis/ca/ca.crt)",
+    )
 
     sub.add_parser("heartbeat", help="Send one signed heartbeat using ~/.aegis/agent/")
     run_p = sub.add_parser("run", help="Heartbeat loop (default every 30s)")
@@ -35,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
             if not args.token.strip():
                 print("Pass --token or set AEGIS_ENROLLMENT_TOKEN.", file=sys.stderr)
                 return 2
-            result = enroll(args.url, args.token.strip())
+            result = enroll(args.url, args.token.strip(), ca=args.ca.strip() or None)
             paths = identity_paths()
             print(f"Enrolled agent_id={result['agent_id']}")
             print(f"Wrote {paths['cert']}")

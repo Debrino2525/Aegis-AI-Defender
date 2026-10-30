@@ -17,3 +17,9 @@ os.environ["ALERT_SIGNING_KEY"] = "pytest-signing-key-not-the-public-default"
 os.environ.pop("AEGIS_ADMIN_PASSWORD", None)
 os.environ.pop("AEGIS_ALLOW_INSECURE_SIGNING_KEY", None)
 os.environ["AEGIS_HOST"] = "127.0.0.1"
+os.environ.pop("AEGIS_TLS", None)
+os.environ.pop("AEGIS_TLS_PROXY", None)
+os.environ.pop("AEGIS_TLS_CERT_REQS", None)
+os.environ.pop("AEGIS_TLS_CERTFILE", None)
+os.environ.pop("AEGIS_TLS_KEYFILE", None)
+os.environ.pop("AEGIS_TLS_CA_CERTS", None)

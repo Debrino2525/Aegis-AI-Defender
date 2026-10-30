@@ -62,6 +62,14 @@ def cert_fingerprint(cert: x509.Certificate) -> str:
     return "sha256:" + hashlib.sha256(der).hexdigest()
 
 
+def cert_common_name(cert: x509.Certificate) -> str:
+    attrs = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+    if not attrs:
+        return ""
+    value = attrs[0].value
+    return value if isinstance(value, str) else value.decode("utf-8")
+
+
 def heartbeat_canonical(agent_id: str, timestamp: str, nonce: str) -> bytes:
     return f"AEGIS-HEARTBEAT\n{agent_id}\n{timestamp}\n{nonce}".encode("utf-8")
 

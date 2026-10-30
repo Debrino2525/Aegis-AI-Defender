@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from aegis.fleet.service import get_fleet_service
+from aegis.fleet.tls import heartbeat_requires_client_cert, peer_cert_pem_from_request
 
 router = APIRouter()
 
@@ -22,16 +23,20 @@ class EnrollRequest(BaseModel):
 
 
 class HeartbeatRequest(BaseModel):
-    agent_id: str
+    agent_id: str = ""
     timestamp: str
     nonce: str
-    certificate_pem: str
-    signature_b64: str
+    certificate_pem: str = ""
+    signature_b64: str = ""
     telemetry: Optional[Dict[str, Any]] = None
 
 
 class MintTokenRequest(BaseModel):
     label: str = Field(default="", max_length=80)
+
+
+class RevokeRequest(BaseModel):
+    reason: str = Field(default="operator", max_length=80)
 
 
 def _client_ip(request: Request) -> str:
@@ -71,6 +76,8 @@ async def agent_heartbeat(body: HeartbeatRequest, request: Request):
             signature_b64=body.signature_b64,
             telemetry=body.telemetry,
             remote_ip=_client_ip(request),
+            peer_cert_pem=peer_cert_pem_from_request(request),
+            require_tls_client_cert=heartbeat_requires_client_cert(),
         )
     except PermissionError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
@@ -79,8 +86,8 @@ async def agent_heartbeat(body: HeartbeatRequest, request: Request):
 
 
 @router.get("/api/fleet/hosts")
-async def list_fleet_hosts():
-    return get_fleet_service().list_hosts()
+async def list_fleet_hosts(include_all: bool = Query(False, alias="all")):
+    return get_fleet_service().list_hosts(include_never_seen=include_all)
 
 
 @router.get("/api/fleet/status")
@@ -92,3 +99,19 @@ async def fleet_status():
 async def mint_enrollment_token(body: MintTokenRequest = MintTokenRequest()):
     minted = get_fleet_service().mint_token(label=body.label)
     return minted
+
+
+@router.post("/api/fleet/hosts/{agent_id}/revoke")
+async def revoke_host(agent_id: str, body: RevokeRequest = RevokeRequest()):
+    try:
+        return get_fleet_service().revoke(agent_id, reason=body.reason)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Unknown agent_id") from exc
+
+
+@router.post("/api/fleet/hosts/{agent_id}/reenroll")
+async def reenroll_host(agent_id: str):
+    try:
+        return get_fleet_service().reenroll(agent_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Unknown agent_id") from exc

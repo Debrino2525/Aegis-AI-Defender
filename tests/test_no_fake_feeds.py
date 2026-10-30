@@ -19,10 +19,14 @@ def client():
         yield test_client
 
 
-def test_unwired_feeds_have_no_invented_counts(tmp_path):
+def test_unwired_feeds_have_no_invented_counts(tmp_path, monkeypatch):
+    monkeypatch.delenv("THREATFOX_AUTH_KEY", raising=False)
     db = VulnerabilityDatabase(tmp_path / "vdb.sqlite3")
     feeds = {item["id"]: item for item in ThreatFeedSync(db).get_feeds_status()}
-    for feed_id in ("threatfox", "abuseipdb", "alienvault_otx", "virustotal"):
+    assert feeds["threatfox"]["status"] == "NOT_WIRED"
+    assert feeds["threatfox"]["has_key"] is False
+    assert feeds["threatfox"]["record_count"] is None
+    for feed_id in ("abuseipdb", "alienvault_otx", "virustotal"):
         assert feeds[feed_id]["status"] == "NOT_WIRED"
         assert feeds[feed_id]["record_count"] is None
     rendered = repr(feeds)

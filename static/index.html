@@ -1422,7 +1422,7 @@ select option:checked, select option:hover {
   <div class="settings-tab-pane" id="stab-threat" style="display:none">
     <div class="card">
       <div class="ch"><div class="ct">Threat Intelligence Feeds &amp; CVE Enrichment API Keys</div></div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. AbuseIPDB, OTX, and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox syncs the last day of IOCs when an Auth-Key is saved. AbuseIPDB, OTX, and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
       <div class="g2">
         <div>
           <div class="fl">NIST National Vulnerability Database (NVD 2.0) API Key</div>
@@ -1443,6 +1443,11 @@ select option:checked, select option:hover {
           <div class="fl">VirusTotal API Key (Optional)</div>
           <input class="fi" type="password" id="cfg-vt-key" placeholder="Stored only. Lookups are not implemented."/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.virustotal.com/gui/join-us" target="_blank" style="color:var(--accent)">virustotal.com &rarr;</a></div>
+        </div>
+        <div>
+          <div class="fl">Abuse.ch ThreatFox Auth-Key</div>
+          <input class="fi" type="password" id="cfg-threatfox-key" placeholder="Sent as the Auth-Key header" autocomplete="off"/>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Free key at <a href="https://auth.abuse.ch/" target="_blank" style="color:var(--accent)">auth.abuse.ch &rarr;</a>. Sync All Feeds pulls get_iocs for the last day.</div>
         </div>
       </div>
       <div style="margin-top:16px">
@@ -2025,11 +2030,11 @@ async function loadFeedConnectors(){
     const grid=document.getElementById('feed-connectors-grid');
     if(!grid)return;
     grid.innerHTML=feeds.map(f=>{
-      const unwired=f.record_count==null||f.status==='NOT_WIRED'||f.status==='UNAVAILABLE';
+      const unwired=f.status==='NOT_WIRED'||f.status==='UNAVAILABLE';
       const statusLabel=unwired?'NOT WIRED':f.status;
-      const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':'var(--text-dim)';
+      const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':f.status==='CONFIGURED'?'var(--accent)':'var(--text-dim)';
       const statusBg=f.status==='ACTIVE'?'rgba(0,200,150,.08)':f.status==='RATE_LIMITED'?'rgba(255,159,10,.08)':'transparent';
-      const countLabel=unwired?'—':Number(f.record_count).toLocaleString();
+      const countLabel=f.record_count==null?'—':Number(f.record_count).toLocaleString();
       return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px">`
         +`<div style="display:flex;justify-content:space-between;align-items:center">`
         +`<span style="font-weight:700;font-size:13px;color:var(--text)">${f.name}</span>`
@@ -3922,6 +3927,8 @@ async function loadSettings(){
     document.getElementById('cfg-abuse-key').value = ti.abuseipdb_api_key || '';
     document.getElementById('cfg-otx-key').value = ti.otx_api_key || '';
     document.getElementById('cfg-vt-key').value = ti.virustotal_api_key || '';
+    const threatfoxKey = document.getElementById('cfg-threatfox-key');
+    if (threatfoxKey) threatfoxKey.value = ti.threatfox_auth_key || '';
     const geoPath = document.getElementById('cfg-geoip-path');
     if (geoPath) geoPath.value = ti.geoip_db_path || '';
 
@@ -3964,6 +3971,7 @@ async function saveCurrentSettingsTab(){
       abuseipdb_api_key: document.getElementById('cfg-abuse-key').value.trim(),
       otx_api_key: document.getElementById('cfg-otx-key').value.trim(),
       virustotal_api_key: document.getElementById('cfg-vt-key').value.trim(),
+      threatfox_auth_key: (document.getElementById('cfg-threatfox-key').value || '').trim(),
       geoip_db_path: (document.getElementById('cfg-geoip-path').value || '').trim()
     },
     alerting: {

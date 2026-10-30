@@ -56,7 +56,7 @@ Aegis AI is an enterprise-grade cyber defense and vulnerability management platf
 - **CISA KEV Catalog**: Authoritative exploited vulnerabilities list.
 - **NIST NVD 2.0 API**: CVE scoring and CVSS v3.1 vectors.
 - **FIRST.org EPSS**: Machine-learning exploit prediction scoring.
-- **Abuse.ch ThreatFox**: Malware C2 and payload indicators.
+- **Abuse.ch ThreatFox**: Last-day malware IOC snapshot when `THREATFOX_AUTH_KEY` is set. The key is sent as the `Auth-Key` header. The card count is the size of that response.
 - **AbuseIPDB**: Crowdsourced malicious IP reputation checks.
 - **AlienVault OTX**: Threat pulses and adversary infrastructure tracking.
 
@@ -127,7 +127,7 @@ What this build actually enforces:
 - `GET /api/settings` masks API keys, client secrets, bot tokens, webhook URLs, the canary URL, and the signing key. Saving the masked preview back does not overwrite the stored secret.
 - Scan reports, behavioral monitor alerts, and incident containment notes are stored in `~/.aegis/history.sqlite3` and are loaded again after a restart. Critical alert routing was already stored in `~/.aegis/alert_queue.sqlite3`. A scan that was still running when the process died is marked `interrupted`.
 
-Still true, and not fixed here: there are no user accounts, RBAC, or SSO. Host containment is Windows-oriented (`netsh`, process kill). Several threat-intel cards (ThreatFox, OTX, AbuseIPDB, VirusTotal) record whether a key is present; they do not perform live lookups. Do not bind this process on a public interface.
+Still true, and not fixed here: there are no user accounts, RBAC, or SSO. Host containment is Windows-oriented (`netsh`, process kill). OTX, AbuseIPDB, and VirusTotal cards record whether a key is present; they do not perform live lookups. ThreatFox does sync when `THREATFOX_AUTH_KEY` is set. Do not bind this process on a public interface.
 
 ---
 

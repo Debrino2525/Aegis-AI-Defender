@@ -10,6 +10,7 @@ THREAT_INTEL_SECRETS = {
     "abuseipdb_api_key": "ABUSEIPDB_API_KEY",
     "otx_api_key": "OTX_API_KEY",
     "virustotal_api_key": "VIRUSTOTAL_API_KEY",
+    "threatfox_auth_key": "THREATFOX_AUTH_KEY",
 }
 
 ALERTING_SECRETS = {

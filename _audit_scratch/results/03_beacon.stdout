@@ -1,0 +1,101 @@
+{
+  "bind_ip": "172.30.0.2",
+  "loopback_skipped_by_monitor": true,
+  "real_sample_path": {
+    "bind_ip": "172.30.0.2",
+    "port": 8080,
+    "n_samples": 6,
+    "sleep_s": 5.0,
+    "sample_durations_s": [
+      0.0631078000000116,
+      0.004739925000023959,
+      0.004548985999974775,
+      0.005433496000023297,
+      0.004491399000016827,
+      0.0048276630000145815
+    ],
+    "matching_history": [
+      {
+        "key": [
+          "172.30.0.2",
+          "172.30.0.2",
+          8080
+        ],
+        "n_timestamps": 6,
+        "timestamps": [
+          1793400844.0746067,
+          1793400849.1420624,
+          1793400854.151902,
+          1793400859.1626627,
+          1793400864.172646,
+          1793400869.1825557
+        ],
+        "intervals": [
+          5.067455768585205,
+          5.0098395347595215,
+          5.01076078414917,
+          5.00998330116272,
+          5.009909629821777
+        ]
+      }
+    ],
+    "beh002_alerts": [
+      {
+        "id": "ALT-0002",
+        "pattern_id": "AEGIS-BEH-002",
+        "severity": "CRITICAL",
+        "title": "C2 Beaconing Detected: 172.30.0.2 \u2192 34.225.159.174",
+        "evidence": "Interval: 5.0s \u00b1 0.0s over 4 connections | Key: ('172.30.0.2', '34.225.159.174', 443)",
+        "dest_ip": "34.225.159.174",
+        "dest_port": 443
+      }
+    ],
+    "all_alert_pattern_ids": [
+      "AEGIS-BEH-001",
+      "AEGIS-BEH-002"
+    ],
+    "n_current_connections_last_sample": 19
+  },
+  "real_sample_error": null,
+  "injected_exact_5s": {
+    "method": "inject timestamps every 5.0s then call _check_beaconing",
+    "n_timestamps": 6,
+    "intervals": [
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0
+    ],
+    "avg_interval": 5.0,
+    "stddev": 0.0,
+    "condition_stddev_lt_5": true,
+    "condition_5_lt_avg_lt_300": false,
+    "would_emit": false,
+    "alerts": []
+  },
+  "boundary_avg_exactly_5": {
+    "avg_interval": 5.0,
+    "strict_gt_5": false,
+    "emitted": false
+  },
+  "real_sleep_5s_timestamps": {
+    "wall_s": 25.0246524810791,
+    "intervals": [
+      5.005463123321533,
+      5.003056764602661,
+      5.005340576171875,
+      5.005254507064819,
+      5.00532341003418
+    ],
+    "avg_interval": 5.004887676239013,
+    "stddev": 0.0009179241699735565,
+    "emitted": true,
+    "alert_titles": [
+      "C2 Beaconing Detected: 10.0.0.1 \u2192 9.9.9.9"
+    ],
+    "evidence": [
+      "Interval: 5.0s \u00b1 0.0s over 6 connections | Key: ('10.0.0.1', '9.9.9.9', 443)"
+    ]
+  }
+}

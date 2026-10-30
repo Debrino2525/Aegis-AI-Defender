@@ -1,0 +1,593 @@
+{
+  "temp_db": "/tmp/aegis-audit-vdb-_kokvt7g/vdb.sqlite3",
+  "seed_row_count": 7,
+  "seed_ids": [
+    "CVE-2021-41773",
+    "CVE-2021-42013",
+    "CVE-2024-6387",
+    "CVE-2023-38408",
+    "CVE-2022-22965",
+    "CVE-2021-23017",
+    "CVE-2015-3306"
+  ],
+  "rows_by_vendor": {
+    "apache": 2,
+    "openbsd": 2,
+    "vmware": 1,
+    "f5": 1,
+    "proftpd": 1
+  },
+  "rows_by_product": {
+    "http_server": 2,
+    "openssh": 2,
+    "spring_framework": 1,
+    "nginx": 1,
+    "proftpd": 1
+  },
+  "rows_by_vendor_product": {
+    "apache/http_server": [
+      "CVE-2021-41773",
+      "CVE-2021-42013"
+    ],
+    "openbsd/openssh": [
+      "CVE-2024-6387",
+      "CVE-2023-38408"
+    ],
+    "vmware/spring_framework": [
+      "CVE-2022-22965"
+    ],
+    "f5/nginx": [
+      "CVE-2021-23017"
+    ],
+    "proftpd/proftpd": [
+      "CVE-2015-3306"
+    ]
+  },
+  "seed_cve_literals_in_source": 7,
+  "cpe_lookup_entry_count": 65,
+  "cpe_lookup_unique_vendor_product": [
+    [
+      "apache",
+      "http_server"
+    ],
+    [
+      "apache",
+      "tomcat"
+    ],
+    [
+      "caddy",
+      "caddy"
+    ],
+    [
+      "docker",
+      "docker"
+    ],
+    [
+      "dovecot",
+      "dovecot"
+    ],
+    [
+      "drupal",
+      "drupal"
+    ],
+    [
+      "eclipse",
+      "jetty"
+    ],
+    [
+      "elastic",
+      "elasticsearch"
+    ],
+    [
+      "elastic",
+      "kibana"
+    ],
+    [
+      "elastic",
+      "logstash"
+    ],
+    [
+      "envoyproxy",
+      "envoy"
+    ],
+    [
+      "exim",
+      "exim"
+    ],
+    [
+      "expressjs",
+      "express"
+    ],
+    [
+      "f5",
+      "nginx"
+    ],
+    [
+      "golang",
+      "go"
+    ],
+    [
+      "haproxy",
+      "haproxy"
+    ],
+    [
+      "isc",
+      "bind"
+    ],
+    [
+      "joomla",
+      "joomla"
+    ],
+    [
+      "kubernetes",
+      "kubernetes"
+    ],
+    [
+      "lighttpd",
+      "lighttpd"
+    ],
+    [
+      "mariadb",
+      "mariadb"
+    ],
+    [
+      "microsoft",
+      "internet_information_services"
+    ],
+    [
+      "mongodb",
+      "mongodb"
+    ],
+    [
+      "nodejs",
+      "nodejs"
+    ],
+    [
+      "openbsd",
+      "libressl"
+    ],
+    [
+      "openbsd",
+      "openssh"
+    ],
+    [
+      "openssl",
+      "openssl"
+    ],
+    [
+      "oracle",
+      "java_se"
+    ],
+    [
+      "oracle",
+      "mysql"
+    ],
+    [
+      "oracle",
+      "openjdk"
+    ],
+    [
+      "perl",
+      "perl"
+    ],
+    [
+      "php",
+      "php"
+    ],
+    [
+      "postfix",
+      "postfix"
+    ],
+    [
+      "postgresql",
+      "postgresql"
+    ],
+    [
+      "powerdns",
+      "powerdns"
+    ],
+    [
+      "proftpd",
+      "proftpd"
+    ],
+    [
+      "pureftpd",
+      "pure-ftpd"
+    ],
+    [
+      "python",
+      "python"
+    ],
+    [
+      "rabbitmq",
+      "rabbitmq"
+    ],
+    [
+      "redis",
+      "redis"
+    ],
+    [
+      "ruby",
+      "ruby"
+    ],
+    [
+      "samba",
+      "samba"
+    ],
+    [
+      "sendmail",
+      "sendmail"
+    ],
+    [
+      "squid-cache",
+      "squid"
+    ],
+    [
+      "traefik",
+      "traefik"
+    ],
+    [
+      "varnish-cache",
+      "varnish_cache"
+    ],
+    [
+      "vmware",
+      "spring_boot"
+    ],
+    [
+      "vmware",
+      "spring_framework"
+    ],
+    [
+      "vsftpd_project",
+      "vsftpd"
+    ],
+    [
+      "wordpress",
+      "wordpress"
+    ]
+  ],
+  "cpe_lookup_pairs_with_zero_seed_rows": [
+    {
+      "vendor": "apache",
+      "product": "tomcat",
+      "keys": [
+        "tomcat"
+      ]
+    },
+    {
+      "vendor": "caddy",
+      "product": "caddy",
+      "keys": [
+        "caddy"
+      ]
+    },
+    {
+      "vendor": "docker",
+      "product": "docker",
+      "keys": [
+        "docker"
+      ]
+    },
+    {
+      "vendor": "dovecot",
+      "product": "dovecot",
+      "keys": [
+        "dovecot"
+      ]
+    },
+    {
+      "vendor": "drupal",
+      "product": "drupal",
+      "keys": [
+        "drupal"
+      ]
+    },
+    {
+      "vendor": "eclipse",
+      "product": "jetty",
+      "keys": [
+        "jetty"
+      ]
+    },
+    {
+      "vendor": "elastic",
+      "product": "elasticsearch",
+      "keys": [
+        "elasticsearch"
+      ]
+    },
+    {
+      "vendor": "elastic",
+      "product": "kibana",
+      "keys": [
+        "kibana"
+      ]
+    },
+    {
+      "vendor": "elastic",
+      "product": "logstash",
+      "keys": [
+        "logstash"
+      ]
+    },
+    {
+      "vendor": "envoyproxy",
+      "product": "envoy",
+      "keys": [
+        "envoy"
+      ]
+    },
+    {
+      "vendor": "exim",
+      "product": "exim",
+      "keys": [
+        "exim"
+      ]
+    },
+    {
+      "vendor": "expressjs",
+      "product": "express",
+      "keys": [
+        "express"
+      ]
+    },
+    {
+      "vendor": "golang",
+      "product": "go",
+      "keys": [
+        "go",
+        "golang"
+      ]
+    },
+    {
+      "vendor": "haproxy",
+      "product": "haproxy",
+      "keys": [
+        "haproxy"
+      ]
+    },
+    {
+      "vendor": "isc",
+      "product": "bind",
+      "keys": [
+        "bind",
+        "named"
+      ]
+    },
+    {
+      "vendor": "joomla",
+      "product": "joomla",
+      "keys": [
+        "joomla"
+      ]
+    },
+    {
+      "vendor": "kubernetes",
+      "product": "kubernetes",
+      "keys": [
+        "k8s",
+        "kubernetes"
+      ]
+    },
+    {
+      "vendor": "lighttpd",
+      "product": "lighttpd",
+      "keys": [
+        "lighttpd"
+      ]
+    },
+    {
+      "vendor": "mariadb",
+      "product": "mariadb",
+      "keys": [
+        "mariadb"
+      ]
+    },
+    {
+      "vendor": "microsoft",
+      "product": "internet_information_services",
+      "keys": [
+        "iis",
+        "microsoft-iis"
+      ]
+    },
+    {
+      "vendor": "mongodb",
+      "product": "mongodb",
+      "keys": [
+        "mongo",
+        "mongodb"
+      ]
+    },
+    {
+      "vendor": "nodejs",
+      "product": "nodejs",
+      "keys": [
+        "node.js",
+        "nodejs"
+      ]
+    },
+    {
+      "vendor": "openbsd",
+      "product": "libressl",
+      "keys": [
+        "libressl"
+      ]
+    },
+    {
+      "vendor": "openssl",
+      "product": "openssl",
+      "keys": [
+        "openssl"
+      ]
+    },
+    {
+      "vendor": "oracle",
+      "product": "java_se",
+      "keys": [
+        "java",
+        "jdk",
+        "jre"
+      ]
+    },
+    {
+      "vendor": "oracle",
+      "product": "mysql",
+      "keys": [
+        "mysql"
+      ]
+    },
+    {
+      "vendor": "oracle",
+      "product": "openjdk",
+      "keys": [
+        "openjdk"
+      ]
+    },
+    {
+      "vendor": "perl",
+      "product": "perl",
+      "keys": [
+        "perl"
+      ]
+    },
+    {
+      "vendor": "php",
+      "product": "php",
+      "keys": [
+        "php"
+      ]
+    },
+    {
+      "vendor": "postfix",
+      "product": "postfix",
+      "keys": [
+        "postfix"
+      ]
+    },
+    {
+      "vendor": "postgresql",
+      "product": "postgresql",
+      "keys": [
+        "postgres",
+        "postgresql"
+      ]
+    },
+    {
+      "vendor": "powerdns",
+      "product": "powerdns",
+      "keys": [
+        "pdns",
+        "powerdns"
+      ]
+    },
+    {
+      "vendor": "pureftpd",
+      "product": "pure-ftpd",
+      "keys": [
+        "pure-ftpd"
+      ]
+    },
+    {
+      "vendor": "python",
+      "product": "python",
+      "keys": [
+        "python"
+      ]
+    },
+    {
+      "vendor": "rabbitmq",
+      "product": "rabbitmq",
+      "keys": [
+        "rabbit",
+        "rabbitmq"
+      ]
+    },
+    {
+      "vendor": "redis",
+      "product": "redis",
+      "keys": [
+        "redis"
+      ]
+    },
+    {
+      "vendor": "ruby",
+      "product": "ruby",
+      "keys": [
+        "ruby"
+      ]
+    },
+    {
+      "vendor": "samba",
+      "product": "samba",
+      "keys": [
+        "samba"
+      ]
+    },
+    {
+      "vendor": "sendmail",
+      "product": "sendmail",
+      "keys": [
+        "sendmail"
+      ]
+    },
+    {
+      "vendor": "squid-cache",
+      "product": "squid",
+      "keys": [
+        "squid"
+      ]
+    },
+    {
+      "vendor": "traefik",
+      "product": "traefik",
+      "keys": [
+        "traefik"
+      ]
+    },
+    {
+      "vendor": "varnish-cache",
+      "product": "varnish_cache",
+      "keys": [
+        "varnish"
+      ]
+    },
+    {
+      "vendor": "vmware",
+      "product": "spring_boot",
+      "keys": [
+        "spring boot"
+      ]
+    },
+    {
+      "vendor": "vsftpd_project",
+      "product": "vsftpd",
+      "keys": [
+        "vsftpd"
+      ]
+    },
+    {
+      "vendor": "wordpress",
+      "product": "wordpress",
+      "keys": [
+        "wordpress"
+      ]
+    }
+  ],
+  "n_cpe_pairs_with_zero_rows": 45,
+  "sync_all_calls": [
+    "sync_cisa_kev",
+    "sync_epss_scores",
+    "sync_nvd_recent",
+    "sync_nvd_by_keywords"
+  ],
+  "threatfox_url_defined": true,
+  "threatfox_called_in_sync_all": false,
+  "abuseipdb_url_defined": true,
+  "extract_cpe_uses_versionStartIncluding": false,
+  "extract_cpe_uses_versionEndExcluding": false,
+  "extract_cpe_uses_cpe23Uri": true,
+  "extract_cpe_sets_min_max_to_same_version_component": true,
+  "hardcoded_threatfox_record_count": 1250
+}

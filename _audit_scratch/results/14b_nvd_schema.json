@@ -1,0 +1,18 @@
+{
+  "id": "CVE-1999-0661",
+  "cve_keys": [
+    "id",
+    "sourceIdentifier",
+    "published",
+    "lastModified",
+    "vulnStatus",
+    "cveTags",
+    "descriptions",
+    "affected",
+    "metrics",
+    "weaknesses",
+    "references"
+  ],
+  "configurations": null,
+  "has_configurations": false
+}

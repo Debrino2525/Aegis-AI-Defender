@@ -1,0 +1,61 @@
+{
+  "n_snapshots": 21,
+  "n_alerts": 8,
+  "alerts_per_minute": 0.8,
+  "growth": {
+    "rss_first": 33075200,
+    "rss_last": 48611328,
+    "conn_history_first": 0,
+    "conn_history_last": 31,
+    "alerts_first": 0,
+    "alerts_last": 8,
+    "seen_alert_keys_first": 0,
+    "seen_alert_keys_last": 0,
+    "graph_nodes_first": 0,
+    "graph_nodes_last": 10,
+    "graph_edges_first": 0,
+    "graph_edges_last": 9
+  },
+  "alert_titles": [
+    [
+      "AEGIS-BEH-001",
+      "HIGH",
+      "Port Scan Detected from ::ffff:172.30.0.2"
+    ],
+    [
+      "AEGIS-BEH-002",
+      "CRITICAL",
+      "C2 Beaconing Detected: 172.30.0.2 \u2192 34.225.159.174"
+    ],
+    [
+      "AEGIS-BEH-002",
+      "CRITICAL",
+      "C2 Beaconing Detected: 172.30.0.2 \u2192 172.65.90.24"
+    ],
+    [
+      "AEGIS-BEH-002",
+      "CRITICAL",
+      "C2 Beaconing Detected: 172.30.0.2 \u2192 172.65.90.26"
+    ],
+    [
+      "AEGIS-BEH-002",
+      "CRITICAL",
+      "C2 Beaconing Detected: 172.30.0.2 \u2192 20.209.35.129"
+    ],
+    [
+      "AEGIS-BEH-002",
+      "CRITICAL",
+      "C2 Beaconing Detected: 172.30.0.2 \u2192 3.92.129.183"
+    ],
+    [
+      "AEGIS-BEH-002",
+      "CRITICAL",
+      "C2 Beaconing Detected: 172.30.0.2 \u2192 34.225.159.174"
+    ],
+    [
+      "AEGIS-BEH-002",
+      "CRITICAL",
+      "C2 Beaconing Detected: 172.30.0.2 \u2192 3.92.129.183"
+    ]
+  ]
+}

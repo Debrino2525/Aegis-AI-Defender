@@ -1,0 +1,139 @@
+[
+  {
+    "id": "CVE-2006-4339",
+    "keys": [
+      "id",
+      "sourceIdentifier",
+      "published",
+      "lastModified",
+      "vulnStatus",
+      "cveTags",
+      "descriptions",
+      "affected",
+      "metrics",
+      "weaknesses",
+      "configurations",
+      "references",
+      "vendorComments"
+    ],
+    "has_configurations": true,
+    "n_configurations": 1,
+    "has_affected": true,
+    "affected_trim": "[{'source': 'secalert@redhat.com', 'affectedData': [{'vendor': 'Red Hat', 'product': 'Red Hat Enterprise Linux 3', 'defaultStatus': 'affected', 'collectionURL': 'https://access.redhat.com/downloads/co",
+    "first_cpeMatch": {
+      "vulnerable": true,
+      "criteria": "cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*",
+      "versionEndIncluding": "0.9.7",
+      "matchCriteriaId": "118A4D99-B8CC-4276-BB72-4C384B16585D"
+    }
+  },
+  {
+    "id": "CVE-2023-0758",
+    "keys": [
+      "id",
+      "sourceIdentifier",
+      "published",
+      "lastModified",
+      "vulnStatus",
+      "cveTags",
+      "descriptions",
+      "affected",
+      "metrics",
+      "weaknesses",
+      "configurations",
+      "references"
+    ],
+    "has_configurations": true,
+    "n_configurations": 1,
+    "has_affected": true,
+    "affected_trim": "[{'source': 'cna@vuldb.com', 'affectedData': [{'vendor': 'glorylion', 'product': 'JFinalOA', 'versions': [{'version': '1.0.2', 'status': 'affected'}]}]}]",
+    "first_cpeMatch": {
+      "vulnerable": true,
+      "criteria": "cpe:2.3:a:jfinaloa_project:jfinaloa:1.0.2:*:*:*:*:*:*:*",
+      "matchCriteriaId": "6E604DC3-94EB-421A-8396-7BF9027A8372"
+    }
+  },
+  {
+    "id": "CVE-2023-0745",
+    "keys": [
+      "id",
+      "sourceIdentifier",
+      "published",
+      "lastModified",
+      "vulnStatus",
+      "cveTags",
+      "descriptions",
+      "affected",
+      "metrics",
+      "weaknesses",
+      "configurations",
+      "references"
+    ],
+    "has_configurations": true,
+    "n_configurations": 1,
+    "has_affected": true,
+    "affected_trim": "[{'source': 'security@yugabyte.com', 'affectedData': [{'vendor': 'YugabyteDB', 'product': 'YugabyteDB Anywhere', 'defaultStatus': 'unaffected', 'platforms': ['Linux', 'Docker', 'Kubernetes'], 'version",
+    "first_cpeMatch": {
+      "vulnerable": true,
+      "criteria": "cpe:2.3:a:yugabyte:yugabytedb_managed:*:*:*:*:*:*:*:*",
+      "versionStartIncluding": "2.0",
+      "versionEndIncluding": "2.13",
+      "matchCriteriaId": "6DEE1FF6-1847-4B84-ABB4-51DC13A43FAA"
+    }
+  },
+  {
+    "id": "CVE-2023-24482",
+    "keys": [
+      "id",
+      "sourceIdentifier",
+      "published",
+      "lastModified",
+      "vulnStatus",
+      "cveTags",
+      "descriptions",
+      "affected",
+      "metrics",
+      "weaknesses",
+      "configurations",
+      "references"
+    ],
+    "has_configurations": true,
+    "n_configurations": 1,
+    "has_affected": true,
+    "affected_trim": "[{'source': 'productcert@siemens.com', 'affectedData': [{'vendor': 'Siemens', 'product': 'COMOS V10.2', 'defaultStatus': 'unknown', 'versions': [{'version': 'All versions', 'status': 'affected'}]}, {'",
+    "first_cpeMatch": {
+      "vulnerable": true,
+      "criteria": "cpe:2.3:a:siemens:comos:*:*:*:*:*:*:*:*",
+      "versionStartIncluding": "10.2",
+      "versionEndExcluding": "10.3.3.1.45",
+      "matchCriteriaId": "5EE12A9C-F1CC-4E67-A3FF-DBEEDBD4FF87"
+    }
+  },
+  {
+    "id": "CVE-2023-23080",
+    "keys": [
+      "id",
+      "sourceIdentifier",
+      "published",
+      "lastModified",
+      "vulnStatus",
+      "cveTags",
+      "descriptions",
+      "affected",
+      "metrics",
+      "weaknesses",
+      "configurations",
+      "references"
+    ],
+    "has_configurations": true,
+    "n_configurations": 5,
+    "has_affected": true,
+    "affected_trim": "[{'source': 'cve@mitre.org', 'affectedData': [{'vendor': 'n/a', 'product': 'n/a', 'versions': [{'version': 'n/a', 'status': 'affected'}]}]}]",
+    "first_cpeMatch": {
+      "vulnerable": true,
+      "criteria": "cpe:2.3:o:tenda:it7-lcs_firmware:*:*:*:*:*:*:*:*",
+      "versionEndIncluding": "2209020914",
+      "matchCriteriaId": "8E5742BF-D47F-4DA5-9BCC-F0D52DCDE006"
+    }
+  }
+]

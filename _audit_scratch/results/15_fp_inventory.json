@@ -1,0 +1,140 @@
+{
+  "literal_product_strings": [
+    "bind",
+    "exim",
+    "mariadb",
+    "microsoft_ftp",
+    "microsoft_smtp",
+    "mongodb",
+    "openssh",
+    "postfix",
+    "postgresql",
+    "proftpd",
+    "pure-ftpd",
+    "redis",
+    "sendmail",
+    "vsftpd"
+  ],
+  "literal_service_name_strings": [
+    "dns",
+    "ftp",
+    "mongodb",
+    "mysql",
+    "postgresql",
+    "redis",
+    "smtp",
+    "ssh"
+  ],
+  "default_port_map_without_banner": {
+    "21": [
+      "ftp",
+      "ftp"
+    ],
+    "22": [
+      "ssh",
+      "ssh"
+    ],
+    "23": [
+      "telnet",
+      "telnet"
+    ],
+    "25": [
+      "smtp",
+      "smtp"
+    ],
+    "53": [
+      "dns",
+      "dns"
+    ],
+    "80": [
+      "http",
+      "http"
+    ],
+    "443": [
+      "https",
+      "https"
+    ],
+    "445": [
+      "smb",
+      "smb"
+    ],
+    "1433": [
+      "mssql",
+      "microsoft_sql_server"
+    ],
+    "1521": [
+      "oracle",
+      "oracle_database"
+    ],
+    "3306": [
+      "mysql",
+      "mysql"
+    ],
+    "3389": [
+      "rdp",
+      "ms-wbt-server"
+    ],
+    "5432": [
+      "postgresql",
+      "postgresql"
+    ],
+    "6379": [
+      "redis",
+      "redis"
+    ],
+    "27017": [
+      "mongodb",
+      "mongodb"
+    ]
+  },
+  "port_gated_probes": {
+    "22": "ssh/_probe_ssh -> openssh",
+    "21": "ftp/_probe_ftp -> vsftpd|proftpd|pure-ftpd|microsoft_ftp",
+    "25/587/465": "smtp/_probe_smtp -> postfix|exim|sendmail|microsoft_smtp",
+    "53": "dns/_probe_dns -> bind",
+    "3306": "mysql/_probe_mysql -> mysql|mariadb",
+    "5432": "postgresql/_probe_postgresql -> postgresql",
+    "6379": "redis/_probe_redis -> redis",
+    "27017": "mongodb/_probe_mongodb -> mongodb",
+    "80,443,8000,8080,8443,8888,3000,5000,9000 or TLS": "http/_probe_http -> _parse_http_server"
+  },
+  "banner_regex_products": [
+    "openssh (SSH-...-OpenSSH_VER)",
+    "vsftpd/proftpd (FTP banner; pure-ftpd banner is mislabeled proftpd)",
+    "redis",
+    "mysql/mariadb"
+  ],
+  "http_open_ended": "_parse_http_server returns match.group(1).lower() from Name/version, else first token lowercased \u2014 open-ended, not a fixed catalog",
+  "count_literal_products": 14,
+  "count_default_map_products": 15,
+  "union_identifiable_closed_set": [
+    "bind",
+    "dns",
+    "exim",
+    "ftp",
+    "http",
+    "https",
+    "mariadb",
+    "microsoft_ftp",
+    "microsoft_smtp",
+    "microsoft_sql_server",
+    "mongodb",
+    "ms-wbt-server",
+    "mysql",
+    "openssh",
+    "oracle_database",
+    "postfix",
+    "postgresql",
+    "proftpd",
+    "pure-ftpd",
+    "redis",
+    "sendmail",
+    "smb",
+    "smtp",
+    "ssh",
+    "telnet",
+    "unknown",
+    "vsftpd"
+  ],
+  "count_union_closed_set": 27
+}

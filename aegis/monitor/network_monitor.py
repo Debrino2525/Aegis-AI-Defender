@@ -17,6 +17,7 @@ import httpx
 from urllib.parse import urlparse
 
 from aegis.monitor.behavioral_engine import BehavioralEngine
+from aegis.monitor.geoip import collect_monitor_ips, geoip_snapshot
 from aegis.monitor.threat_patterns import (
     MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS,
     is_routine_web_edge_traffic,
@@ -792,7 +793,8 @@ class NetworkMonitor:
                 "MEDIUM": sum(1 for a in self.alerts if a["severity"] == "MEDIUM"),
                 "LOW": sum(1 for a in self.alerts if a["severity"] == "LOW"),
                 "unacknowledged": sum(1 for a in self.alerts if not a["acknowledged"]),
-            }
+            },
+            "geoip": geoip_snapshot(collect_monitor_ips(self.current_connections, active_nodes)),
         }
 
     def acknowledge_alert(self, alert_id: str) -> bool:

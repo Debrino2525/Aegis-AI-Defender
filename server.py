@@ -715,6 +715,7 @@ async def get_platform_settings():
             "has_abuseipdb": bool(os.getenv("ABUSEIPDB_API_KEY", "").strip()),
             "has_otx": bool(os.getenv("OTX_API_KEY", "").strip()),
             "has_virustotal": bool(os.getenv("VIRUSTOTAL_API_KEY", "").strip()),
+            "geoip_db_path": os.getenv("GEOIP_DB_PATH", "").strip(),
         }),
         "alerting": _masked_section(ALERTING_SECRETS, {
             "arkesel_sender_id": os.getenv("ARKESEL_SENDER_ID", "AegisAI"),
@@ -757,6 +758,7 @@ async def save_platform_settings(payload: SettingsPayload):
         updates[env_name] = str(section[field]).strip()
 
     _take_secrets(payload.threat_intel, THREAT_INTEL_SECRETS)
+    _take_plain(payload.threat_intel, "geoip_db_path", "GEOIP_DB_PATH")
     _take_secrets(payload.alerting, ALERTING_SECRETS)
     al = payload.alerting
     _take_plain(al, "arkesel_sender_id", "ARKESEL_SENDER_ID")
@@ -787,6 +789,8 @@ async def save_platform_settings(payload: SettingsPayload):
     alert_router.adapter_modem.port = os.getenv("MODEM_SERIAL_PORT", "").strip()
     alert_router.heartbeat.canary_url = os.getenv("CANARY_HEARTBEAT_URL", "").strip()
     alert_router.base_console_url = os.getenv("AEGIS_CONSOLE_URL", "http://localhost:8000").rstrip("/")
+    from aegis.monitor.geoip import reload_geoip
+    reload_geoip()
     return {"ok": True, "message": "Settings successfully saved and reloaded!"}
 
 # ── On-Call Responders & Ownership REST Endpoints ─────────────────────────

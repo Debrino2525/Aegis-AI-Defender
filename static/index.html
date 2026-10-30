@@ -629,6 +629,9 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .geo-note p{margin:0;font-size:14px;line-height:1.55;color:#3c4654}
 .geo-note-k{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a5a00}
 .geo-note .btn{margin-top:16px}
+#tv-map-view:not(.has-points) #tv-world-canvas{display:none}
+#tv-map-view.has-points .geo-note{display:none}
+#tv-map-view.tv-view-layer.active.has-points{display:block;padding:0;background:#12161c!important}
 #tv-graph-view{background:radial-gradient(75% 65% at 50% 50%,#0e1424 0%,#06070b 72%)}
 
 .tv-hero{position:absolute;left:24px;bottom:24px;z-index:20;width:min(560px,calc(100% - 48px));padding:20px 22px;border-radius:20px;
@@ -1130,10 +1133,11 @@ select option:checked, select option:hover {
     <div class="tv-stage-viewport" id="tv-stage-viewport">
       <!-- 1. Global Threat Map Layer -->
       <div id="tv-map-view" class="tv-view-layer">
-        <div class="geo-note">
-          <p class="geo-note-k">Unavailable</p>
-          <h2>GeoIP is not configured</h2>
-          <p>This console does not place hosts on a map and does not invent coordinates. Site topology shows the connections observed on this host.</p>
+        <canvas id="tv-world-canvas"></canvas>
+        <div class="geo-note" id="geo-note">
+          <p class="geo-note-k" id="geo-note-k">Unavailable</p>
+          <h2 id="geo-note-title">GeoIP database is missing</h2>
+          <p id="geo-note-body">Set GEOIP_DB_PATH to a local GeoLite2-City.mmdb file, or save that path under Settings. This console does not invent coordinates. Private addresses stay on site topology.</p>
           <button type="button" class="btn btn-p btn-sm" onclick="switchTvView('graph')">Open site topology</button>
         </div>
       </div>
@@ -1440,6 +1444,11 @@ select option:checked, select option:hover {
           <input class="fi" type="password" id="cfg-vt-key" placeholder="Stored only. Lookups are not implemented."/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.virustotal.com/gui/join-us" target="_blank" style="color:var(--accent)">virustotal.com &rarr;</a></div>
         </div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="fl">GeoLite2 City database path</div>
+        <input class="fi" type="text" id="cfg-geoip-path" placeholder="/var/lib/aegis/GeoLite2-City.mmdb" spellcheck="false" autocomplete="off"/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Local file only. Same value as GEOIP_DB_PATH. Leave blank when GeoLite2-City.mmdb is not installed. A missing file or a private address produces no map point.</div>
       </div>
       <div style="margin-top:16px;display:flex;justify-content:flex-end">
         <button class="btn btn-p btn-sm" onclick="saveThreatKeysOnly()">Save Threat Intel Keys</button>
@@ -2332,6 +2341,8 @@ function updateMonitorUI(data){
 
   // Render Baselines
   renderBaselines(data.baselines || {});
+
+  applyMonitorGeo(data.geoip);
 }
 
 function renderAlertFeed(alerts){
@@ -3658,18 +3669,7 @@ function switchTvView(view) {
       }, 50);
     }
   }
-  if(view === 'map') {
-    // Resize map canvas when returning to map view
-    const mcvs = document.getElementById('tv-world-canvas');
-    if(mcvs) {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = mcvs.parentElement ? mcvs.parentElement.getBoundingClientRect() : mcvs.getBoundingClientRect();
-      if(rect.width && rect.height) {
-        mcvs.width = Math.round(rect.width * dpr);
-        mcvs.height = Math.round(rect.height * dpr);
-      }
-    }
-  }
+  if(view === 'map' && typeof renderGeoMap === 'function') renderGeoMap();
 }
 
 function toggleInspector(show) {
@@ -3790,208 +3790,100 @@ function toggleTvPlay() {}
 
 function jumpTvTime() {}
 
-// ── CINEMATIC WORLD MAP: dot-matrix land, severity-aware arcs, lit beacon ────
-let tvWorldRafId = null;
-let tvLand = null, tvDots = null, tvDotsKey = '';
+// World map plots only coordinates returned by the local GeoIP database.
+let geoPoints = [];
+let geoConfigured = false;
 
-function buildLandMask() {
-  const img = new Image();
-  img.onload = () => {
-    try {
-      const cols = 230, rows = 115;
-      const c = document.createElement('canvas'); c.width = cols; c.height = rows;
-      const x = c.getContext('2d', { willReadFrequently: true });
-      x.drawImage(img, 0, 0, cols, rows);
-      const d = x.getImageData(0, 0, cols, rows).data;
-      const mask = new Uint8Array(cols * rows);
-      for (let i = 0; i < cols * rows; i++) mask[i] = (d[i*4] + d[i*4+1] + d[i*4+2] > 78) ? 1 : 0;
-      tvLand = { cols, rows, mask }; tvDots = null;
-      const el = document.querySelector('#tv-map-view img');
-      if (el) el.style.opacity = '0';
-    } catch (e) { console.warn('Land mask unavailable, using static map', e); }
-  };
-  img.src = '/static/world_map.svg';
-}
-
-function ensureDots(w, h) {
-  if (!tvLand) return null;
-  const key = w + 'x' + h;
-  if (tvDots && tvDotsKey === key) return tvDots;
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const x = c.getContext('2d');
-  const { cols, rows, mask } = tvLand;
-  const sx = w / cols, sy = h / rows, r = Math.max(1, Math.min(sx, sy) * 0.3);
-  x.fillStyle = 'rgba(150,176,235,0.34)';
-  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-    if (mask[j * cols + i]) { x.beginPath(); x.arc((i + .5) * sx, (j + .5) * sy, r, 0, 6.2832); x.fill(); }
-  }
-  tvDots = c; tvDotsKey = key; return c;
-}
-
-function initWorldMapCanvas() {
-  return;
-  const cvs = document.getElementById('tv-world-canvas');
-  if (!cvs) return;
-  function resizeMap() {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = (cvs.parentElement || cvs).getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      cvs.width = Math.round(rect.width * dpr);
-      cvs.height = Math.round(rect.height * dpr);
-    }
-  }
-  resizeMap();
-  window.addEventListener('resize', resizeMap);
-  if (!tvLand) buildLandMask();
-
-  cvs.addEventListener('click', e => {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = cvs.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) * dpr, my = (e.clientY - rect.top) * dpr;
-    const hx = ((-0.187 + 180) / 360) * cvs.width, hy = ((90 - 5.6037) / 180) * cvs.height;
-    if (Math.hypot(mx - hx, my - hy) < 50 * dpr) {
-      const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '';
-      if (!lip) return;
-      selectInspectorHost({ ip: lip, loc: 'This host', score: 'Normal', conns: (simNodes.length || 1) });
-    }
+function applyMonitorGeo(geo) {
+  const payload = geo || {};
+  geoConfigured = !!(payload.configured && payload.database === 'loaded');
+  geoPoints = (Array.isArray(payload.points) ? payload.points : []).filter(function(point) {
+    if (!point) return false;
+    const lat = point.latitude, lon = point.longitude;
+    if (typeof lat !== 'number' || typeof lon !== 'number') return false;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+    if (lat === 0 && lon === 0) return false;
+    return true;
   });
-  if (!tvWorldRafId) tvWorldRafId = requestAnimationFrame(renderWorldMapLoop);
+  renderGeoMap();
 }
 
-// TODO: Replace with server-side GeoIP database lookup from /api/monitor
-// Derives equirectangular coordinates deterministically from real IP address bytes
-function resolveHostGeo(ip, index, total) {
-  return null;
-  if (!ip) return { lon: 0, lat: 20 };
-  const parts = String(ip).split('.').map(p => parseInt(p, 10) || 0);
-  if (parts.length === 4) {
-    const lon = ((parts[0] * 37 + parts[1] * 19 + parts[3]) % 330) - 165;
-    const lat = ((parts[1] * 23 + parts[2] * 29) % 120) - 55;
-    return { lon, lat };
-  }
-  const phi = (index / (total || 1)) * Math.PI * 2;
-  return { lon: Math.cos(phi) * 110, lat: Math.sin(phi) * 45 };
+function resolveHostGeo(ip) {
+  const hit = geoPoints.find(function(point) { return point.ip === ip; });
+  if (!hit) return null;
+  return {
+    lat: hit.latitude,
+    lon: hit.longitude,
+    city: hit.city || '',
+    country: hit.country || ''
+  };
 }
 
-function renderWorldMapLoop() {
-  if (tvWorldRafId) { cancelAnimationFrame(tvWorldRafId); tvWorldRafId = null; }
-  return;
-  tvWorldRafId = requestAnimationFrame(renderWorldMapLoop);
+function renderGeoMap() {
+  const layer = document.getElementById('tv-map-view');
+  const noteK = document.getElementById('geo-note-k');
+  const noteTitle = document.getElementById('geo-note-title');
+  const noteBody = document.getElementById('geo-note-body');
   const cvs = document.getElementById('tv-world-canvas');
-  if (!cvs || document.querySelector('.page.active')?.id !== 'page-monitor' || tvCurrentView !== 'map') return;
-  const ctx = cvs.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = cvs.width, h = cvs.height;
-  if (!w || !h) {
-    const rect = (cvs.parentElement || cvs).getBoundingClientRect();
-    if (rect.width && rect.height) { cvs.width = Math.round(rect.width * dpr); cvs.height = Math.round(rect.height * dpr); }
+  if (!layer) return;
+  const showPoints = geoConfigured && geoPoints.length > 0;
+  layer.classList.toggle('has-points', showPoints);
+  if (!showPoints) {
+    if (noteK) noteK.textContent = geoConfigured ? 'No coordinates' : 'Unavailable';
+    if (noteTitle) noteTitle.textContent = geoConfigured ? 'No public coordinates to plot' : 'GeoIP database is missing';
+    if (noteBody) noteBody.textContent = geoConfigured
+      ? 'The GeoLite2 City database is loaded. None of the public addresses on this host resolved to a location. Private addresses stay on site topology.'
+      : 'Set GEOIP_DB_PATH to a local GeoLite2-City.mmdb file, or save that path under Settings. This console does not invent coordinates. Private addresses stay on site topology.';
     return;
   }
-  const now = Date.now();
+  if (!cvs) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = layer.getBoundingClientRect();
+  if (rect.width && rect.height) {
+    cvs.width = Math.round(rect.width * dpr);
+    cvs.height = Math.round(rect.height * dpr);
+  }
+  const ctx = cvs.getContext('2d');
+  if (!ctx || !cvs.width || !cvs.height) return;
+  const w = cvs.width, h = cvs.height;
   ctx.clearRect(0, 0, w, h);
-
-  // 1 · Dot-matrix land with a slow light sweep that only touches the dots
-  const dots = ensureDots(w, h);
-  if (dots) {
-    ctx.drawImage(dots, 0, 0);
-    const sweep = ((now * 0.00005) % 1.4 - 0.2) * w;
-    const g = ctx.createLinearGradient(sweep - w * 0.14, 0, sweep + w * 0.14, 0);
-    g.addColorStop(0, 'rgba(190,210,255,0)');
-    g.addColorStop(.5, 'rgba(190,210,255,0.55)');
-    g.addColorStop(1, 'rgba(190,210,255,0)');
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#12161c';
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = dpr;
+  ctx.beginPath();
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const x = ((lon + 180) / 360) * w;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
   }
-
-  const hx = ((-0.187 + 180.0) / 360.0) * w;
-  const hy = ((90.0 - 5.6037) / 180.0) * h;
-
-  // 2 · Live endpoints (derived from active socket telemetry)
-  const targets = [];
-  if (simNodes && simNodes.length > 1) {
-    simNodes.filter(n => n.type !== 'local').slice(0, 8).forEach((rn, i) => {
-      const g = resolveHostGeo(rn.id || rn.ip, i, simNodes.length);
-      targets.push({
-        x: ((g.lon + 180) / 360) * w, y: ((90 - g.lat) / 180) * h,
-        label: rn.id, bad: !!rn.suspicious, seed: i * 0.17
-      });
-    });
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const y = ((90 - lat) / 180) * h;
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
   }
-
-  const quad = (p, x0, y0, cx, cy, x1, y1) => {
-    const o = 1 - p;
-    return [o*o*x0 + 2*o*p*cx + p*p*x1, o*o*y0 + 2*o*p*cy + p*p*y1];
-  };
-
-  targets.forEach(t => {
-    const col = t.bad ? '255,77,94' : '154,184,255';
-    const dist = Math.hypot(t.x - hx, t.y - hy);
-    const cx = (hx + t.x) / 2, cy = Math.min(hy, t.y) - dist * 0.28;
-
-    // faint full path
-    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.quadraticCurveTo(cx, cy, t.x, t.y);
-    ctx.strokeStyle = `rgba(${col},0.12)`; ctx.lineWidth = 1 * dpr; ctx.stroke();
-
-    // comet: fading trail + bright head
-    const head = ((now * 0.00035 + t.seed) % 1);
-    const steps = 22, span = 0.22;
-    let prev = quad(Math.max(0, head - span), hx, hy, cx, cy, t.x, t.y);
-    for (let s = 1; s <= steps; s++) {
-      const p = Math.max(0, head - span) + (Math.min(head, 1) - Math.max(0, head - span)) * (s / steps);
-      const pt = quad(p, hx, hy, cx, cy, t.x, t.y);
-      ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(pt[0], pt[1]);
-      ctx.strokeStyle = `rgba(${col},${(s / steps) * 0.85})`;
-      ctx.lineWidth = (0.6 + (s / steps) * 1.6) * dpr; ctx.lineCap = 'round'; ctx.stroke();
-      prev = pt;
-    }
-    const hp = quad(head, hx, hy, cx, cy, t.x, t.y);
-    ctx.beginPath(); ctx.arc(hp[0], hp[1], 2.4 * dpr, 0, 6.2832);
-    ctx.fillStyle = '#fff'; ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = 14 * dpr; ctx.fill(); ctx.shadowBlur = 0;
-
-    // endpoint: core + expanding ring (severity-weighted)
-    const ph = ((now * 0.0006 + t.seed * 3) % 1);
-    ctx.beginPath(); ctx.arc(t.x, t.y, (4 + ph * (t.bad ? 22 : 14)) * dpr, 0, 6.2832);
-    ctx.strokeStyle = `rgba(${col},${(1 - ph) * 0.55})`; ctx.lineWidth = 1.2 * dpr; ctx.stroke();
-    ctx.beginPath(); ctx.arc(t.x, t.y, 3.2 * dpr, 0, 6.2832);
-    ctx.fillStyle = `rgb(${col})`; ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = 10 * dpr; ctx.fill(); ctx.shadowBlur = 0;
-
-    // labels: only for threats, to keep the map clean
-    if (t.bad) {
-      ctx.font = `500 ${Math.round(10.5 * dpr)}px 'JetBrains Mono', monospace`;
-      const tw = ctx.measureText(t.label).width, pw = tw + 16 * dpr, ph2 = 22 * dpr;
-      const px = t.x - pw / 2, py = t.y + 14 * dpr;
-      ctx.fillStyle = 'rgba(14,16,22,0.78)'; ctx.strokeStyle = 'rgba(255,77,94,0.45)'; ctx.lineWidth = 1 * dpr;
-      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px, py, pw, ph2, 11 * dpr) : ctx.rect(px, py, pw, ph2);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ffb3bb'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(t.label, t.x, py + ph2 / 2);
-    }
+  ctx.stroke();
+  geoPoints.forEach(function(point) {
+    const x = ((point.longitude + 180) / 360) * w;
+    const y = ((90 - point.latitude) / 180) * h;
+    ctx.beginPath();
+    ctx.arc(x, y, 5 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = '#c4554a';
+    ctx.fill();
+    const place = [point.city, point.country].filter(Boolean).join(', ');
+    const label = place ? (point.ip + ' · ' + place) : point.ip;
+    ctx.font = Math.round(12 * dpr) + 'px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const pad = 6 * dpr;
+    const tw = ctx.measureText(label).width;
+    const bx = Math.min(Math.max(8 * dpr, x + 10 * dpr), Math.max(8 * dpr, w - tw - pad * 2 - 8 * dpr));
+    const by = Math.min(Math.max(8 * dpr, y - 11 * dpr), h - 28 * dpr);
+    ctx.fillStyle = 'rgba(247,248,250,0.94)';
+    ctx.fillRect(bx, by, tw + pad * 2, 22 * dpr);
+    ctx.fillStyle = '#12161c';
+    ctx.fillText(label, bx + pad, by + 11 * dpr);
   });
-
-  // 3 · Gateway beacon: three staggered sonar rings + glowing core
-  for (let i = 0; i < 3; i++) {
-    const p = ((now * 0.00028) + i / 3) % 1;
-    ctx.beginPath(); ctx.arc(hx, hy, (6 + p * 46) * dpr, 0, 6.2832);
-    ctx.strokeStyle = `rgba(94,234,212,${(1 - p) * 0.5})`; ctx.lineWidth = 1.3 * dpr; ctx.stroke();
-  }
-  const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, 34 * dpr);
-  glow.addColorStop(0, 'rgba(94,234,212,0.45)'); glow.addColorStop(1, 'rgba(94,234,212,0)');
-  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(hx, hy, 34 * dpr, 0, 6.2832); ctx.fill();
-  ctx.beginPath(); ctx.arc(hx, hy, 4.5 * dpr, 0, 6.2832);
-  ctx.fillStyle = '#fff'; ctx.shadowColor = '#5EEAD4'; ctx.shadowBlur = 16 * dpr; ctx.fill(); ctx.shadowBlur = 0;
-
-  const lip = (typeof monLocalIp !== 'undefined' && monLocalIp) ? monLocalIp : '';
-  if (!lip) return;
-  const txt = `This host  ${lip}`;
-  ctx.font = `500 ${Math.round(11 * dpr)}px 'JetBrains Mono', monospace`;
-  const tw = ctx.measureText(txt).width, pw = tw + 22 * dpr, ph3 = 26 * dpr;
-  const px = hx - pw / 2, py = hy + 22 * dpr;
-  ctx.fillStyle = 'rgba(14,16,22,0.72)'; ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 1 * dpr;
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px, py, pw, ph3, 13 * dpr) : ctx.rect(px, py, pw, ph3);
-  ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#eceef3'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(txt, hx, py + ph3 / 2);
 }
 
 // Ensure initTvEngine runs on load
@@ -4030,6 +3922,8 @@ async function loadSettings(){
     document.getElementById('cfg-abuse-key').value = ti.abuseipdb_api_key || '';
     document.getElementById('cfg-otx-key').value = ti.otx_api_key || '';
     document.getElementById('cfg-vt-key').value = ti.virustotal_api_key || '';
+    const geoPath = document.getElementById('cfg-geoip-path');
+    if (geoPath) geoPath.value = ti.geoip_db_path || '';
 
     // Alerting Gateways fields
     document.getElementById('cfg-arkesel-key').value = al.arkesel_api_key || '';
@@ -4069,7 +3963,8 @@ async function saveCurrentSettingsTab(){
       nvd_api_key: document.getElementById('cfg-nvd-key').value.trim(),
       abuseipdb_api_key: document.getElementById('cfg-abuse-key').value.trim(),
       otx_api_key: document.getElementById('cfg-otx-key').value.trim(),
-      virustotal_api_key: document.getElementById('cfg-vt-key').value.trim()
+      virustotal_api_key: document.getElementById('cfg-vt-key').value.trim(),
+      geoip_db_path: (document.getElementById('cfg-geoip-path').value || '').trim()
     },
     alerting: {
       arkesel_api_key: document.getElementById('cfg-arkesel-key').value.trim(),

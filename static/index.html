@@ -817,6 +817,7 @@ select option:checked, select option:hover {
   </button>
   <div class="nav-right">
     <div class="hp">VDB <b id="vdb-st">Local</b></div>
+    <a class="incident-link" href="/investigate">Investigate</a>
     <a class="incident-link" href="/incidents">Incidents</a>
     <button type="button" class="sync-btn" data-theme-toggle onclick="aegisToggleTheme()">Light</button>
     <button class="sync-btn" onclick="triggerUpdate()">Sync</button>
@@ -830,6 +831,7 @@ select option:checked, select option:hover {
 <aside id="sidebar"><div class="rail-inner">
   <div class="sb-item active" onclick="showPage('dashboard')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/></svg></span><span class="lbl">Dashboard</span></div>
   <div class="sb-item" onclick="showPage('monitor')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/><span class="sb-badge" id="sb-alerts" style="display:none">0</span></svg></span><span class="lbl">Live Monitor</span></div>
+  <a class="sb-item" href="/investigate"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/></svg></span><span class="lbl">Investigate</span></a>
   <a class="sb-item" href="/incidents"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg></span><span class="lbl">Incidents</span></a>
   <div class="sb-item" onclick="showPage('scan')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg></span><span class="lbl">New Scan</span></div>
   <div class="sb-sec">Intelligence</div>
@@ -1510,8 +1512,8 @@ window.fetch = function(input, init){
 
 function aegisFollowNext(){
   const next = new URLSearchParams(location.search).get('next');
-  if (next === '/incidents') {
-    location.assign('/incidents');
+  if (next === '/incidents' || next === '/investigate' || (next && next.indexOf('/investigate') === 0)) {
+    location.assign(next);
     return true;
   }
   return false;
@@ -2054,7 +2056,8 @@ function fleetHostActions(h){
   const revoke = h.revoked || h.status==='revoked'
     ? `<button class="btn btn-g btn-sm" type="button" disabled>Revoked</button>`
     : `<button class="btn btn-d btn-sm" type="button" onclick='revokeFleetHost(${id})'>Revoke</button>`;
-  return `<span style="display:flex;gap:6px;flex-wrap:wrap">${revoke}<button class="btn btn-g btn-sm" type="button" onclick='reenrollFleetHost(${id})'>Re-enroll</button></span>`;
+  const investigate = `<a class="btn btn-g btn-sm" href="/investigate?host=${encodeURIComponent(h.agent_id || '')}">Investigate</a>`;
+  return `<span style="display:flex;gap:6px;flex-wrap:wrap">${investigate}${revoke}<button class="btn btn-g btn-sm" type="button" onclick='reenrollFleetHost(${id})'>Re-enroll</button></span>`;
 }
 async function loadAssets(){
   const wrap=document.getElementById('assets-wrap');
@@ -2101,7 +2104,7 @@ async function loadAssets(){
   }
   if(scanned.length){
     const catCards=Object.entries(cats).map(([c,i])=>`<div class="mc tc"><div class="ml">${i.icon} ${c}</div><div class="mv" style="font-size:22px">${i.count}</div><div class="msub">service${i.count!==1?'s':''}</div></div>`).join('');
-    const rows=scanned.map(h=>`<tr onclick="viewScan('${h.scan_id}')"><td style="font-weight:600;color:var(--accent)">${esc(h.host)}</td><td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${(h.open_ports||[]).join(', ')||'—'}</td><td style="color:${h.total_findings>0?'var(--medium)':'var(--success)'}">${h.total_findings}</td><td style="color:var(--critical)">${(h.severity_breakdown||{}).CRITICAL||0}</td><td style="color:var(--high)">${(h.severity_breakdown||{}).HIGH||0}</td><td style="color:var(--text-dim)">${h.duration?h.duration+'s':'—'}</td><td style="color:var(--text-dim);font-size:11px">${h.started_at?h.started_at.split('T')[0]:'—'}</td><td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();viewScan('${h.scan_id}')">View</button></td></tr>`).join('');
+    const rows=scanned.map(h=>`<tr onclick="viewScan('${h.scan_id}')"><td style="font-weight:600;color:var(--accent)">${esc(h.host)}</td><td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${(h.open_ports||[]).join(', ')||'—'}</td><td style="color:${h.total_findings>0?'var(--medium)':'var(--success)'}">${h.total_findings}</td><td style="color:var(--critical)">${(h.severity_breakdown||{}).CRITICAL||0}</td><td style="color:var(--high)">${(h.severity_breakdown||{}).HIGH||0}</td><td style="color:var(--text-dim)">${h.duration?h.duration+'s':'—'}</td><td style="color:var(--text-dim);font-size:11px">${h.started_at?h.started_at.split('T')[0]:'—'}</td><td><a class="btn btn-g btn-sm" href="/investigate?ip=${encodeURIComponent(h.host)}" onclick="event.stopPropagation()">Investigate</a> <button class="btn btn-g btn-sm" onclick="event.stopPropagation();viewScan('${h.scan_id}')">View</button></td></tr>`).join('');
     html+=`<div style="margin-top:20px"><div class="ps" style="margin-bottom:8px">Scan inventory (Prevent) — hosts this console scanned, not the enrolled fleet.</div>
       <div class="g4" style="margin-bottom:16px">${catCards}</div>
       <div class="card"><div class="ch"><div class="ct">Scan inventory</div></div>

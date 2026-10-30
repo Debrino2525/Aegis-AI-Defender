@@ -1,0 +1,66 @@
+/* Device investigation — same night-ops shell as Incident Workspace.
+   One timeline of samples. No nested breach-log chrome. */
+
+.sample-link {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.sample-link:hover { filter: brightness(1.08); }
+
+.claim {
+  margin: 0 0 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  max-width: 68ch;
+}
+
+.claim p { margin: 0 0 4px; }
+
+.ev.is-target {
+  outline: 1px solid var(--accent);
+  outline-offset: 4px;
+  background: var(--accent-dim);
+}
+
+.kind {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+
+.gap {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+.preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.preview pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.dry-note {
+  color: var(--attention);
+  font-size: 12px;
+  margin: 0 0 10px;
+}

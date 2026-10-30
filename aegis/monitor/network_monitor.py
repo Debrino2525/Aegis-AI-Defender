@@ -18,7 +18,9 @@ from urllib.parse import urlparse
 
 from aegis.monitor.behavioral_engine import BehavioralEngine
 from aegis.monitor.threat_patterns import (
-    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS
+    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS,
+    is_routine_web_edge_traffic,
+    is_well_known_web_edge,
 )
 
 
@@ -331,6 +333,8 @@ class NetworkMonitor:
     def _check_novel_destinations(self, src: str, dest_set: Set[str]):
         """Flags initial connections to unprofiled external IP addresses."""
         for dst in list(dest_set)[:8]:
+            if is_well_known_web_edge(dst):
+                continue
             if not is_private_ip(dst) and self.behavioral_engine.is_new_destination(src, dst):
                 self._emit_alert(
                     pattern_id="AEGIS-BEH-005",
@@ -426,6 +430,8 @@ class NetworkMonitor:
             if is_private_ip(dst):
                 continue
             for port in [80, 443, 8080, 8443, 4444, 4443]:
+                if is_routine_web_edge_traffic(dst, port):
+                    continue
                 key = (src, dst, port)
                 timestamps = self.conn_history.get(key, [])
                 if len(timestamps) < 4:

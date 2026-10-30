@@ -39,6 +39,8 @@ def test_console_does_not_ship_known_fakes():
         "Timeline scrubber",
         "Passive Monitor",
         "All systems operational",
+        "[Block IP]",
+        "Drop Traffic",
         "Saturday Oct 24",
         "record_count||0",
     ):

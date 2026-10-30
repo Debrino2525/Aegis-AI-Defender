@@ -602,8 +602,8 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .tv-tbtn{border-radius:8px;padding:5px 9px;font-family:var(--mono)}
 .tv-tbtn.active,.tv-tbtn.tv-play{background:rgba(94,234,212,.14);color:var(--accent)}
 
-#mon-statsbar{gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-wrap:nowrap}
-.mstat{background:none;border:none;border-radius:0;box-shadow:none;border-left:1px solid var(--border);padding:20px 28px;min-width:0}
+#mon-statsbar{gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.mstat{background:none;border:none;border-radius:0;box-shadow:none;border-left:1px solid var(--border);padding:16px 20px;min-width:0;flex:1 1 160px}
 .mstat:first-child{border-left:none;padding-left:4px}
 .mstat::before{display:none}
 .mstat-val{font-size:38px;font-weight:300;letter-spacing:-.035em;color:var(--text);line-height:1.05;font-variant-numeric:tabular-nums}
@@ -611,7 +611,7 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 @media(max-width:1100px){#mon-statsbar{flex-wrap:wrap}.mstat{flex:1 1 33%;border-left:none;padding:16px 8px}}
 .mbadge{padding:3px 10px;font-size:11px}
 
-.tv-stage-wrap{height:clamp(560px,calc(100vh - 250px),780px);border-radius:26px;border:1px solid var(--border2);background:#05060a;
+.tv-stage-wrap{height:clamp(720px,calc(100vh - 160px),980px);border-radius:26px;border:1px solid var(--border2);background:#05060a;
   box-shadow:0 50px 140px -40px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.07)}
 .tv-stage-header{position:absolute;top:18px;left:18px;right:18px;padding:0;background:none;border:none;z-index:25;pointer-events:none}
 .tv-stage-header>*{pointer-events:auto}
@@ -623,16 +623,21 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .tv-stage-viewport{position:absolute;inset:0;background:none}
 .tv-stage-viewport::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:6;
   background:radial-gradient(120% 95% at 50% 46%,transparent 42%,rgba(3,4,7,.88) 100%)}
-#tv-map-view{background:radial-gradient(75% 65% at 50% 52%,#0e1424 0%,#06070b 72%)!important}
+#tv-map-view.tv-view-layer.active{display:flex;align-items:flex-start;justify-content:center;padding:92px 36px 28px;background:var(--bg)!important;z-index:12}
+.geo-note{width:min(520px,100%);padding:28px 32px;border-radius:16px;background:#f7f8fa;color:#12161c;border:1px solid #d5dbe3;box-shadow:0 18px 48px rgba(0,0,0,.28);text-align:left}
+.geo-note h2{margin:0 0 8px;font-size:22px;font-weight:650;letter-spacing:-.02em;color:#12161c}
+.geo-note p{margin:0;font-size:14px;line-height:1.55;color:#3c4654}
+.geo-note-k{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a5a00}
+.geo-note .btn{margin-top:16px}
 #tv-graph-view{background:radial-gradient(75% 65% at 50% 50%,#0e1424 0%,#06070b 72%)}
 
-.tv-hero{position:absolute;left:24px;bottom:24px;z-index:20;width:372px;padding:20px 22px;border-radius:20px;
+.tv-hero{position:absolute;left:24px;bottom:24px;z-index:20;width:min(560px,calc(100% - 48px));padding:20px 22px;border-radius:20px;
   background:rgba(12,14,20,.6);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
   border:1px solid var(--border2);box-shadow:0 30px 80px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.09);
   transition:border-color .4s,box-shadow .4s}
 .tv-hero .k{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text-dim)}
 .tv-hero .h{font-size:22px;font-weight:500;letter-spacing:-.025em;margin:10px 0 8px;line-height:1.2}
-.tv-hero .p{font-size:13px;color:var(--text-dim);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tv-hero .p{font-size:13px;color:var(--text-dim);line-height:1.55;max-height:9.6em;overflow:auto}
 .tv-hero .a{display:flex;gap:8px;margin-top:16px}
 .pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--success);animation:ring 2.4s infinite}
 @keyframes ring{0%{box-shadow:0 0 0 0 rgba(61,220,151,.5)}70%{box-shadow:0 0 0 9px rgba(61,220,151,0)}100%{box-shadow:0 0 0 0 rgba(61,220,151,0)}}
@@ -663,7 +668,10 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 .inc-card.crit{border-left:1px solid rgba(255,77,94,.4);box-shadow:inset 3px 0 0 var(--critical),inset 0 1px 0 rgba(255,255,255,.05)}
 .inc-card.high{border-left:1px solid rgba(255,138,76,.4);box-shadow:inset 3px 0 0 var(--high),inset 0 1px 0 rgba(255,255,255,.05)}
 .inc-card.med{border-left:1px solid rgba(242,193,78,.4);box-shadow:inset 3px 0 0 var(--medium),inset 0 1px 0 rgba(255,255,255,.05)}
-.inc-narr{font-size:13.5px;line-height:1.7}
+.inc-narr{font-size:13.5px;line-height:1.7;white-space:normal;overflow:visible}
+.contain-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.contain-bar .fsel{width:auto;min-width:0;flex:1 1 180px;max-width:280px;padding:8px 12px;font-size:13px}
+.contain-note{flex:1 1 220px;font-size:12px;line-height:1.45;color:var(--text-dim)}
 
 /* ── OVERLAYS (solid, so nothing bleeds through) ─────────────────── */
 #toast{background:var(--solid);border-radius:14px;border:1px solid var(--border2)}
@@ -1121,12 +1129,12 @@ select option:checked, select option:hover {
 
     <div class="tv-stage-viewport" id="tv-stage-viewport">
       <!-- 1. Global Threat Map Layer -->
-      <div id="tv-map-view" class="tv-view-layer" style="position:relative;width:100%;height:100%;background:var(--bg);overflow:hidden;">
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:32px;text-align:center;">
-          <div style="max-width:420px;">
-            <div style="font-size:14px;font-weight:650;margin-bottom:8px;">GeoIP is not configured</div>
-            <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">This console does not place hosts on a map. Open Site topology for connections observed on this host.</div>
-          </div>
+      <div id="tv-map-view" class="tv-view-layer">
+        <div class="geo-note">
+          <p class="geo-note-k">Unavailable</p>
+          <h2>GeoIP is not configured</h2>
+          <p>This console does not place hosts on a map and does not invent coordinates. Site topology shows the connections observed on this host.</p>
+          <button type="button" class="btn btn-p btn-sm" onclick="switchTvView('graph')">Open site topology</button>
         </div>
       </div>
 
@@ -1585,6 +1593,7 @@ async function loadDash(){
     renderInsights(d.top_insights||[]);
     renderAttack(d.attack_summary||{});
     renderRansom((d.attack_summary||{}).ransomware_cves||[]);
+    if (typeof loadAlertingState === 'function') loadAlertingState();
   }catch(e){console.error(e);}
 }
 
@@ -3043,18 +3052,49 @@ async function executeIncidentAction(incId, actionType, target, btn) {
   }
 }
 
+function syncContainmentTarget(incId) {
+  const kind = document.getElementById('act-kind-' + incId);
+  const target = document.getElementById('act-target-' + incId);
+  const note = document.getElementById('act-note-' + incId);
+  if (!kind || !target) return;
+  const action = kind.value;
+  const want = action === 'terminate_process' ? 'proc' : ((action === 'block_ip' || action === 'isolate_connections') ? 'ip' : '');
+  let shown = 0;
+  Array.from(target.options).forEach((opt, i) => {
+    if (i === 0) return;
+    const match = !!want && opt.dataset.kind === want;
+    opt.hidden = !match;
+    opt.disabled = !match;
+    if (match) shown += 1;
+  });
+  const needsTarget = want !== '';
+  target.hidden = !needsTarget;
+  target.disabled = !needsTarget;
+  if (target.selectedOptions[0] && target.selectedOptions[0].disabled) target.value = '';
+  if (!note) return;
+  if (action === 'resolve') note.textContent = 'Marks this incident resolved. It does not change the host.';
+  else if (action === 'block_ip') note.textContent = shown ? 'Firewall block uses the IP selected once.' : 'No remote IP on this incident.';
+  else if (action === 'isolate_connections') note.textContent = shown ? 'Drops sockets to the IP selected once.' : 'No remote IP on this incident.';
+  else if (action === 'terminate_process') note.textContent = shown ? 'Stops the process selected once.' : 'No process name on this incident.';
+  else note.textContent = 'Choose one action. The target IP or process is selected once.';
+}
+
 function executeSelectedIncidentAction(incId, btn) {
-  const sel = document.getElementById('act-select-' + incId);
-  if (!sel || !sel.value) {
-    toast('Please select an action from the dropdown first', 'err');
+  const kind = document.getElementById('act-kind-' + incId);
+  const target = document.getElementById('act-target-' + incId);
+  if (!kind || !kind.value) {
+    toast('Choose an action first', 'err');
     return;
   }
-  try {
-    const item = JSON.parse(sel.value);
-    executeIncidentAction(incId, item.type, item.target, btn);
-  } catch (e) {
-    toast('Invalid action configuration', 'err');
+  if (kind.value === 'resolve') {
+    executeIncidentAction(incId, 'resolve', incId, btn);
+    return;
   }
+  if (!target || !target.value) {
+    toast('Choose a target', 'err');
+    return;
+  }
+  executeIncidentAction(incId, kind.value, target.value, btn);
 }
 
 function executeAlertDropdownAction(incId, alertId, btn) {
@@ -3063,12 +3103,15 @@ function executeAlertDropdownAction(incId, alertId, btn) {
     toast('Select an action for this alert first', 'err');
     return;
   }
-  try {
-    const item = JSON.parse(sel.value);
-    executeIncidentAction(incId, item.type, item.target, btn);
-  } catch (e) {
-    toast('Invalid alert action selection', 'err');
+  const action = sel.value;
+  let target = incId;
+  if (action === 'block_ip' || action === 'isolate_connections') target = sel.dataset.ip || '';
+  else if (action === 'terminate_process') target = sel.dataset.proc || '';
+  if (action !== 'resolve' && !target) {
+    toast('This alert has no target for that action', 'err');
+    return;
   }
+  executeIncidentAction(incId, action, target, btn);
 }
 
 function promptCustomAction(incId) {
@@ -3184,27 +3227,19 @@ function renderIncidents(incidents){
             <button class="btn btn-g btn-sm" style="padding:2px 8px;font-size:10.5px;border-radius:6px;" onclick="promptCustomAction('${esc(inc.id)}')">Custom Action…</button>
           </div>
 
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <select class="fsel" id="act-select-${esc(inc.id)}" style="flex:1;min-width:260px;max-width:580px;padding:8px 34px 8px 12px;font-size:12px;border-radius:8px;background-color:#0c0e14;color:#eceef3;color-scheme:dark;">
-              <option value="" style="background:#0c0e14;color:#8a92a5;">-- Select Enforceable Containment Action --</option>
-              ${procs.length ? `
-                <optgroup label="Process Termination (Local Host)" style="background:#121620;color:#5EEAD4;">
-                  ${procs.map(p => `<option value='{"type":"terminate_process","target":"${esc(p)}"}' style="background:#0c0e14;color:#eceef3;">[Kill Process] ${esc(p)}</option>`).join('')}
-                </optgroup>
-              ` : ''}
-              ${dests.length ? `
-                <optgroup label="Firewall Containment (Windows Defender)" style="background:#121620;color:#5EEAD4;">
-                  ${dests.map(d => `<option value='{"type":"block_ip","target":"${esc(d)}"}' style="background:#0c0e14;color:#eceef3;">[Block IP] ${esc(d)} (Drop Traffic)</option>`).join('')}
-                </optgroup>
-                <optgroup label="Socket Session Drop" style="background:#121620;color:#5EEAD4;">
-                  ${dests.map(d => `<option value='{"type":"isolate_connections","target":"${esc(d)}"}' style="background:#0c0e14;color:#eceef3;">[Drop Sockets] ${esc(d)} (Active TCP)</option>`).join('')}
-                </optgroup>
-              ` : ''}
-              <optgroup label="Incident Status" style="background:#121620;color:#5EEAD4;">
-                <option value='{"type":"resolve","target":"${esc(inc.id)}"}' style="background:#0c0e14;color:#eceef3;">[Resolve] Mark Incident Contained &amp; Archived</option>
-              </optgroup>
+          <div class="contain-bar">
+            <select class="fsel" id="act-kind-${esc(inc.id)}" onchange="syncContainmentTarget('${esc(inc.id)}')">
+              <option value="">Action</option>
+              ${dests.length ? `<option value="block_ip">Firewall block</option><option value="isolate_connections">Drop sockets</option>` : ''}
+              ${procs.length ? `<option value="terminate_process">Stop process</option>` : ''}
+              <option value="resolve">Resolve</option>
             </select>
-
+            <select class="fsel" id="act-target-${esc(inc.id)}" hidden>
+              <option value="">Target</option>
+              ${dests.map(d => `<option data-kind="ip" value="${esc(d)}">${esc(d)}</option>`).join('')}
+              ${procs.map(p => `<option data-kind="proc" value="${esc(p)}">${esc(p)}</option>`).join('')}
+            </select>
+            <span class="contain-note" id="act-note-${esc(inc.id)}">Choose one action. The target IP or process is selected once.</span>
             <button class="btn btn-p btn-sm" style="padding:8px 20px;font-size:12px;border-radius:8px;" onclick="executeSelectedIncidentAction('${esc(inc.id)}', this)">
               Enforce Action
             </button>
@@ -3246,12 +3281,11 @@ function renderIncidents(incidents){
                       </div>
 
                       <div style="display:flex;align-items:center;gap:6px;">
-                        <select class="fsel" id="${actSelId}" style="padding:5px 28px 5px 8px;font-size:11px;border-radius:6px;width:200px;background-color:#0c0e14;color:#eceef3;color-scheme:dark;">
-                          <option value="" style="background:#0c0e14;color:#8a92a5;">-- Alert Action --</option>
-                          ${aProc ? `<option value='{"type":"terminate_process","target":"${esc(aProc)}"}' style="background:#0c0e14;color:#eceef3;">[Kill] ${esc(aProc)}</option>` : ''}
-                          ${aDst ? `<option value='{"type":"block_ip","target":"${esc(aDst)}"}' style="background:#0c0e14;color:#eceef3;">[Block IP] ${esc(aDst)}</option>` : ''}
-                          ${aDst ? `<option value='{"type":"isolate_connections","target":"${esc(aDst)}"}' style="background:#0c0e14;color:#eceef3;">[Drop Sockets] ${esc(aDst)}</option>` : ''}
-                          <option value='{"type":"resolve","target":"${esc(inc.id)}"}' style="background:#0c0e14;color:#eceef3;">[Resolve] Incident</option>
+                        <select class="fsel" id="${actSelId}" data-ip="${esc(aDst)}" data-proc="${esc(aProc)}" style="padding:5px 8px;font-size:12px;width:160px;">
+                          <option value="">Action</option>
+                          ${aDst ? `<option value="block_ip">Firewall block</option><option value="isolate_connections">Drop sockets</option>` : ''}
+                          ${aProc ? `<option value="terminate_process">Stop process</option>` : ''}
+                          <option value="resolve">Resolve</option>
                         </select>
                         <button class="btn btn-g btn-sm" style="padding:5px 12px;font-size:11px;border-radius:6px;" onclick="executeAlertDropdownAction('${esc(inc.id)}', '${esc(a.id)}', this)">
                           Execute
@@ -4278,7 +4312,7 @@ async function testDispatchGateway(channel){
       k.textContent='Needs your attention';
       h.textContent=inc.length===1?'1 incident is active':inc.length+' incidents are active';
       const n=(inc[0].narrative||'').trim();
-      p.textContent=n.length>170?n.slice(0,167)+'…':(n||'Correlated alerts were clustered into an incident.');
+      p.textContent=n||'Correlated alerts were clustered into an incident.';
       if(pill) pill.textContent=inc.length+' active '+(inc.length===1?'threat':'threats');
     } else if(crit+high>0){
       alertMode=true;

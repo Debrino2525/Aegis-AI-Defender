@@ -4,6 +4,8 @@ import os
 import tempfile
 from pathlib import Path
 
+import pytest
+
 _DATA = Path(tempfile.mkdtemp(prefix="aegis-pytest-"))
 _ENV_FILE = _DATA / "test.env"
 _ENV_FILE.write_text("", encoding="utf-8")
@@ -23,3 +25,11 @@ os.environ.pop("AEGIS_TLS_CERT_REQS", None)
 os.environ.pop("AEGIS_TLS_CERTFILE", None)
 os.environ.pop("AEGIS_TLS_KEYFILE", None)
 os.environ.pop("AEGIS_TLS_CA_CERTS", None)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_response_policy():
+    from aegis.response.engine import reset_response_engine
+    reset_response_engine(clear=True)
+    yield
+    reset_response_engine(clear=True)

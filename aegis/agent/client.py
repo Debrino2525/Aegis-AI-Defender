@@ -144,12 +144,19 @@ def enroll(
 
 
 def heartbeat(root: Optional[Path] = None, timeout: float = 20.0) -> Dict[str, Any]:
+    from aegis.agent.contain import (
+        clear_pending_results,
+        execute_commands,
+        load_pending_results,
+    )
+
     identity = load_identity(root)
     telemetry = collect_telemetry()
     timestamp = datetime.now(timezone.utc).isoformat()
     nonce = secrets.token_urlsafe(16)
     key = load_key(identity["private_key_pem"])
     signature = sign_heartbeat(key, identity["agent_id"], timestamp, nonce)
+    pending_results = load_pending_results(root)
     body = {
         "agent_id": identity["agent_id"],
         "timestamp": timestamp,
@@ -157,6 +164,7 @@ def heartbeat(root: Optional[Path] = None, timeout: float = 20.0) -> Dict[str, A
         "certificate_pem": identity["certificate_pem"],
         "signature_b64": base64.b64encode(signature).decode("ascii"),
         "telemetry": telemetry,
+        "command_results": pending_results,
     }
     path = identity.get("heartbeat_path") or "/api/fleet/heartbeat"
     url = urljoin(identity["console_url"].rstrip("/") + "/", path.lstrip("/"))
@@ -176,7 +184,13 @@ def heartbeat(root: Optional[Path] = None, timeout: float = 20.0) -> Dict[str, A
         raise RuntimeError(_ca_hint(exc, identity.get("console_url") or url)) from exc
     if response.status_code >= 400:
         raise RuntimeError(f"Heartbeat failed ({response.status_code}): {_detail(response)}")
-    return response.json()
+    payload = response.json()
+    if pending_results:
+        clear_pending_results(root)
+    commands = payload.get("commands") if isinstance(payload, dict) else None
+    if commands:
+        execute_commands(commands, root=root)
+    return payload
 
 
 def run_loop(interval: float = 30.0, root: Optional[Path] = None) -> None:

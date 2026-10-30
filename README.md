@@ -34,10 +34,11 @@ Aegis AI is an enterprise-grade cyber defense and vulnerability management platf
   - `AEGIS-BEH-012`: Target DNS Drift Detection
 - **Analyst Assist**: Groups behavioral alerts by host, time, and tactic. Multi-phase lists and hop paths appear only when a sample exists. Related detections are other pattern IDs on that host.
 
-### 3. ⚡ Respond: Host-Level Containment & Remediation
-- **Process Termination**: Instantly halts malicious or suspicious processes while safeguarding core Windows system processes.
-- **Firewall IP Isolation**: Generates Windows Defender Firewall rules (`netsh advfirewall`) to block inbound and outbound communication with attacker IPs.
-- **Socket Session Termination**: Disconnects active socket connections holding malicious sessions.
+### 3. ⚡ Respond: Auditable host containment
+- **Observe / Recommend / Auto** per enrolled host. New sites default to **Recommend**. Auto never arms itself.
+- Every action carries a **rule ID**, **evidence**, a **dry-run**, an operator **confirm** (or Auto after the site is armed), a **signed HMAC audit**, and a **rollback** when the change is reversible (unblock / unquarantine).
+- Fleet contain runs on the **agent host** via heartbeat commands. The console box is not a stand-in for a remote server. A failed firewall change is reported as not applied — never a fake block.
+- Process termination, IP block, socket isolate, and host quarantine. Process kill and socket isolate are not reversible.
 
 ### 4. 🚨 Critical Alert Routing & DoD Zero Trust Escalation
 - **Autonomous Cascading Dispatch**:

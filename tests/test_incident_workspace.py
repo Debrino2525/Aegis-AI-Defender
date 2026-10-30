@@ -59,9 +59,14 @@ def test_shell_links_workspace_and_keeps_unlock(client):
         "/api/alerting/alerts",
         "/api/incidents/action",
         "/api/fleet/hosts",
+        "/api/response/preview",
+        "/api/response/confirm",
+        "/api/response/rollback",
+        "/api/response/policy",
     ):
         assert path in body
     assert "Analyst Assist" in body
+    assert "Dry-run" in body or "dry-run" in body
     assert "assistBlock" in body
     assert "Observed hops" in body
     assert "world_map.svg" not in body

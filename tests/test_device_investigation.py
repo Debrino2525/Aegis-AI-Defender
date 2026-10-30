@@ -131,6 +131,7 @@ def test_page_is_device_first_and_not_darktrace(client):
     body = script.text
     assert "/api/auth/login" in body
     assert "/api/investigations" in body
+    assert "Analyst Assist" in body
     assert "dry_run: true" in body
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
     assert 'href="/investigate"' in html

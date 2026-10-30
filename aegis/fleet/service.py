@@ -74,6 +74,31 @@ def host_status(last_seen: Optional[str], now: Optional[datetime] = None, revoke
     return "offline"
 
 
+def _public_hop_connections(telemetry: Dict[str, Any]) -> list:
+    rows = telemetry.get("hop_connections") or []
+    if not isinstance(rows, list):
+        return []
+    cleaned = []
+    for item in rows[:32]:
+        if not isinstance(item, dict):
+            continue
+        local_ip = str(item.get("local_ip") or "").strip()
+        remote_ip = str(item.get("remote_ip") or "").strip()
+        port = item.get("remote_port")
+        if not local_ip or not remote_ip or port in (None, ""):
+            continue
+        cleaned.append(
+            {
+                "local_ip": local_ip,
+                "remote_ip": remote_ip,
+                "remote_port": port,
+                "local_port": item.get("local_port"),
+                "status": item.get("status") or "ESTABLISHED",
+            }
+        )
+    return cleaned
+
+
 class FleetService:
     def __init__(self, store: Optional[FleetStore] = None, ca: Optional[SiteCA] = None):
         data = aegis_data_dir()
@@ -356,6 +381,7 @@ class FleetService:
             "enrolled_at": raw.get("enrolled_at"),
             "listen_count": telemetry.get("listen_count", len(listening)),
             "listening_tcp": listening[:64],
+            "hop_connections": _public_hop_connections(telemetry),
             "cpu_percent": telemetry.get("cpu_percent"),
             "memory_percent": telemetry.get("memory_percent"),
             "process_count": telemetry.get("process_count"),

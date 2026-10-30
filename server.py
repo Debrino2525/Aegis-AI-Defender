@@ -41,6 +41,7 @@ from aegis.reporting.csv_reporter import CSVReporter
 from aegis.reporting.sarif_reporter import SARIFReporter
 from aegis.monitor.network_monitor import NetworkMonitor
 from aegis.monitor.ai_analyst import AIAnalyst
+from aegis.monitor.analyst_assist import hop_observations_from_sources
 from aegis.monitor.remediation import remediator
 from datetime import timezone
 from aegis.core.verifier import FindingVerifier
@@ -222,6 +223,20 @@ def _investigation_sources() -> DeviceSources:
 
 
 bind_investigation_sources(_investigation_sources)
+
+
+def _analyst_hop_kwargs() -> Dict[str, Any]:
+    hosts = get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or []
+    return {
+        "hop_observations": hop_observations_from_sources(
+            connections=list(monitor.current_connections or []),
+            conn_history=dict(monitor.conn_history or {}),
+            hosts=hosts,
+            alerts=list(monitor.alerts or []),
+        ),
+        "hosts": hosts,
+        "conn_history": dict(monitor.conn_history or {}),
+    }
 
 def _env_file_path() -> Path:
     override = os.getenv("AEGIS_ENV_FILE", "").strip()
@@ -604,7 +619,7 @@ async def trigger_update():
 async def get_monitor():
     """Returns the current live monitor state (connections, graph, alerts, baselines)."""
     state = monitor.get_state()
-    state["incidents"] = analyst.analyze(monitor.alerts)
+    state["incidents"] = analyst.analyze(monitor.alerts, **_analyst_hop_kwargs())
     return state
 
 
@@ -1089,7 +1104,7 @@ async def ws_monitor(websocket: WebSocket):
     try:
         while True:
             state = monitor.get_state()
-            state["incidents"] = analyst.analyze(monitor.alerts)
+            state["incidents"] = analyst.analyze(monitor.alerts, **_analyst_hop_kwargs())
             # Strip internal fields before sending
             for alert in state.get("alerts", []):
                 alert.pop("_timestamp", None)

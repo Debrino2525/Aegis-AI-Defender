@@ -42,7 +42,6 @@ from aegis.reporting.sarif_reporter import SARIFReporter
 from aegis.monitor.network_monitor import NetworkMonitor
 from aegis.monitor.ai_analyst import AIAnalyst
 from aegis.monitor.analyst_assist import hop_observations_from_sources
-from aegis.monitor.remediation import remediator
 from datetime import timezone
 from aegis.core.verifier import FindingVerifier
 
@@ -202,9 +201,12 @@ from aegis.fleet.api import router as fleet_router
 from aegis.fleet.service import get_fleet_service
 from aegis.investigate.api import router as investigate_router, bind_sources as bind_investigation_sources
 from aegis.investigate.device import DeviceSources
+from aegis.response.api import router as response_router, bind_context as bind_response_context
+from aegis.response.engine import ResponseError, get_response_engine
 
 app.include_router(fleet_router)
 app.include_router(investigate_router)
+app.include_router(response_router)
 install_peer_cert_hook()
 
 
@@ -223,6 +225,44 @@ def _investigation_sources() -> DeviceSources:
 
 
 bind_investigation_sources(_investigation_sources)
+
+
+def _console_ips() -> List[str]:
+    ips: List[str] = []
+    for conn in monitor.current_connections or []:
+        if not isinstance(conn, dict):
+            continue
+        for key in ("local_ip", "src_ip"):
+            val = conn.get(key)
+            if val and str(val) not in ips:
+                ips.append(str(val))
+    return ips
+
+
+def _incident_payload(incident_id: str) -> Optional[Dict[str, Any]]:
+    inc = analyst.get_incident(incident_id)
+    if not inc:
+        return None
+    return inc.to_dict()
+
+
+def _response_context() -> Dict[str, Any]:
+    return {
+        "hosts": get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or [],
+        "console_ips": _console_ips(),
+        "get_incident": _incident_payload,
+    }
+
+
+bind_response_context(_response_context)
+
+
+def _decorate_incidents(incidents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    engine = get_response_engine()
+    hosts = get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or []
+    ips = _console_ips()
+    engine.tick_auto(incidents, hosts=hosts, console_ips=ips)
+    return engine.annotate_incidents(incidents, hosts=hosts, console_ips=ips)
 
 
 def _analyst_hop_kwargs() -> Dict[str, Any]:
@@ -619,7 +659,9 @@ async def trigger_update():
 async def get_monitor():
     """Returns the current live monitor state (connections, graph, alerts, baselines)."""
     state = monitor.get_state()
-    state["incidents"] = analyst.analyze(monitor.alerts, **_analyst_hop_kwargs())
+    incidents = analyst.analyze(monitor.alerts, **_analyst_hop_kwargs())
+    state["incidents"] = _decorate_incidents(incidents)
+    state["response_policy"] = get_response_engine().site_policy()
     return state
 
 
@@ -1058,43 +1100,53 @@ class IncidentActionRequest(BaseModel):
     target: Optional[str] = None
     pid: Optional[int] = None
     note: Optional[str] = None
+    confirm: bool = False
+    dry_run: bool = False
+    action_id: Optional[str] = None
+    agent_id: Optional[str] = None
 
 
 @app.post("/api/incidents/action")
 async def execute_incident_action(req: IncidentActionRequest):
-    """
-    Executes real host-level remediation on machine processes or network firewall rules
-    in response to an individual correlated alert incident.
-    """
+    """Preview, confirm, or resolve. Host contain goes through the signed response engine."""
     inc = analyst.get_incident(req.incident_id)
     if not inc:
         raise HTTPException(status_code=404, detail=f"Incident '{req.incident_id}' not found")
 
-    res = None
-    if req.action_type == "terminate_process":
-        res = remediator.terminate_process(target=req.target or "", pid=req.pid)
-    elif req.action_type == "block_ip":
-        res = remediator.block_remote_ip(ip=req.target or "")
-    elif req.action_type == "isolate_connections":
-        res = remediator.isolate_socket_connections(remote_ip=req.target or "")
-    elif req.action_type == "resolve":
+    if req.action_type == "resolve":
         res = {
             "success": True,
             "message": f"Incident {req.incident_id} marked as contained and resolved.",
             "action": "resolve",
             "target": req.incident_id,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported action type '{req.action_type}'")
-
-    if res.get("success"):
         inc.record_action(res)
-    else:
-        inc.record_action({"action": req.action_type, "success": False, "error": res.get("error", "Failed")})
-    get_history_store().save_incident_states(analyst.export_operator_state())
+        get_history_store().save_incident_states(analyst.export_operator_state())
+        return res
 
-    return res
+    engine = get_response_engine()
+    try:
+        if req.action_id and (req.confirm or not req.dry_run):
+            record = engine.confirm(req.action_id, actor="operator", confirm=True)
+        else:
+            record = engine.preview(
+                inc.to_dict(),
+                req.action_type,
+                req.target or "",
+                actor="operator",
+                agent_id=req.agent_id,
+                hosts=get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or [],
+                console_ips=_console_ips(),
+            )
+            if req.confirm and not req.dry_run:
+                record = engine.confirm(record["action_id"], actor="operator", confirm=True)
+    except ResponseError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+    inc.record_action(record)
+    get_history_store().save_incident_states(analyst.export_operator_state())
+    return record
 
 
 @app.websocket("/ws/monitor")
@@ -1104,7 +1156,9 @@ async def ws_monitor(websocket: WebSocket):
     try:
         while True:
             state = monitor.get_state()
-            state["incidents"] = analyst.analyze(monitor.alerts, **_analyst_hop_kwargs())
+            incidents = analyst.analyze(monitor.alerts, **_analyst_hop_kwargs())
+            state["incidents"] = _decorate_incidents(incidents)
+            state["response_policy"] = get_response_engine().site_policy()
             # Strip internal fields before sending
             for alert in state.get("alerts", []):
                 alert.pop("_timestamp", None)

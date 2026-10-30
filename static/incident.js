@@ -20,6 +20,8 @@
     evidenceOpen: true,
     pending: null,
     lastResult: null,
+    responseActions: [],
+    responsePolicy: null,
     poll: null,
     busy: false
   };
@@ -235,7 +237,9 @@
       getJSON("/api/monitor"),
       getJSON("/api/scans"),
       getJSON("/api/alerting/alerts"),
-      getJSON("/api/fleet/hosts")
+      getJSON("/api/fleet/hosts"),
+      getJSON("/api/response/actions"),
+      getJSON("/api/response/policy")
     ]);
     if (settled.some(isAuth)) {
       showGate();
@@ -276,6 +280,17 @@
       state.fleetOk = false;
       state.fleetHosts = [];
       state.errors.push("Fleet " + reasonText(settled[3].reason));
+    }
+    if (settled[4].status === "fulfilled") {
+      var actionBody = settled[4].value || {};
+      state.responseActions = Array.isArray(actionBody.actions) ? actionBody.actions : [];
+    } else {
+      state.responseActions = [];
+    }
+    if (settled[5].status === "fulfilled") {
+      state.responsePolicy = settled[5].value || null;
+    } else {
+      state.responsePolicy = null;
     }
     if (!state.key) state.key = readFocusFromUrl();
     if (state.key && state.key.indexOf("inc:") === 0 && !state.incidents.some(function (inc) { return "inc:" + inc.id === state.key; })) {
@@ -685,8 +700,12 @@
       return;
     }
     var inc = item.raw;
+    var response = inc.response || {};
     var actions = list(inc.executable_actions);
     var html = '<p class="kicker">Respond</p><h2>' + esc(inc.id || "Incident") + "</h2>";
+    html += '<p class="muted">Mode ' + esc(response.mode || (state.responsePolicy && state.responsePolicy.site_mode) || "recommend") +
+      (response.asset_id ? " · asset " + esc(response.asset_id) : " · no enrolled agent") +
+      ". Default Recommend. Auto never arms a new site.</p>";
     html += '<div class="block"><h3>Recommended</h3>';
     var recommended = list(inc.recommended_actions);
     if (!recommended.length) html += '<p class="muted">No recommended actions returned.</p>';
@@ -695,9 +714,18 @@
       recommended.forEach(function (step) { html += "<li>" + esc(step) + "</li>"; });
       html += "</ul>";
     }
+    var proposals = list(response.proposals);
+    if (proposals.length) {
+      html += "<ul>";
+      proposals.forEach(function (row) {
+        html += "<li><span class=\"mono\">" + esc(row.rule_id || "") + "</span> " +
+          esc(row.title || row.action || "") + " · " + esc(row.target || "") + "</li>";
+      });
+      html += "</ul>";
+    }
     html += "</div>";
     html += '<div class="block"><h3>Actions</h3>';
-    html += '<p class="muted">Review opens a confirm step. Run sends the action to /api/incidents/action.</p>';
+    html += '<p class="muted">Review loads a dry-run with rule ID, evidence, and rollback. Confirm sends the change to the enrolled agent host.</p>';
     if (!actions.length) html += '<p class="muted">No executable actions returned.</p>';
     actions.forEach(function (action, index) {
       var current = index === state.actionIndex ? ' aria-current="true"' : "";
@@ -706,12 +734,20 @@
         '<span class="sub">' + esc([action.action, action.target].filter(Boolean).join(" · ")) + "</span></button>";
     });
     html += "</div>";
-    var taken = list(inc.actions_taken);
-    html += '<div class="block"><h3>Actions taken</h3>';
-    if (!taken.length) html += '<p class="muted">None recorded on this incident.</p>';
+    var auditRows = list(state.responseActions).filter(function (row) {
+      return row.incident_id === inc.id;
+    });
+    html += '<div class="block"><h3>Signed audit</h3>';
+    if (!auditRows.length) html += '<p class="muted">No response actions recorded for this incident.</p>';
     else {
       html += '<ul class="log">';
-      taken.forEach(function (row) { html += "<li>" + esc(summarizeResult(row)) + "</li>"; });
+      auditRows.forEach(function (row) {
+        html += "<li>" + esc(summarizeResult(row));
+        if (row.applied && row.rollback_possible) {
+          html += ' <button type="button" class="btn" data-rollback="' + esc(row.action_id) + '">Rollback</button>';
+        }
+        html += "</li>";
+      });
       html += "</ul>";
     }
     html += "</div>";
@@ -722,9 +758,10 @@
   function summarizeResult(row) {
     if (!row || typeof row !== "object") return String(row == null ? "" : row);
     var bits = [];
-    ["success", "action", "target", "message", "error", "timestamp"].forEach(function (key) {
+    ["rule_id", "status", "action", "target", "mode", "applied", "message", "error"].forEach(function (key) {
       if (row[key] != null && row[key] !== "") bits.push(key + ": " + row[key]);
     });
+    if (row.audit && row.audit.signature) bits.push("sig: " + String(row.audit.signature).slice(0, 12));
     return bits.join(" · ") || "Action recorded";
   }
 
@@ -733,24 +770,76 @@
     return '<div class="block"><h3>Last response</h3><p class="mono">HTTP ' + esc(result.status) + "</p><p>" + esc(summarizeResult(data)) + "</p></div>";
   }
 
-  function openConfirm(index) {
+  async function openConfirm(index) {
     var item = currentItem();
     if (!item || item.kind !== "inc") return;
     var actions = list(item.raw.executable_actions);
     var action = actions[index];
     if (!action) return;
     state.actionIndex = index;
+    if (action.action === "resolve") {
+      state.pending = {
+        kind: "resolve",
+        incidentId: item.raw.id,
+        action: action.action,
+        target: action.target,
+        label: action.label,
+        danger: !!action.danger
+      };
+      $("confirm-title").textContent = action.label || "Resolve incident";
+      $("confirm-facts").innerHTML = "<dt>Action</dt><dd>resolve</dd><dt>Incident</dt><dd>" + esc(item.raw.id) + "</dd>";
+      $("confirm-check").checked = false;
+      $("confirm-run").disabled = true;
+      $("confirm-run").className = "btn btn-primary";
+      renderDecide();
+      $("confirm").showModal();
+      return;
+    }
+    var res = await fetch("/api/response/preview", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        incident_id: item.raw.id,
+        action: action.action,
+        target: action.target || ""
+      })
+    });
+    var preview = {};
+    try { preview = await res.json(); } catch (e) {}
+    if (res.status === 401) {
+      showGate();
+      return;
+    }
+    if (!res.ok) {
+      state.lastResult = { status: res.status, data: preview };
+      renderDecide();
+      return;
+    }
     state.pending = {
+      kind: "confirm",
+      actionId: preview.action_id,
       incidentId: item.raw.id,
-      action: action.action,
-      target: action.target,
+      action: preview.action,
+      target: preview.target,
       label: action.label,
-      description: action.description,
       danger: !!action.danger
     };
     $("confirm-title").textContent = action.label || "Review action";
+    var dry = preview.dry_run || {};
+    var evidence = preview.evidence || {};
     var facts = "";
-    [["Action", action.action], ["Target", action.target], ["Incident", item.raw.id], ["What it does", action.description]].forEach(function (pair) {
+    [
+      ["Rule", preview.rule_id],
+      ["Mode", preview.mode],
+      ["Action", preview.action],
+      ["Target", preview.target],
+      ["Asset", preview.asset_id || "none"],
+      ["Evidence", (evidence.alert_ids || []).join(", ")],
+      ["Dry-run", dry.would],
+      ["Commands", (dry.commands || []).join(" ; ")],
+      ["Rollback", preview.rollback_possible ? (preview.rollback_action || "available") : "not reversible"]
+    ].forEach(function (pair) {
       if (pair[1] == null || pair[1] === "") return;
       facts += "<dt>" + esc(pair[0]) + "</dt><dd>" + esc(pair[1]) + "</dd>";
     });
@@ -768,16 +857,27 @@
     $("confirm-run").disabled = true;
     var pending = state.pending;
     try {
-      var res = await fetch("/api/incidents/action", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          incident_id: pending.incidentId,
-          action_type: pending.action,
-          target: pending.target
-        })
-      });
+      var res;
+      if (pending.kind === "resolve") {
+        res = await fetch("/api/incidents/action", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            incident_id: pending.incidentId,
+            action_type: "resolve",
+            target: pending.incidentId,
+            confirm: true
+          })
+        });
+      } else {
+        res = await fetch("/api/response/confirm", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action_id: pending.actionId, confirm: true })
+        });
+      }
       var data = {};
       try { data = await res.json(); } catch (e) {}
       if (res.status === 401) {
@@ -787,6 +887,29 @@
       state.lastResult = { status: res.status, data: data };
       state.pending = null;
       $("confirm").close();
+      await loadAll();
+    } finally {
+      state.busy = false;
+    }
+  }
+
+  async function rollbackAction(actionId) {
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      var res = await fetch("/api/response/rollback", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action_id: actionId, confirm: true })
+      });
+      var data = {};
+      try { data = await res.json(); } catch (e) {}
+      if (res.status === 401) {
+        showGate();
+        return;
+      }
+      state.lastResult = { status: res.status, data: data };
       await loadAll();
     } finally {
       state.busy = false;
@@ -860,6 +983,11 @@
     var actionBtn = event.target.closest("[data-action-index]");
     if (actionBtn) {
       openConfirm(Number(actionBtn.getAttribute("data-action-index")));
+      return;
+    }
+    var rollbackBtn = event.target.closest("[data-rollback]");
+    if (rollbackBtn) {
+      rollbackAction(rollbackBtn.getAttribute("data-rollback"));
       return;
     }
     var mon = event.target.closest("[data-ack-monitor]");

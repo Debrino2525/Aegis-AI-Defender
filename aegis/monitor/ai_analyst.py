@@ -180,11 +180,19 @@ class Incident:
         """Records an action execution result onto the incident."""
         self.actions_taken.append(action_result)
         action_type = action_result.get("action")
-        if action_type in ("terminate_process", "block_ip", "isolate_connections"):
-            if self.status != "RESOLVED":
-                self.status = "CONTAINED"
-        elif action_type == "resolve":
+        status = str(action_result.get("status") or "")
+        if action_type == "resolve":
             self.status = "RESOLVED"
+            return
+        if action_type in (
+            "terminate_process", "block_ip", "isolate_connections",
+            "quarantine_host", "unblock_ip", "unquarantine_host",
+        ):
+            if status in {"preview", "observed"}:
+                return
+            if action_result.get("applied") or status in {"queued", "sent", "executed", "applied"}:
+                if self.status != "RESOLVED":
+                    self.status = "CONTAINED"
 
     def _build_executable_actions(self) -> List[Dict[str, Any]]:
         """Builds one-click actionable containment buttons specific to this incident."""

@@ -56,12 +56,12 @@
 
 <dialog id="confirm">
   <h2 id="confirm-title">Review action</h2>
-  <p>Confirm sends this action to the host. The server does not return a separate dry-run.</p>
+  <p id="confirm-copy">Dry-run first. Confirm sends the change to the enrolled host, not only this console.</p>
   <dl id="confirm-facts"></dl>
-  <label class="confirm-check"><input type="checkbox" id="confirm-check"/> I have reviewed this action</label>
+  <label class="confirm-check"><input type="checkbox" id="confirm-check"/> I have reviewed the dry-run and evidence</label>
   <div class="dialog-actions">
     <button type="button" class="btn" id="confirm-cancel">Cancel</button>
-    <button type="button" class="btn btn-danger" id="confirm-run" disabled>Run action</button>
+    <button type="button" class="btn btn-danger" id="confirm-run" disabled>Confirm action</button>
   </div>
 </dialog>
 <script src="/static/incident.js"></script>

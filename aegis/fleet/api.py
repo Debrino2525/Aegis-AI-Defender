@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from aegis.fleet.service import get_fleet_service
 from aegis.fleet.tls import heartbeat_requires_client_cert, peer_cert_pem_from_request
+from aegis.response.engine import get_response_engine
 
 router = APIRouter()
 
@@ -29,6 +30,7 @@ class HeartbeatRequest(BaseModel):
     certificate_pem: str = ""
     signature_b64: str = ""
     telemetry: Optional[Dict[str, Any]] = None
+    command_results: Optional[List[Dict[str, Any]]] = None
 
 
 class MintTokenRequest(BaseModel):
@@ -68,7 +70,7 @@ async def enroll_agent(body: EnrollRequest, request: Request):
 async def agent_heartbeat(body: HeartbeatRequest, request: Request):
     service = get_fleet_service()
     try:
-        return service.heartbeat(
+        result = service.heartbeat(
             agent_id=body.agent_id,
             timestamp=body.timestamp,
             nonce=body.nonce,
@@ -83,11 +85,23 @@ async def agent_heartbeat(body: HeartbeatRequest, request: Request):
         raise HTTPException(status_code=401, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    engine = get_response_engine()
+    agent_id = result.get("agent_id") or body.agent_id
+    if body.command_results:
+        engine.ingest_command_results(agent_id, body.command_results)
+    result["commands"] = engine.dequeue_commands(agent_id)
+    return result
 
 
 @router.get("/api/fleet/hosts")
 async def list_fleet_hosts(include_all: bool = Query(False, alias="all")):
-    return get_fleet_service().list_hosts(include_never_seen=include_all)
+    payload = get_fleet_service().list_hosts(include_never_seen=include_all)
+    engine = get_response_engine()
+    for host in payload.get("hosts") or []:
+        agent_id = host.get("agent_id") or ""
+        host["response_mode"] = engine.asset_mode(agent_id)
+        host["effective_response_mode"] = engine.effective_asset_mode(agent_id)
+    return payload
 
 
 @router.get("/api/fleet/status")

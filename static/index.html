@@ -1475,6 +1475,29 @@ select option:checked, select option:hover {
         <pre id="fleet-enroll-cmd" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap"></pre>
       </div>
     </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="ch"><div class="ct">Host response</div></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Per-asset Observe / Recommend / Auto. New sites default to Recommend. Auto never arms itself — an operator must enable it here.</div>
+      <div class="g2" style="margin-bottom:12px">
+        <div>
+          <div class="fl">Site mode</div>
+          <select class="fi" id="cfg-response-site-mode">
+            <option value="observe">Observe</option>
+            <option value="recommend" selected>Recommend</option>
+            <option value="auto">Auto</option>
+          </select>
+        </div>
+        <div>
+          <div class="fl">Allow Auto on this site</div>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:8px">
+            <input type="checkbox" id="cfg-response-auto-allowed"/>
+            Arm Auto (requires confirm)
+          </label>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:4px" id="response-policy-note">Auto is off. Assets stay on Observe or Recommend.</div>
+        </div>
+      </div>
+      <button class="btn btn-p btn-sm" type="button" onclick="saveResponsePolicy()">Save response policy</button>
+    </div>
     <div class="card">
       <div class="ch"><div class="ct">Enrolled hosts</div></div>
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Revoke stops the current client certificate. Re-enroll mints a replacement token for the same agent id. Assets still lists only hosts that have heartbeated.</div>
@@ -2051,6 +2074,16 @@ function fleetStatusColor(status){
   if(status==='revoked') return 'var(--critical)';
   return 'var(--text-dim)';
 }
+function responseModeControl(h){
+  const id = h.agent_id || '';
+  const mode = h.response_mode || 'recommend';
+  const effective = h.effective_response_mode || mode;
+  return `<select class="fsel" style="min-width:120px;padding:4px 8px;font-size:12px" onchange="setAssetResponseMode(${JSON.stringify(id)}, this.value)">
+    <option value="observe"${mode==='observe'?' selected':''}>Observe</option>
+    <option value="recommend"${mode==='recommend'?' selected':''}>Recommend</option>
+    <option value="auto"${mode==='auto'?' selected':''}>Auto</option>
+  </select><div style="font-size:10px;color:var(--text-dim)">effective ${esc(effective)}</div>`;
+}
 function fleetHostActions(h){
   const id = JSON.stringify(h.agent_id || '');
   const revoke = h.revoked || h.status==='revoked'
@@ -2091,6 +2124,7 @@ async function loadAssets(){
         <td>${esc(os)}</td>
         <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(addrs)}</td>
         <td style="color:${fleetStatusColor(h.status)};font-weight:600">${esc(h.status||'offline')}</td>
+        <td>${responseModeControl(h)}</td>
         <td style="color:var(--text-dim);font-size:11px">${esc(h.last_seen||'—')}</td>
         <td style="color:var(--text-dim)">${h.listen_count!=null?h.listen_count:'—'}</td>
         <td style="color:var(--text-dim)">${h.cpu_percent!=null?h.cpu_percent+'%':'—'}</td>
@@ -2099,7 +2133,7 @@ async function loadAssets(){
     }).join('');
     html+=`<div id="assets-reenroll-wrap" style="display:none;margin-bottom:12px" class="card"><div class="ch"><div class="ct">Re-enroll token</div></div><div class="fl">Copy this token now. It is not shown again.</div><input class="fi" id="assets-reenroll-token" readonly spellcheck="false"/><pre id="assets-reenroll-cmd" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap;margin-top:8px"></pre></div>`;
     html+=`<div class="card"><div class="ch"><div class="ct">Enrolled hosts</div></div>
-      <table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>OS</th><th>Addresses</th><th>Status</th><th>Last seen</th><th>Listen</th><th>CPU</th><th></th></tr></thead>
+      <table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>OS</th><th>Addresses</th><th>Status</th><th>Response</th><th>Last seen</th><th>Listen</th><th>CPU</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
   }
   if(scanned.length){
@@ -3203,34 +3237,68 @@ async function executeIncidentAction(incId, actionType, target, btn) {
   if (btn) {
     btn.disabled = true;
     btn.dataset.origText = btn.textContent;
-    btn.innerHTML = '<span class="spin">↻</span> Executing…';
+    btn.innerHTML = '<span class="spin">↻</span> Preview…';
   }
 
   try {
-    const res = await fetch('/api/incidents/action', {
+    if (actionType === 'resolve') {
+      const res = await fetch('/api/incidents/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          incident_id: incId,
+          action_type: 'resolve',
+          target: incId,
+          confirm: true
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast(data.message || 'Incident resolved', 'ok');
+        if (typeof refreshMonitorData === 'function') refreshMonitorData();
+      } else {
+        toast(data.error || data.detail || 'Action failed', 'err');
+      }
+      return;
+    }
+    const previewRes = await fetch('/api/response/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        incident_id: incId,
-        action_type: actionType,
-        target: target || ''
-      })
+      body: JSON.stringify({ incident_id: incId, action: actionType, target: target || '' })
     });
-
-    const data = await res.json();
-    if (res.ok && data.success) {
-      toast(data.message || 'Containment action executed successfully', 'ok');
+    const preview = await previewRes.json().catch(function(){ return {}; });
+    if (!previewRes.ok) {
+      toast(preview.detail || preview.error || 'Preview failed', 'err');
+      return;
+    }
+    const dry = preview.dry_run || {};
+    const lines = [
+      'Rule ' + (preview.rule_id || ''),
+      'Mode ' + (preview.mode || ''),
+      dry.would || 'Dry-run recorded.',
+      (dry.commands || []).join('\n'),
+      preview.rollback_possible ? ('Rollback: ' + (preview.rollback_action || 'available')) : 'Not reversible'
+    ].filter(Boolean).join('\n');
+    if (!confirm(lines + '\n\nConfirm this action on the enrolled host (not a silent Auto)?')) return;
+    if (btn) btn.innerHTML = '<span class="spin">↻</span> Confirming…';
+    const confRes = await fetch('/api/response/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action_id: preview.action_id, confirm: true })
+    });
+    const data = await confRes.json().catch(function(){ return {}; });
+    if (confRes.ok && (data.applied || data.status === 'queued' || data.status === 'sent' || data.status === 'executed' || data.status === 'observed')) {
+      toast(data.message || data.status || 'Response recorded', 'ok');
       if (typeof refreshMonitorData === 'function') refreshMonitorData();
     } else {
-      const err = data.error || data.detail || 'Action failed';
-      toast(err, 'err');
+      toast(data.error || data.detail || 'Action was not applied', 'err');
     }
   } catch (err) {
     toast('Network error executing containment action: ' + err.message, 'err');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = btn.dataset.origText || 'Execute';
+      btn.textContent = btn.dataset.origText || 'Preview & confirm';
     }
   }
 }
@@ -3430,8 +3498,8 @@ function renderIncidents(incidents){
         <div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid var(--border);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
             <div style="font-size:11.5px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;">
-              <span style="color:var(--accent);">Incident Containment:</span>
-              <span style="font-size:10.5px;color:var(--text-dim);font-weight:400;">Choose an action to enforce changes directly on this host</span>
+              <span style="color:var(--accent);">Host response:</span>
+              <span style="font-size:10.5px;color:var(--text-dim);font-weight:400;">Dry-run, confirm, signed audit. Mode ${esc((inc.response && inc.response.mode) || 'recommend')}</span>
             </div>
             <button class="btn btn-g btn-sm" style="padding:2px 8px;font-size:10.5px;border-radius:6px;" onclick="promptCustomAction('${esc(inc.id)}')">Custom Action…</button>
           </div>
@@ -3450,17 +3518,17 @@ function renderIncidents(incidents){
             </select>
             <span class="contain-note" id="act-note-${esc(inc.id)}">Choose one action. The target IP or process is selected once.</span>
             <button class="btn btn-p btn-sm" style="padding:8px 20px;font-size:12px;border-radius:8px;" onclick="executeSelectedIncidentAction('${esc(inc.id)}', this)">
-              Enforce Action
+              Preview &amp; confirm
             </button>
           </div>
 
           ${taken.length ? `
             <div style="margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid rgba(61,220,151,.25);">
-              <div style="font-size:10px;font-weight:700;color:var(--success);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Enforced Actions Audit Log:</div>
+              <div style="font-size:10px;font-weight:700;color:var(--success);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Signed response audit:</div>
               ${taken.map(t => `
                 <div style="font-size:11px;color:var(--text);font-family:var(--mono);line-height:1.5;">
-                  &bull; ${esc(t.message || t.action || 'Action executed')}
-                  <span style="color:var(--text-dim);font-size:9.5px;margin-left:6px;">${esc(t.timestamp ? t.timestamp.split('T')[1].split('.')[0] + 'Z' : '')}</span>
+                  &bull; ${esc([t.rule_id, t.status || t.action, t.target, t.message || t.error].filter(Boolean).join(' · ') || 'Action recorded')}
+                  <span style="color:var(--text-dim);font-size:9.5px;margin-left:6px;">${esc(t.audit && t.audit.signature ? String(t.audit.signature).slice(0,12) : '')}</span>
                 </div>
               `).join('')}
             </div>
@@ -4208,6 +4276,7 @@ function loadFleetSettingsFrom(fl){
     }
   }
   loadFleetHostsTable();
+  loadResponsePolicy();
 }
 
 async function loadFleetSettings(){
@@ -4256,6 +4325,65 @@ async function mintEnrollmentToken(){
     toast('Could not mint token', 'err');
   }
 }
+async function loadResponsePolicy(){
+  try {
+    const res = await fetch('/api/response/policy');
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) return;
+    const mode = document.getElementById('cfg-response-site-mode');
+    if (mode) mode.value = data.site_mode || 'recommend';
+    const allow = document.getElementById('cfg-response-auto-allowed');
+    if (allow) allow.checked = !!data.auto_allowed;
+    const note = document.getElementById('response-policy-note');
+    if (note) {
+      note.textContent = data.auto_allowed
+        ? ('Auto armed' + (data.auto_armed_at ? ' at ' + data.auto_armed_at : '') + '. Ceiling: ' + (data.ceiling || 'auto') + '.')
+        : 'Auto is off. New sites stay on Recommend until an operator arms Auto.';
+    }
+  } catch (e) {}
+}
+async function saveResponsePolicy(){
+  const mode = (document.getElementById('cfg-response-site-mode') || {}).value || 'recommend';
+  const allow = !!(document.getElementById('cfg-response-auto-allowed') || {}).checked;
+  let confirmAuto = false;
+  if (allow) {
+    confirmAuto = confirm('Arm Auto on this site? Matching rules will execute without a second operator click. New sites never start this way.');
+    if (!confirmAuto) {
+      const box = document.getElementById('cfg-response-auto-allowed');
+      if (box) box.checked = false;
+      return;
+    }
+  }
+  try {
+    const res = await fetch('/api/response/policy', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({site_mode: mode, auto_allowed: allow, confirm_auto: confirmAuto})
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) { toast(data.detail || 'Could not save response policy', 'err'); return; }
+    toast('Response policy saved. Default remains Recommend until Auto is armed.', 'ok');
+    loadResponsePolicy();
+    loadAssets();
+  } catch (e) {
+    toast('Could not save response policy', 'err');
+  }
+}
+async function setAssetResponseMode(assetId, mode){
+  try {
+    const res = await fetch('/api/response/assets/' + encodeURIComponent(assetId), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mode: mode})
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) { toast(data.detail || 'Could not set response mode', 'err'); loadAssets(); return; }
+    toast('Response mode for ' + assetId + ' is ' + (data.effective_mode || mode), 'ok');
+    loadAssets();
+  } catch (e) {
+    toast('Could not set response mode', 'err');
+  }
+}
 async function loadFleetHostsTable(){
   const wrap = document.getElementById('fleet-hosts-tbl');
   if (!wrap) return;
@@ -4271,10 +4399,11 @@ async function loadFleetHostsTable(){
       <td style="font-weight:600">${esc(h.hostname)}</td>
       <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(h.agent_id)}</td>
       <td style="color:${fleetStatusColor(h.status)};font-weight:600">${esc(h.status||'offline')}</td>
+      <td>${responseModeControl(h)}</td>
       <td style="color:var(--text-dim);font-size:11px">${esc(h.last_seen||'never')}</td>
       <td>${fleetHostActions(h)}</td>
     </tr>`).join('');
-    wrap.innerHTML = `<table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>Status</th><th>Last seen</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    wrap.innerHTML = `<table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>Status</th><th>Response</th><th>Last seen</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   } catch (e) {
     wrap.innerHTML = '<div class="empty"><div class="eh">Could not load hosts</div></div>';
   }

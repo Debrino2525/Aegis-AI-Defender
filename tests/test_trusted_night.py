@@ -39,6 +39,8 @@ def test_api_and_containment_require_auth(client):
 
     assert client.get("/api/scans").status_code == 401
     assert client.get("/api/settings").status_code == 401
+    assert client.get("/api/response/policy").status_code == 401
+    assert client.get("/api/response/actions").status_code == 401
     denied = client.post(
         "/api/incidents/action",
         json={"incident_id": "INC-1", "action_type": "terminate_process", "target": "evil.exe"},

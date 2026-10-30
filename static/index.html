@@ -1305,26 +1305,6 @@ select option:checked, select option:hover {
   <div class="card"><div id="hist-wrap"><div class="empty"><div class="ei"></div><div class="eh">No reports yet</div></div></div></div>
 </div>
 
-<div id="platform-setup" style="display:none;position:fixed;inset:0;background:rgba(6,10,16,.55);z-index:80;align-items:center;justify-content:center;padding:16px">
-  <div class="card" style="width:min(480px,100%);padding:16px">
-    <div class="ch">
-      <div class="ct" id="platform-setup-title">Connect</div>
-      <button class="btn btn-g btn-sm" onclick="document.getElementById('platform-setup').style.display='none'">Cancel</button>
-    </div>
-    <p id="platform-setup-help" style="font-size:12px;color:var(--text-dim);line-height:1.45;margin:0 0 12px"></p>
-    <p style="font-size:12px;margin:0 0 12px"><a id="platform-setup-create" href="#" target="_blank" rel="noopener">Open the provider to create the app</a></p>
-    <div class="fl">Redirect URI — register this on the provider app</div>
-    <input class="fi" id="platform-setup-redirect" readonly style="margin-bottom:10px"/>
-    <div class="fl">Client ID</div>
-    <input class="fi" id="platform-setup-id" autocomplete="off" style="margin-bottom:10px"/>
-    <div class="fl">Client secret</div>
-    <input class="fi" id="platform-setup-secret" type="password" autocomplete="off" style="margin-bottom:12px"/>
-    <div style="display:flex;justify-content:flex-end">
-      <button class="btn btn-p btn-sm" onclick="submitPlatformSetup()">Continue to sign-in</button>
-    </div>
-  </div>
-</div>
-
 <!-- SETTINGS & ALERT CONFIGURATION -->
 <div class="page" id="page-settings">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -1834,8 +1814,6 @@ async function loadRisks(){
 }
 
 // ── THREAT PAGE ────────────────────────────────────────────────────────────
-let _platformSetup = {provider:'', contactId:''};
-
 function workspaceLink(connections, provider){
   return (connections || []).find(function(c){ return c.provider === provider && !c.contact_id; }) || null;
 }
@@ -1879,9 +1857,9 @@ function platformCardsHtml(connections){
   const emailActions = platformActions(microsoft, 'email_microsoft', '', 'Connect Microsoft', 'Disconnect Microsoft')
     + platformActions(google, 'email_google', '', 'Connect Google', 'Disconnect Google');
   return [
-    platformCard('Slack', 'Tap Connect, then approve the Slack workspace.', slack, platformActions(slack, 'slack', '', 'Connect')),
-    platformCard('Microsoft Teams', 'Tap Connect, then sign in with the Teams account that should receive the page.', teams, platformActions(teams, 'teams', '', 'Connect')),
-    platformCard('Email', 'Tap Connect for Microsoft 365 or Google. Alerts go to that mailbox.', emailLink, emailActions),
+    platformCard('Slack', 'Tap Connect. The browser opens Slack so you can sign in and allow Aegis.', slack, platformActions(slack, 'slack', '', 'Connect')),
+    platformCard('Microsoft Teams', 'Tap Connect. The browser opens Microsoft so you can sign in and allow Aegis.', teams, platformActions(teams, 'teams', '', 'Connect')),
+    platformCard('Email', 'Tap Connect. The browser opens Microsoft 365 or Google so you can sign in. Alerts go to that mailbox.', emailLink, emailActions),
   ].join('');
 }
 function paintPlatformCards(connections){
@@ -1900,47 +1878,8 @@ async function connectPlatform(provider, contactId){
     const data = await res.json().catch(function(){ return {}; });
     if(!res.ok){ toast(data.detail || 'Could not start connect', 'err'); return; }
     if(data.authorize_url){ location.href = data.authorize_url; return; }
-    if(data.setup_required){
-      _platformSetup = {provider: provider, contactId: contactId || ''};
-      const names = {slack:'Slack', teams:'Microsoft Teams', email_microsoft:'Microsoft email', email_google:'Google email'};
-      const createUrls = {
-        slack: 'https://api.slack.com/apps?new_app=1',
-        teams: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
-        email_microsoft: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
-        email_google: 'https://console.cloud.google.com/auth/clients'
-      };
-      document.getElementById('platform-setup-title').textContent = 'One-time setup for ' + (names[provider] || 'this platform');
-      document.getElementById('platform-setup-help').textContent = 'Responders never fill this in. After this console has an app, Connect opens the provider in the browser and they sign in there. Google, Slack, and Microsoft only show that sign-in for an app that already exists, so this machine needs the client ID and secret once. Paste them, then Continue opens the sign-in page. The next Connect skips this form.';
-      const createLink = document.getElementById('platform-setup-create');
-      createLink.href = createUrls[provider] || 'https://developers.google.com';
-      createLink.textContent = 'Open ' + (names[provider] || 'the provider') + ' to create the app';
-      document.getElementById('platform-setup-redirect').value = data.redirect_uri || '';
-      document.getElementById('platform-setup-id').value = '';
-      document.getElementById('platform-setup-secret').value = '';
-      document.getElementById('platform-setup').style.display = 'flex';
-      return;
-    }
-    toast('The provider app is not ready yet', 'err');
-  }catch(e){ toast('Could not start connect', 'err'); }
-}
-async function submitPlatformSetup(){
-  const clientId = document.getElementById('platform-setup-id').value.trim();
-  const clientSecret = document.getElementById('platform-setup-secret').value;
-  document.getElementById('platform-setup-secret').value = '';
-  if(!clientId || !clientSecret.trim()){ toast('Enter the client ID and secret from the provider app', 'err'); return; }
-  try{
-    const res = await fetch('/api/integrations/' + encodeURIComponent(_platformSetup.provider) + '/start', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contact_id: _platformSetup.contactId,
-        client_id: clientId,
-        client_secret: clientSecret.trim()
-      })
-    });
-    const data = await res.json().catch(function(){ return {}; });
-    if(data.authorize_url){ location.href = data.authorize_url; return; }
-    toast(data.detail || 'The provider app is not ready yet', 'err');
+    const names = {slack:'Slack', teams:'Microsoft', email_microsoft:'Microsoft', email_google:'Google'};
+    toast('Aegis cannot open ' + (names[provider] || 'that') + ' sign-in yet. The browser page exists only when Aegis has its own app there, the same way Cursor has its GitHub app.', 'err');
   }catch(e){ toast('Could not start connect', 'err'); }
 }
 async function disconnectPlatform(provider, contactId){

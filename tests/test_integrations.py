@@ -158,8 +158,10 @@ def test_connected_platform_is_paged_and_sms_is_not(tmp_path, monkeypatch):
 def test_console_leads_with_connect_not_sms():
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
     assert "Slack, Microsoft Teams, or email" in html
-    assert 'id="platform-setup"' in html
+    assert 'id="platform-setup"' not in html
+    assert "Client secret" not in html
     assert "function connectPlatform" in html
+    assert "location.href = data.authorize_url" in html
     for gone in (
         "Other channels",
         "SMS gateway",

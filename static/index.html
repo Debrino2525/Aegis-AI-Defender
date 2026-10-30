@@ -1422,7 +1422,7 @@ select option:checked, select option:hover {
   <div class="settings-tab-pane" id="stab-threat" style="display:none">
     <div class="card">
       <div class="ch"><div class="ct">Threat Intelligence Feeds &amp; CVE Enrichment API Keys</div></div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox syncs the last day of IOCs when an Auth-Key is saved. AbuseIPDB, OTX, and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox syncs the last day of IOCs when an Auth-Key is saved. AbuseIPDB syncs its blacklist when an API key is saved. OTX and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
       <div class="g2">
         <div>
           <div class="fl">NIST National Vulnerability Database (NVD 2.0) API Key</div>
@@ -1431,7 +1431,7 @@ select option:checked, select option:hover {
         </div>
         <div>
           <div class="fl">AbuseIPDB Threat Intelligence API Key</div>
-          <input class="fi" type="password" id="cfg-abuse-key" placeholder="Stored only. Lookups are not implemented."/>
+          <input class="fi" type="password" id="cfg-abuse-key" placeholder="Sent as the Key header" autocomplete="off"/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.abuseipdb.com/register" target="_blank" style="color:var(--accent)">abuseipdb.com &rarr;</a></div>
         </div>
         <div>

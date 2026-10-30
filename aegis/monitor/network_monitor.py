@@ -103,6 +103,22 @@ class NetworkMonitor:
 
         self.local_ips = get_local_ips()
 
+    def reset_operator_view(self) -> None:
+        """Drop alerts, graph, and sampled sockets so the map cannot keep leftover points."""
+        self.alerts.clear()
+        self.seen_alert_keys.clear()
+        self.watched_targets.clear()
+        self.conn_history.clear()
+        self.scan_tracker.clear()
+        self.graph_nodes.clear()
+        self.graph_edges.clear()
+        self.current_connections.clear()
+        self.connection_count_history.clear()
+        self.stats["alerts_generated"] = 0
+        self.stats["total_connections_seen"] = 0
+        self.stats["hosts_profiled"] = 0
+        self.behavioral_engine.baselines.clear()
+
     async def start(self):
         """Starts the monitoring loop."""
         self.running = True
@@ -806,7 +822,7 @@ class NetworkMonitor:
                 "LOW": sum(1 for a in self.alerts if a["severity"] == "LOW"),
                 "unacknowledged": sum(1 for a in self.alerts if not a["acknowledged"]),
             },
-            "geoip": geoip_snapshot(collect_monitor_ips(self.current_connections, active_nodes)),
+            "geoip": geoip_snapshot(collect_monitor_ips(self.current_connections)),
         }
 
     def acknowledge_alert(self, alert_id: str) -> bool:

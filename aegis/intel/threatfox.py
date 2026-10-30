@@ -98,6 +98,15 @@ def _ensure(conn) -> None:
     )
 
 
+def clear_snapshot(db) -> None:
+    """Drop stored ThreatFox rows. Used by platform reset. Never invents a count."""
+    with db._get_connection() as conn:
+        _ensure(conn)
+        conn.execute("DELETE FROM threatfox_iocs")
+        conn.execute("DELETE FROM threatfox_meta")
+        conn.commit()
+
+
 def snapshot(db) -> Optional[Dict[str, Any]]:
     """Last successful sync, or None when ThreatFox has never answered."""
     with db._get_connection() as conn:

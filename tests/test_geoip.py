@@ -91,7 +91,7 @@ def test_zero_zero_is_not_a_coordinate():
 
 def test_monitor_state_uses_lookup_and_skips_private(monkeypatch):
     def fake_snapshot(ips):
-        assert "10.0.0.8" in ips
+        assert "10.0.0.8" not in ips
         assert "45.33.32.156" in ips
         return {
             "configured": True,
@@ -117,6 +117,70 @@ def test_monitor_state_uses_lookup_and_skips_private(monkeypatch):
     assert state["geoip"]["points"][0]["latitude"] == 5.6037
     assert state["geoip"]["points"][0]["longitude"] == -0.187
     assert all(point["ip"] != "10.0.0.8" for point in state["geoip"]["points"])
+
+
+def test_web_edge_and_graph_nodes_do_not_seed_the_map():
+    from aegis.monitor.geoip import collect_monitor_ips
+
+    ips = collect_monitor_ips(
+        [
+            {"local_ip": "10.0.0.8", "remote_ip": "142.250.1.1", "remote_port": 443},
+            {"local_ip": "10.0.0.8", "remote_ip": "45.33.32.156", "remote_port": 22},
+        ],
+        [{"id": "leftover", "ip": "1.2.3.4"}],
+    )
+    assert "142.250.1.1" not in ips
+    assert "1.2.3.4" not in ips
+    assert "leftover" not in ips
+    assert ips == ["45.33.32.156"]
+
+
+def test_reset_operator_view_drops_map_inputs():
+    import time
+
+    engine = NetworkMonitor()
+    engine.current_connections = [{
+        "local_ip": "10.0.0.8",
+        "remote_ip": "45.33.32.156",
+        "remote_port": 22,
+    }]
+    engine.graph_nodes["leftover"] = {
+        "id": "leftover",
+        "ip": "1.2.3.4",
+        "type": "external",
+        "connections": 4,
+        "last_seen": time.time(),
+        "is_suspicious": False,
+    }
+    engine.reset_operator_view()
+    assert engine.current_connections == []
+    assert engine.graph_nodes == {}
+    state = engine.get_state()
+    assert state["geoip"]["points"] == []
+    assert state["graph"]["nodes"] == []
+    assert state["connections"] == []
+
+
+def test_reset_api_drops_leftover_graph_from_the_map():
+    import time
+    from server import monitor
+
+    headers = {"Authorization": f"Bearer {os.environ['AEGIS_ADMIN_TOKEN']}"}
+    monitor.graph_nodes["leftover"] = {
+        "id": "leftover",
+        "ip": "1.2.3.4",
+        "type": "external",
+        "connections": 4,
+        "last_seen": time.time(),
+        "is_suspicious": False,
+    }
+    with TestClient(app) as client:
+        cleared = client.post("/api/reset", headers=headers)
+        assert cleared.status_code == 200
+        state = client.get("/api/monitor", headers=headers).json()
+        assert all(node.get("id") != "leftover" for node in state["graph"]["nodes"])
+        assert all(point.get("ip") != "1.2.3.4" for point in state["geoip"]["points"])
+        assert state["geoip"]["points"] == []
 
 
 def test_fixture_mmdb_returns_known_coordinate(tmp_path):
@@ -185,3 +249,6 @@ def test_map_does_not_invent_coordinates():
     assert "for (let lon = -180" not in html
     assert "geo-heartbeat" in html
     assert 'html[data-theme="light"] .tv-stage-wrap' in html
+    assert "stage.replaceChildren()" in html
+    assert "geoMapPromise = null" in html
+    assert "applyMonitorGeo({configured:false, database:'missing', points:[]})" in html

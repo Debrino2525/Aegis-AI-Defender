@@ -540,16 +540,12 @@ async def delete_scan(scan_id: str):
 # ── REST: reset platform to pristine clean state ────────────────────────────
 @app.post("/api/reset")
 async def reset_platform():
-    """Resets all scan data, findings, monitor alerts, and watchlist to clean state."""
+    """Resets scans, monitor view, and API intel snapshots. Does not invent telemetry."""
     scans.clear()
-    monitor.alerts.clear()
-    monitor.seen_alert_keys.clear()
-    monitor.watched_targets.clear()
-    monitor.conn_history.clear()
-    monitor.scan_tracker.clear()
-    monitor.stats["alerts_generated"] = 0
+    monitor.reset_operator_view()
     analyst.clear()
     get_history_store().clear_operator_history()
+    ThreatFeedSync(VulnerabilityDatabase()).clear_api_snapshots()
     return {"ok": True, "message": "Platform reset to clean state"}
 
 

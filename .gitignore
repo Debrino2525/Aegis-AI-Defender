@@ -31,6 +31,8 @@ ENV/
 *.pem
 *.key
 *.cert
+admin_token
+alert_signing_key
 
 # SQLite Databases & Local Storage
 *.sqlite3

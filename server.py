@@ -15,7 +15,8 @@ from typing import Dict, List, Optional, Any, Tuple
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from dotenv import load_dotenv
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,7 @@ from pydantic import BaseModel
 
 # Add parent dir to path for aegis imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+load_dotenv()
 
 from aegis.core.config import ScanConfig, TOP_PORTS
 from aegis.core.engine import ScanEngine
@@ -62,10 +64,106 @@ async def add_security_headers(request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
 
+
+_PUBLIC_API = {
+    ("POST", "/api/auth/login"),
+    ("GET", "/api/auth/status"),
+    ("POST", "/api/auth/logout"),
+}
+
+
+def _request_needs_auth(request: Request) -> bool:
+    if request.method == "OPTIONS":
+        return False
+    path = request.url.path
+    if not path.startswith("/api/"):
+        return False
+    if (request.method, path) in _PUBLIC_API:
+        return False
+    # The HMAC triage token is the credential for this one alert.
+    if path.startswith("/api/alerting/triage/"):
+        return False
+    return True
+
+
+def _unauthorized(detail: str = "Authentication required") -> JSONResponse:
+    response = JSONResponse({"detail": detail}, status_code=401)
+    response.headers["WWW-Authenticate"] = "Bearer"
+    return response
+
+
+@app.middleware("http")
+async def require_console_auth(request: Request, call_next):
+    if _request_needs_auth(request):
+        if not console_auth.authorized(
+            authorization=request.headers.get("authorization"),
+            cookie=request.cookies.get(console_auth.COOKIE),
+        ):
+            return _unauthorized()
+    return await call_next(request)
+
+
+class LoginRequest(BaseModel):
+    secret: Optional[str] = None
+    token: Optional[str] = None
+    password: Optional[str] = None
+
+
+def _login_secret(body: LoginRequest) -> str:
+    return (body.secret or body.token or body.password or "").strip()
+
+
+@app.post("/api/auth/login")
+async def login(body: LoginRequest, request: Request):
+    """Exchange the admin token or password for an HttpOnly session cookie."""
+    if not console_auth.check_secret(_login_secret(body)):
+        return _unauthorized("Invalid credentials")
+    sid = console_auth.issue_session()
+    response = JSONResponse({"ok": True, "authenticated": True})
+    response.set_cookie(
+        key=console_auth.COOKIE,
+        value=sid,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        max_age=console_auth.SESSION_TTL,
+        path="/",
+    )
+    return response
+
+
+@app.post("/api/auth/logout")
+async def logout(request: Request):
+    console_auth.drop_session(request.cookies.get(console_auth.COOKIE))
+    response = JSONResponse({"ok": True, "authenticated": False})
+    response.delete_cookie(console_auth.COOKIE, path="/")
+    return response
+
+
+@app.get("/api/auth/status")
+async def auth_status(request: Request):
+    ok = console_auth.authorized(
+        authorization=request.headers.get("authorization"),
+        cookie=request.cookies.get(console_auth.COOKIE),
+    )
+    return {"authenticated": ok, "auth_required": True}
+
+
+async def _accept_if_authorized(websocket: WebSocket) -> bool:
+    if console_auth.authorized(
+        authorization=websocket.headers.get("authorization"),
+        cookie=websocket.cookies.get(console_auth.COOKIE),
+        query_token=websocket.query_params.get("token"),
+    ):
+        await websocket.accept()
+        return True
+    await websocket.close(code=1008)
+    return False
+
 # Mount static files directory
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
-# In-memory scan store (use a real DB in production)
+# Scan cache. Durable copy lives in ~/.aegis/history.sqlite3.
 scans: Dict[str, Dict[str, Any]] = {}
 
 # ── Monitor singleton ────────────────────────────────────────────────────────
@@ -75,12 +173,69 @@ verifier = FindingVerifier()
 
 
 from aegis.alerting.router import alert_router
-from aegis.alerting.security import verify_triage_token
+from aegis.alerting.security import (
+    verify_triage_token,
+    bootstrap_signing_key,
+    signing_key_text,
+    signing_key_source,
+    signing_key_is_public_default,
+)
+from aegis.persistence.history_store import get_history_store
+from aegis.runtime import all_interfaces_warning, listen_host, listen_port
+from aegis.security.console_auth import console_auth
+from aegis.security.masking import (
+    ALERTING_SECRETS,
+    THREAT_INTEL_SECRETS,
+    is_masked_echo,
+    mask_secret,
+)
+
+def _env_file_path() -> Path:
+    override = os.getenv("AEGIS_ENV_FILE", "").strip()
+    return Path(override) if override else Path(".env")
+
+
+def announce_console_security() -> None:
+    """Load the admin credential and say so. Does not print a secret that was already set."""
+    bootstrap_signing_key()
+    console_auth.bootstrap()
+    warning = all_interfaces_warning(listen_host())
+    if warning:
+        print(warning, file=sys.stderr)
+    if console_auth.generated:
+        return
+    if os.getenv("AEGIS_ADMIN_TOKEN", "").strip():
+        where = "AEGIS_ADMIN_TOKEN"
+    elif os.getenv("AEGIS_ADMIN_PASSWORD", "").strip():
+        where = "AEGIS_ADMIN_PASSWORD"
+    else:
+        where = str(console_auth.token_path)
+    print(f"[AEGIS] Admin credential loaded from {where}.", file=sys.stderr)
+
+
+def remember_scan(scan: Dict[str, Any]) -> None:
+    scans[scan["id"]] = scan
+    get_history_store().upsert_scan(scan)
+
+
+def restore_history() -> None:
+    """Replace in-memory operator history with the SQLite copy. Used on startup and in tests."""
+    store = get_history_store()
+    loaded = store.load_scans()
+    scans.clear()
+    scans.update(loaded)
+    monitor.alerts = store.load_monitor_alerts()
+    monitor.stats["alerts_generated"] = len(monitor.alerts)
+    analyst.restore_operator_state(store.load_incident_states())
+
 
 @app.on_event("startup")
 async def _startup():
     """Auto-start the network monitor and alert router when the server boots."""
-    await monitor.start()
+    announce_console_security()
+    restore_history()
+    if not monitor.running:
+        await monitor.start()
     await alert_router.start()
 
 
@@ -242,6 +397,7 @@ async def delete_scan(scan_id: str):
     if scan_id not in scans:
         raise HTTPException(status_code=404, detail="Scan not found")
     del scans[scan_id]
+    get_history_store().delete_scan(scan_id)
     return {"ok": True}
 
 
@@ -257,6 +413,7 @@ async def reset_platform():
     monitor.scan_tracker.clear()
     monitor.stats["alerts_generated"] = 0
     analyst.clear()
+    get_history_store().clear_operator_history()
     return {"ok": True, "message": "Platform reset to clean state"}
 
 
@@ -350,7 +507,7 @@ async def start_scan(req: ScanRequest):
     elif custom_port and custom_port not in ports:
         ports = [custom_port] + [p for p in ports if p != custom_port]
 
-    scans[scan_id] = {
+    remember_scan({
         "id": scan_id,
         "target": clean_host,
         "status": "queued",
@@ -362,7 +519,7 @@ async def start_scan(req: ScanRequest):
         "findings": [],
         "services": [],
         "open_ports": [],
-    }
+    })
 
     # Run scan in background
     asyncio.create_task(_run_scan(scan_id, clean_host, ports, req.concurrency))
@@ -521,7 +678,9 @@ def _mask_key(val: str) -> str:
         return "***"
     return v[:4] + "..." + v[-4:]
 
-def _update_env_file(updates: Dict[str, str], env_path: Path = Path(".env")):
+def _update_env_file(updates: Dict[str, str], env_path: Optional[Path] = None):
+    if env_path is None:
+        env_path = _env_file_path()
     existing_lines = []
     if env_path.exists():
         existing_lines = env_path.read_text(encoding="utf-8").splitlines()
@@ -541,36 +700,38 @@ def _update_env_file(updates: Dict[str, str], env_path: Path = Path(".env")):
             new_lines.append(f"{k}={v}")
     env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
+def _masked_section(fields: Dict[str, str], extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    section: Dict[str, Any] = {}
+    for field, env_name in fields.items():
+        section[field] = mask_secret(os.getenv(env_name, ""))
+    if extra:
+        section.update(extra)
+    return section
+
+
 @app.get("/api/settings")
 async def get_platform_settings():
-    """Returns live system configuration with masked credentials for UI settings form."""
+    """Live configuration. Secrets are masked; the raw values never leave the process."""
+    signing = signing_key_text()
     return {
-        "threat_intel": {
-            "nvd_api_key": os.getenv("NVD_API_KEY", ""),
-            "abuseipdb_api_key": os.getenv("ABUSEIPDB_API_KEY", ""),
-            "otx_api_key": os.getenv("OTX_API_KEY", ""),
-            "virustotal_api_key": os.getenv("VIRUSTOTAL_API_KEY", ""),
-            "has_nvd": bool(os.getenv("NVD_API_KEY")),
-            "has_abuseipdb": bool(os.getenv("ABUSEIPDB_API_KEY")),
-            "has_otx": bool(os.getenv("OTX_API_KEY")),
-            "has_virustotal": bool(os.getenv("VIRUSTOTAL_API_KEY")),
-        },
-        "alerting": {
-            "arkesel_api_key": os.getenv("ARKESEL_API_KEY", ""),
+        "threat_intel": _masked_section(THREAT_INTEL_SECRETS, {
+            "has_nvd": bool(os.getenv("NVD_API_KEY", "").strip()),
+            "has_abuseipdb": bool(os.getenv("ABUSEIPDB_API_KEY", "").strip()),
+            "has_otx": bool(os.getenv("OTX_API_KEY", "").strip()),
+            "has_virustotal": bool(os.getenv("VIRUSTOTAL_API_KEY", "").strip()),
+        }),
+        "alerting": _masked_section(ALERTING_SECRETS, {
             "arkesel_sender_id": os.getenv("ARKESEL_SENDER_ID", "AegisAI"),
-            "hubtel_client_id": os.getenv("HUBTEL_CLIENT_ID", ""),
-            "hubtel_client_secret": os.getenv("HUBTEL_CLIENT_SECRET", ""),
             "hubtel_sender_id": os.getenv("HUBTEL_SENDER_ID", "AegisAI"),
-            "telegram_bot_token": os.getenv("TELEGRAM_BOT_TOKEN", ""),
             "telegram_chat_id": os.getenv("TELEGRAM_CHAT_ID", ""),
-            "whatsapp_api_token": os.getenv("WHATSAPP_API_TOKEN", ""),
             "whatsapp_phone_number_id": os.getenv("WHATSAPP_PHONE_NUMBER_ID", ""),
-            "critical_alert_webhook_url": os.getenv("CRITICAL_ALERT_WEBHOOK_URL", ""),
             "modem_serial_port": os.getenv("MODEM_SERIAL_PORT", "COM3"),
-            "modem_baudrate": int(os.getenv("MODEM_BAUDRATE", "115200")),
-            "canary_heartbeat_url": os.getenv("CANARY_HEARTBEAT_URL", ""),
-            "aegis_console_url": os.getenv("AEGIS_CONSOLE_URL", "http://localhost:8000")
-        }
+            "modem_baudrate": int(os.getenv("MODEM_BAUDRATE", "115200") or "115200"),
+            "aegis_console_url": os.getenv("AEGIS_CONSOLE_URL", "http://127.0.0.1:8000"),
+            "alert_signing_key": mask_secret(signing),
+            "alert_signing_key_source": signing_key_source(),
+            "alert_signing_key_rejected_default": signing_key_is_public_default(),
+        }),
     }
 
 class SettingsPayload(BaseModel):
@@ -581,33 +742,40 @@ class SettingsPayload(BaseModel):
 async def save_platform_settings(payload: SettingsPayload):
     """Persists updated settings into .env and hot-reloads runtime services."""
     updates = {}
-    if payload.threat_intel:
-        ti = payload.threat_intel
-        if "nvd_api_key" in ti: updates["NVD_API_KEY"] = str(ti["nvd_api_key"]).strip()
-        if "abuseipdb_api_key" in ti: updates["ABUSEIPDB_API_KEY"] = str(ti["abuseipdb_api_key"]).strip()
-        if "otx_api_key" in ti: updates["OTX_API_KEY"] = str(ti["otx_api_key"]).strip()
-        if "virustotal_api_key" in ti: updates["VIRUSTOTAL_API_KEY"] = str(ti["virustotal_api_key"]).strip()
-    if payload.alerting:
-        al = payload.alerting
-        if "arkesel_api_key" in al: updates["ARKESEL_API_KEY"] = str(al["arkesel_api_key"]).strip()
-        if "arkesel_sender_id" in al: updates["ARKESEL_SENDER_ID"] = str(al["arkesel_sender_id"]).strip()
-        if "hubtel_client_id" in al: updates["HUBTEL_CLIENT_ID"] = str(al["hubtel_client_id"]).strip()
-        if "hubtel_client_secret" in al: updates["HUBTEL_CLIENT_SECRET"] = str(al["hubtel_client_secret"]).strip()
-        if "hubtel_sender_id" in al: updates["HUBTEL_SENDER_ID"] = str(al["hubtel_sender_id"]).strip()
-        if "telegram_bot_token" in al: updates["TELEGRAM_BOT_TOKEN"] = str(al["telegram_bot_token"]).strip()
-        if "telegram_chat_id" in al: updates["TELEGRAM_CHAT_ID"] = str(al["telegram_chat_id"]).strip()
-        if "whatsapp_api_token" in al: updates["WHATSAPP_API_TOKEN"] = str(al["whatsapp_api_token"]).strip()
-        if "whatsapp_phone_number_id" in al: updates["WHATSAPP_PHONE_NUMBER_ID"] = str(al["whatsapp_phone_number_id"]).strip()
-        if "critical_alert_webhook_url" in al: updates["CRITICAL_ALERT_WEBHOOK_URL"] = str(al["critical_alert_webhook_url"]).strip()
-        if "modem_serial_port" in al: updates["MODEM_SERIAL_PORT"] = str(al["modem_serial_port"]).strip()
-        if "modem_baudrate" in al: updates["MODEM_BAUDRATE"] = str(al["modem_baudrate"]).strip()
-        if "canary_heartbeat_url" in al: updates["CANARY_HEARTBEAT_URL"] = str(al["canary_heartbeat_url"]).strip()
-        if "aegis_console_url" in al: updates["AEGIS_CONSOLE_URL"] = str(al["aegis_console_url"]).strip()
 
-    # Apply to os.environ and write to .env
-    for k, v in updates.items():
-        os.environ[k] = v
-    _update_env_file(updates)
+    def _take_secrets(section: Optional[Dict[str, Any]], field_map: Dict[str, str]) -> None:
+        if not section:
+            return
+        for field, env_name in field_map.items():
+            if field not in section or section[field] is None:
+                continue
+            submitted = str(section[field]).strip()
+            current = os.getenv(env_name, "")
+            if is_masked_echo(submitted, current):
+                continue
+            updates[env_name] = submitted
+
+    def _take_plain(section: Optional[Dict[str, Any]], field: str, env_name: str) -> None:
+        if not section or field not in section or section[field] is None:
+            return
+        updates[env_name] = str(section[field]).strip()
+
+    _take_secrets(payload.threat_intel, THREAT_INTEL_SECRETS)
+    _take_secrets(payload.alerting, ALERTING_SECRETS)
+    al = payload.alerting
+    _take_plain(al, "arkesel_sender_id", "ARKESEL_SENDER_ID")
+    _take_plain(al, "hubtel_sender_id", "HUBTEL_SENDER_ID")
+    _take_plain(al, "telegram_chat_id", "TELEGRAM_CHAT_ID")
+    _take_plain(al, "whatsapp_phone_number_id", "WHATSAPP_PHONE_NUMBER_ID")
+    _take_plain(al, "modem_serial_port", "MODEM_SERIAL_PORT")
+    _take_plain(al, "modem_baudrate", "MODEM_BAUDRATE")
+    _take_plain(al, "aegis_console_url", "AEGIS_CONSOLE_URL")
+
+    # Apply to os.environ and write to .env. Masked echoes were dropped above.
+    if updates:
+        for k, v in updates.items():
+            os.environ[k] = v
+        _update_env_file(updates)
 
     # Hot reload alert router adapters
     alert_router.adapter_sms.arkesel_api_key = os.getenv("ARKESEL_API_KEY", "").strip()
@@ -761,13 +929,15 @@ async def execute_incident_action(req: IncidentActionRequest):
         inc.record_action(res)
     else:
         inc.record_action({"action": req.action_type, "success": False, "error": res.get("error", "Failed")})
+    get_history_store().save_incident_states(analyst.export_operator_state())
 
     return res
 
 
 @app.websocket("/ws/monitor")
 async def ws_monitor(websocket: WebSocket):
-    await websocket.accept()
+    if not await _accept_if_authorized(websocket):
+        return
     try:
         while True:
             state = monitor.get_state()
@@ -785,7 +955,8 @@ async def ws_monitor(websocket: WebSocket):
 # ── WebSocket: real-time scan progress stream ───────────────────────────────
 @app.websocket("/ws/scan/{scan_id}")
 async def websocket_scan(websocket: WebSocket, scan_id: str):
-    await websocket.accept()
+    if not await _accept_if_authorized(websocket):
+        return
     last_sent = 0
     try:
         while True:
@@ -1022,6 +1193,9 @@ async def _run_scan(scan_id: str, target: str, ports: List[int], concurrency: in
         scan["status"] = "error"
         scan["log"].append(f"[!] Fatal error: {e}")
         scan["progress"] = 100
+    finally:
+        if scan_id in scans:
+            get_history_store().upsert_scan(scans[scan_id])
 
 
 async def _run_update():
@@ -1031,3 +1205,20 @@ async def _run_update():
         await syncer.sync_all()
     except Exception as e:
         print(f"[!] Error during threat feed synchronization: {e}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    host = listen_host()
+    port = listen_port()
+    warning = all_interfaces_warning(host)
+    if warning:
+        print(warning, file=sys.stderr)
+    else:
+        print(f"[AEGIS] Listening on http://{host}:{port}", file=sys.stderr)
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level=os.getenv("AEGIS_LOG_LEVEL", "info"),
+    )

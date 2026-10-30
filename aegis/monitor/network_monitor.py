@@ -510,6 +510,7 @@ class NetworkMonitor:
         # Keep last 500 alerts
         self.alerts = self.alerts[-500:]
         self.stats["alerts_generated"] += 1
+        self._persist_monitor_alert(alert)
         try:
             from aegis.alerting.router import alert_router
             import asyncio
@@ -792,5 +793,13 @@ class NetworkMonitor:
         for a in self.alerts:
             if a["id"] == alert_id:
                 a["acknowledged"] = True
+                self._persist_monitor_alert(a)
                 return True
         return False
+
+    def _persist_monitor_alert(self, alert: Dict[str, Any]) -> None:
+        try:
+            from aegis.persistence.history_store import get_history_store
+            get_history_store().save_monitor_alert(alert)
+        except Exception as exc:
+            print(f"[AEGIS] Failed to persist monitor alert {alert.get('id')}: {exc}")

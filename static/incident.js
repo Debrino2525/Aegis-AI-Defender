@@ -402,7 +402,13 @@
     html += fact("First seen", inc.first_seen);
     html += fact("Last seen", inc.last_seen);
     if (inc.duration_seconds != null) html += fact("Duration", inc.duration_seconds + "s");
-    html += "</ul></div>";
+    html += "</ul>";
+    if (list(inc.source_ips).length) {
+      html += '<p class="muted">' + list(inc.source_ips).map(function (ip) {
+        return '<a href="/investigate?ip=' + encodeURIComponent(ip) + '">Investigate ' + esc(ip) + "</a>";
+      }).join(" · ") + "</p>";
+    }
+    html += "</div>";
     html += '<div class="block" id="evidence"><h3>Evidence</h3>';
     if (!alerts.length) html += '<p class="muted">No alerts were included on this incident.</p>';
     else {
@@ -529,6 +535,9 @@
       var addrs = [].concat(row.ipv4 || [], row.ipv6 || []);
       if (addrs.length) html += fact("Addresses", addrs.join(", "));
       if (row.listen_count != null) html += fact("Listening ports", row.listen_count);
+      if (row.agent_id) {
+        html += '<li><a href="/investigate?host=' + encodeURIComponent(row.agent_id) + '">Open device investigation</a></li>';
+      }
       html += "</ul>";
     });
     html += "</div>";

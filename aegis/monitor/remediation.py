@@ -316,5 +316,128 @@ class RemediationEngine:
             return {"success": False, "error": f"Socket inspection error: {str(e)}"}
 
 
+def preview_contain_action(
+    action: str,
+    target: str,
+    sockets: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    """Describe a containment action without executing it.
+
+    Investigation contain is dry-run only. This never terminates a process,
+    writes a firewall rule, or stages enforce_pending_containment.bat.
+    """
+    now_iso = datetime.now(timezone.utc).isoformat()
+    sockets = sockets or []
+    action = (action or "").strip()
+    target = (target or "").strip()
+
+    base = {
+        "success": True,
+        "dry_run": True,
+        "mutates": False,
+        "action": action,
+        "target": target,
+        "timestamp": now_iso,
+    }
+
+    if action == "block_ip":
+        try:
+            ip_obj = ipaddress.ip_address(target)
+            if ip_obj.is_loopback or ip_obj.is_unspecified:
+                return {
+                    **base,
+                    "success": False,
+                    "error": f"Refusing to preview a block of loopback or invalid address '{target}'.",
+                }
+        except ValueError:
+            return {
+                **base,
+                "success": False,
+                "error": f"Invalid IP address format: '{target}'.",
+            }
+        rule_name_out = f"Aegis_Block_Out_{target.replace(':', '_')}"
+        rule_name_in = f"Aegis_Block_In_{target.replace(':', '_')}"
+        return {
+            **base,
+            "label": f"Block IP {target}",
+            "would": (
+                f"Add Windows Defender Firewall block rules for {target} on this console host. "
+                "Not executed."
+            ),
+            "commands": [
+                f'netsh advfirewall firewall add rule name="{rule_name_out}" dir=out action=block remoteip={target}',
+                f'netsh advfirewall firewall add rule name="{rule_name_in}" dir=in action=block remoteip={target}',
+            ],
+            "rule_name": rule_name_out,
+        }
+
+    if action == "isolate_connections":
+        matching = [
+            sock for sock in sockets
+            if str(sock.get("remote_ip") or "") == target
+            or str(sock.get("local_ip") or "") == target
+        ]
+        pids = []
+        for sock in matching:
+            pid = sock.get("pid")
+            if pid is not None and pid not in pids:
+                pids.append(pid)
+        if matching:
+            would = (
+                f"Would terminate {len(pids) or 'the owning'} process(es) holding "
+                f"{len(matching)} sampled socket(s) involving {target}. Not executed."
+            )
+        else:
+            would = (
+                f"No live socket sample involving {target} on this console. "
+                "Isolate would find nothing to close. Not executed."
+            )
+        return {
+            **base,
+            "label": f"Drop sockets to {target}",
+            "would": would,
+            "matching_sockets": len(matching),
+            "pids": pids,
+            "commands": [f"taskkill /F /PID {pid}" for pid in pids],
+        }
+
+    if action == "terminate_process":
+        clean = os.path.basename(target).strip()
+        if not clean:
+            return {**base, "success": False, "error": "No process name specified."}
+        if clean.lower() in PROTECTED_PROCESS_NAMES:
+            return {
+                **base,
+                "success": False,
+                "error": f"Refusing to preview termination of protected process '{clean}'.",
+            }
+        matching = [
+            sock for sock in sockets
+            if os.path.basename(str(sock.get("process") or "")).lower() in {clean.lower(), clean.lower() + ".exe"}
+        ]
+        pids = []
+        for sock in matching:
+            pid = sock.get("pid")
+            if pid is not None and pid not in pids:
+                pids.append(pid)
+        return {
+            **base,
+            "label": f"Terminate process {clean}",
+            "would": (
+                f"Would terminate running instances of '{clean}' on this console host. "
+                "Not executed."
+            ),
+            "matching_sockets": len(matching),
+            "pids": pids,
+            "commands": (
+                [f"taskkill /F /PID {pid}" for pid in pids]
+                if pids
+                else [f"taskkill /F /IM {clean}"]
+            ),
+        }
+
+    return {**base, "success": False, "error": f"Unsupported action type '{action}'"}
+
+
 # Global singleton instance
 remediator = RemediationEngine()

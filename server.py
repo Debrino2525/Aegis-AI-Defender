@@ -199,9 +199,29 @@ from aegis.security.masking import (
 )
 from aegis.fleet.api import router as fleet_router
 from aegis.fleet.service import get_fleet_service
+from aegis.investigate.api import router as investigate_router, bind_sources as bind_investigation_sources
+from aegis.investigate.device import DeviceSources
 
 app.include_router(fleet_router)
+app.include_router(investigate_router)
 install_peer_cert_hook()
+
+
+def _investigation_sources() -> DeviceSources:
+    return DeviceSources(
+        hosts=get_fleet_service().list_hosts(include_never_seen=False).get("hosts") or [],
+        connections=list(monitor.current_connections or []),
+        conn_history=dict(monitor.conn_history or {}),
+        monitor_alerts=[
+            {k: v for k, v in alert.items() if not str(k).startswith("_")}
+            for alert in (monitor.alerts or [])
+        ],
+        routed_alerts=alert_router.queue.list_recent_alerts(limit=50),
+        scans=list(scans.values()),
+    )
+
+
+bind_investigation_sources(_investigation_sources)
 
 def _env_file_path() -> Path:
     override = os.getenv("AEGIS_ENV_FILE", "").strip()
@@ -301,6 +321,13 @@ async def root():
 async def incident_workspace():
     """Investigation surface: one incident, its evidence, and a confirmed response."""
     html_path = Path(__file__).parent / "static" / "incident.html"
+    return html_path.read_text(encoding="utf-8")
+
+
+@app.get("/investigate", response_class=HTMLResponse)
+async def device_investigation():
+    """One enrolled host or source IP: evidence timeline, related alerts, contain dry-run."""
+    html_path = Path(__file__).parent / "static" / "investigate.html"
     return html_path.read_text(encoding="utf-8")
 
 

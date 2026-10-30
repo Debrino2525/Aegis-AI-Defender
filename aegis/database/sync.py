@@ -6,8 +6,9 @@ Connects to multi-source threat intelligence feeds:
 2. NIST National Vulnerability Database (NVD CVE API 2.0) — Supports optional NVD_API_KEY (50 req/30s vs 5 req/30s).
 3. FIRST.org EPSS (Exploit Prediction Scoring System) — 100% Free & Open (No key required).
 4. AbuseIPDB (IP Reputation & Threat Indicators) — Supports optional ABUSEIPDB_API_KEY.
-5. AlienVault OTX (Open Threat Exchange Indicators) — Supports optional OTX_API_KEY.
-6. Abuse.ch ThreatFox (Malware C2 & Payload Feeds) — Auth-Key header required.
+5. AlienVault OTX (Open Threat Exchange Indicators) — X-OTX-API-KEY header required.
+6. VirusTotal popular threat categories — x-apikey header required.
+7. Abuse.ch ThreatFox (Malware C2 & Payload Feeds) — Auth-Key header required.
 """
 
 import os
@@ -103,24 +104,8 @@ class ThreatFeedSync:
             },
             self._threatfox_feed(),
             self._abuseipdb_feed(),
-            self._unwired_feed(
-                feed_id="alienvault_otx",
-                name="AlienVault Open Threat Exchange (OTX)",
-                provider="AT&T Cybersecurity",
-                feed_type="Global Threat Pulses & C2",
-                description="Not connected. A stored key does not pull pulses; this connector has no client.",
-                signup_url="https://otx.alienvault.com",
-                has_key=bool(self.otx_api_key),
-            ),
-            self._unwired_feed(
-                feed_id="virustotal",
-                name="VirusTotal",
-                provider="VirusTotal",
-                feed_type="File and URL reputation",
-                description="Not connected. A stored key does not run lookups; this connector has no client.",
-                signup_url="https://www.virustotal.com/gui/join-us",
-                has_key=bool(self.virustotal_api_key),
-            ),
+            self._otx_feed(),
+            self._virustotal_feed(),
         ]
 
     @staticmethod
@@ -186,6 +171,126 @@ class ThreatFeedSync:
             ),
             "docs": "Count is the number of addresses in the last successful response.",
         }
+
+    def _otx_feed(self) -> Dict[str, Any]:
+        """Status from the last OTX page. The count is stored indicators, not the subscription total."""
+        from aegis.intel.otx import snapshot
+
+        base = {
+            "id": "alienvault_otx",
+            "name": "AlienVault Open Threat Exchange (OTX)",
+            "provider": "AT&T Cybersecurity",
+            "type": "Subscribed threat pulses",
+            "auth_required": True,
+            "signup_url": "https://otx.alienvault.com",
+        }
+        if not self.otx_api_key:
+            return {
+                **base,
+                "status": "NOT_WIRED",
+                "has_key": False,
+                "record_count": None,
+                "description": "Not connected. Set OTX_API_KEY. Requests send it as the X-OTX-API-KEY header.",
+                "docs": "No pulse sync until an API key is set.",
+            }
+        stored = snapshot(self.db)
+        if stored is None:
+            return {
+                **base,
+                "status": "CONFIGURED",
+                "has_key": True,
+                "record_count": None,
+                "description": (
+                    "API key is set. Sync All Feeds pulls the first page of subscribed pulses. "
+                    "No snapshot is stored yet."
+                ),
+                "docs": "GET https://otx.alienvault.com/api/v1/pulses/subscribed with header X-OTX-API-KEY.",
+            }
+        count = stored["indicator_count"]
+        return {
+            **base,
+            "status": "ACTIVE",
+            "has_key": True,
+            "record_count": count,
+            "description": (
+                f"Last sync stored {count} indicators from the first page "
+                f"of subscribed pulses ({stored['pulses_in_page']} pulses, "
+                f"page limit {stored['page_limit']})."
+            ),
+            "docs": "Count is indicators kept from that page, not the full subscription size.",
+        }
+
+    async def sync_otx(self) -> Optional[int]:
+        """Store one page of OTX subscribed pulses. Returns None when it is not usable."""
+        from aegis.intel.otx import fetch_subscribed, replace_snapshot
+
+        result = await fetch_subscribed()
+        if not result["ok"] or result["pulses"] is None:
+            reason = result.get("reason") or "unavailable"
+            console.print(f"[yellow][!] OTX sync skipped: {reason}[/yellow]")
+            return None
+        count = replace_snapshot(self.db, result["pulses"], result["subscribed_count"])
+        console.print(f"[green][+] OTX sync stored {count} indicators.[/green]")
+        return count
+
+    def _virustotal_feed(self) -> Dict[str, Any]:
+        """Status from the last VirusTotal category list. Never invents a count."""
+        from aegis.intel.virustotal import snapshot
+
+        base = {
+            "id": "virustotal",
+            "name": "VirusTotal",
+            "provider": "VirusTotal",
+            "type": "Popular threat categories",
+            "auth_required": True,
+            "signup_url": "https://www.virustotal.com/gui/join-us",
+        }
+        if not self.virustotal_api_key:
+            return {
+                **base,
+                "status": "NOT_WIRED",
+                "has_key": False,
+                "record_count": None,
+                "description": "Not connected. Set VIRUSTOTAL_API_KEY. Requests send it as the x-apikey header.",
+                "docs": "No category sync until an API key is set.",
+            }
+        stored = snapshot(self.db)
+        if stored is None:
+            return {
+                **base,
+                "status": "CONFIGURED",
+                "has_key": True,
+                "record_count": None,
+                "description": (
+                    "API key is set. Sync All Feeds pulls popular threat categories. "
+                    "No snapshot is stored yet."
+                ),
+                "docs": "GET https://www.virustotal.com/api/v3/popular_threat_categories with header x-apikey.",
+            }
+        count = stored["category_count"]
+        return {
+            **base,
+            "status": "ACTIVE",
+            "has_key": True,
+            "record_count": count,
+            "description": (
+                f"Last sync stored {count} category names from VirusTotal popular threat categories."
+            ),
+            "docs": "Count is the number of category names in the last successful response.",
+        }
+
+    async def sync_virustotal(self) -> Optional[int]:
+        """Store one VirusTotal category list. Returns None when it is not usable."""
+        from aegis.intel.virustotal import fetch_categories, replace_snapshot
+
+        result = await fetch_categories()
+        if not result["ok"] or result["categories"] is None:
+            reason = result.get("reason") or "unavailable"
+            console.print(f"[yellow][!] VirusTotal sync skipped: {reason}[/yellow]")
+            return None
+        count = replace_snapshot(self.db, result["categories"])
+        console.print(f"[green][+] VirusTotal sync stored {count} categories.[/green]")
+        return count
 
     async def sync_abuseipdb(self) -> Optional[int]:
         """Store one AbuseIPDB blacklist response. Returns None when it is not usable."""
@@ -278,6 +383,12 @@ class ThreatFeedSync:
         abuseipdb_count = await self.sync_abuseipdb()
         if abuseipdb_count is not None:
             counts["abuseipdb"] = abuseipdb_count
+        otx_count = await self.sync_otx()
+        if otx_count is not None:
+            counts["alienvault_otx"] = otx_count
+        virustotal_count = await self.sync_virustotal()
+        if virustotal_count is not None:
+            counts["virustotal"] = virustotal_count
         return counts
 
     async def sync_cisa_kev(self) -> int:

@@ -38,6 +38,7 @@ def test_console_does_not_ship_known_fakes():
         'value="COM3"',
         "Timeline scrubber",
         "Passive Monitor",
+        "All systems operational",
         "Saturday Oct 24",
         "record_count||0",
     ):

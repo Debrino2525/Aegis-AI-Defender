@@ -208,15 +208,49 @@ class AlertQueue:
             return None
 
     def list_recent_alerts(self, limit: int = 50) -> List[Dict[str, Any]]:
+        from aegis.monitor.threat_patterns import hidden_queued_beacon_ids
         with self._get_conn() as conn:
-            rows = conn.execute("SELECT * FROM critical_alerts ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+            rows = conn.execute("SELECT * FROM critical_alerts ORDER BY created_at DESC").fetchall()
             results = []
             for r in rows:
                 d = dict(r)
                 d["zt_pillars"] = json.loads(d.get("zt_pillars") or "[]")
                 d["metadata"] = json.loads(d.get("metadata") or "{}")
                 results.append(d)
-            return results
+        hidden = hidden_queued_beacon_ids(results)
+        visible = [
+            row for row in results
+            if row.get("alert_id") not in hidden and "simulated" not in str(row.get("title") or "").lower()
+        ]
+        return visible[:limit]
+
+    def drop_routine_web_beacons(self) -> int:
+        """Delete stored beacons that are routine web traffic. Returns how many were removed."""
+        from aegis.monitor.threat_patterns import hidden_queued_beacon_ids
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                "SELECT alert_id, title, source_ip, dest_ip, dest_port, metadata FROM critical_alerts"
+            ).fetchall()
+            parsed = []
+            for row in rows:
+                item = dict(row)
+                item["metadata"] = json.loads(item.get("metadata") or "{}")
+                parsed.append(item)
+            hidden = hidden_queued_beacon_ids(parsed)
+            for alert_id in hidden:
+                conn.execute("DELETE FROM dispatch_audit WHERE alert_id = ?", (alert_id,))
+                conn.execute("DELETE FROM critical_alerts WHERE alert_id = ?", (alert_id,))
+            return len(hidden)
+
+    def drop_simulated_alerts(self) -> int:
+        """Remove incidents that were inserted as simulations."""
+        with self._get_conn() as conn:
+            rows = conn.execute("SELECT alert_id, title FROM critical_alerts").fetchall()
+            hidden = [row["alert_id"] for row in rows if "simulated" in str(row["title"] or "").lower()]
+            for alert_id in hidden:
+                conn.execute("DELETE FROM dispatch_audit WHERE alert_id = ?", (alert_id,))
+                conn.execute("DELETE FROM critical_alerts WHERE alert_id = ?", (alert_id,))
+            return len(hidden)
 
     def get_unacknowledged_alerts(self) -> List[Dict[str, Any]]:
         with self._get_conn() as conn:

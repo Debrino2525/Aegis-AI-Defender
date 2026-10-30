@@ -769,7 +769,7 @@ select option:checked, select option:hover {
 <!-- TOP BAR -->
 <nav id="topnav">
   <div class="brand">
-    <div class="brand-mark" title="Globitech Ghana">
+    <div class="brand-mark" title="Globitech">
       <svg width="22" height="22" viewBox="0 0 120 120" fill="none" role="img" aria-label="Globitech mark">
         <path d="M18 78C34 70 48 52 58 28C62 42 72 58 92 68C70 66 48 70 18 78Z" fill="#F7941D"/>
         <path d="M22 62C42 52 58 34 68 10C74 28 88 46 112 54C86 54 58 56 22 62Z" fill="#8DC63F"/>
@@ -919,8 +919,8 @@ select option:checked, select option:hover {
   <div class="card" style="margin-bottom:16px">
     <div class="ch">
       <div>
-        <div class="ct">Critical Alert Routing &amp; DoD Zero Trust Dispatcher</div>
-        <div style="font-size:11px;color:var(--text-dim)">Autonomous cascading notification (ChatOps &rarr; Local Ghana SMS &rarr; Cellular Out-of-Band) with dead-man escalation</div>
+        <div class="ct">Critical alert routing</div>
+        <div style="font-size:11px;color:var(--text-dim)">Chat, then SMS, then a cellular modem. A dead-man canary is separate and does not notify a person.</div>
       </div>
     </div>
     <div class="g4" id="alert-channels-grid" style="margin-top:12px;margin-bottom:16px">
@@ -1293,13 +1293,13 @@ select option:checked, select option:hover {
   <!-- TAB 1: Alert Dispatch Gateways -->
   <div class="settings-tab-pane" id="stab-channels">
     <div class="g2">
-      <!-- Local Ghana SMS Gateway -->
+      <!-- SMS gateway -->
       <div class="card">
-        <div class="ch"><div class="ct">Local Ghanaian SMS Gateway</div><span class="badge badge-done" id="badge-sms-status">Active</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Primary delivery medium for West African telcos (MTN, Telecel, AT). Direct delivery under 10 seconds.</div>
+        <div class="ch"><div class="ct">SMS gateway</div><span class="badge badge-done" id="badge-sms-status">Active</span></div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Optional. Used only after chat dispatch does not succeed. Leave the fields empty until a gateway is configured.</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div><div class="fl">Arkesel API Key (Recommended)</div><input class="fi" type="password" id="cfg-arkesel-key" placeholder="Enter Arkesel API v2 Key..."/></div>
-          <div><div class="fl">Arkesel Sender ID (NCA Registered)</div><input class="fi" id="cfg-arkesel-sender" placeholder="AegisAI (Max 11 chars)" value="AegisAI"/></div>
+          <div><div class="fl">Arkesel sender ID</div><input class="fi" id="cfg-arkesel-sender" placeholder="AegisAI (max 11 characters)" value="AegisAI"/></div>
           <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Hubtel SMS (Secondary Gateway)</div></div>
           <div class="g2">
             <div><div class="fl">Hubtel Client ID</div><input class="fi" id="cfg-hubtel-id" placeholder="Hubtel Client ID..."/></div>
@@ -1310,7 +1310,7 @@ select option:checked, select option:hover {
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
             <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test SMS</div>
             <div style="display:flex;gap:6px">
-              <input class="fi" id="test-sms-phone" placeholder="+233244000000" style="flex:1"/>
+              <input class="fi" id="test-sms-phone" placeholder="E.164 phone number" style="flex:1"/>
               <button class="btn btn-g btn-sm" onclick="testDispatchGateway('sms')">Verify SMS</button>
             </div>
           </div>
@@ -1376,7 +1376,7 @@ select option:checked, select option:hover {
       <div class="g3" style="margin-bottom:10px">
         <div><div class="fl">Full Name</div><input class="fi" id="new-c-name" placeholder="e.g. Samuel K. Mensah"/></div>
         <div><div class="fl">SOC Role</div><select class="fsel" id="new-c-role"><option>Tier-1 Security Analyst</option><option>SOC Team Lead</option><option>Incident Commander</option><option>Security Director</option><option>DevOps On-Call</option></select></div>
-        <div><div class="fl">Primary Phone (Ghana/Intl)</div><input class="fi" id="new-c-phone" placeholder="+233244123456"/></div>
+        <div><div class="fl">Primary phone</div><input class="fi" id="new-c-phone" placeholder="E.164 phone number"/></div>
       </div>
       <div class="g3" style="margin-bottom:14px">
         <div><div class="fl">WhatsApp Number (Optional)</div><input class="fi" id="new-c-whatsapp" placeholder="+233244123456"/></div>
@@ -1852,8 +1852,8 @@ async function loadAlertingState(){
       const canaryOk = (status.canary_heartbeat || {}).canary_configured;
       chGrid.innerHTML = `
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Local SMS (Ghana)</span><span class="badge ${smsOk?'badge-done':'badge-queued'}">${smsOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Arkesel / Hubtel Ghana Gateway (MTN, Telecel, AT)</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">SMS</span><span class="badge ${smsOk?'badge-done':'badge-queued'}">${smsOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
+          <div style="font-size:11px;color:var(--text-dim)">Configured SMS gateway</div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">ChatOps Dispatch</span><span class="badge ${chatOk?'badge-done':'badge-queued'}">${chatOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
@@ -1874,15 +1874,29 @@ async function loadAlertingState(){
         aWrap.innerHTML = '<div class="empty"><div class="eh">No active critical alerts in queue</div></div>';
       } else {
         const rows = alerts.map(a=>{
-          const pillars = (a.zt_pillars||[]).map(p=>`<span style="background:rgba(94,234,212,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-right:4px">${p}</span>`).join('') || '—';
+          const id = String(a.alert_id||'');
+          const pillars = (a.zt_pillars||[]).map(p=>`<span style="background:rgba(94,234,212,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-right:4px">${esc(p)}</span>`).join('') || '—';
           const escBadge = a.escalation_level > 0 ? `<span class="badge badge-error">Level ${a.escalation_level} Escalated</span>` : `<span class="badge badge-running">Level 0 Primary</span>`;
-          const ackBtn = a.acknowledged ? `<span style="color:var(--success);font-weight:700;font-size:11px">&#10003; Acknowledged</span>` : `<button class="btn btn-p btn-sm" onclick="ackCriticalAlert('${a.alert_id}')">Acknowledge</button>`;
-          return `<tr><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${a.alert_id}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">x${a.occurrence_count||1}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`;
+          const ackBtn = a.acknowledged ? `<span style="color:var(--success);font-weight:700;font-size:11px">&#10003; Acknowledged</span>` : `<button class="btn btn-p btn-sm" onclick="event.stopPropagation(); ackCriticalAlert('${id}')">Acknowledge</button>`;
+          const summary = esc(String(a.summary||'').replace(/\s*\|\s*Key:[\s\S]*$/,''));
+          const detail = `<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;font-size:11px">`
+            + `<div><div style="color:var(--text-dim)">Destination</div><div style="font-family:var(--mono)">${esc(a.dest_ip||'—')}${a.dest_port?':'+esc(a.dest_port):''}</div></div>`
+            + `<div><div style="color:var(--text-dim)">Tactic</div><div>${esc(a.tactic||'—')}</div></div>`
+            + `<div><div style="color:var(--text-dim)">Technique</div><div style="font-family:var(--mono)">${esc(a.technique||'—')}</div></div>`
+            + `<div><div style="color:var(--text-dim)">Last seen</div><div>${esc(a.last_occurrence||a.created_at||'—')}</div></div>`
+            + `</div><div style="margin-top:8px;line-height:1.45">${summary||'No additional detail was recorded.'}</div>`;
+          return `<tr style="cursor:pointer" onclick="toggleAlertDetail('${id}')"><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${esc(id)}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">x${a.occurrence_count||1}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`
+            + `<tr id="adet-${id}" style="display:none"><td colspan="7" style="background:var(--surface2);padding:12px 14px">${detail}</td></tr>`;
         }).join('');
-        aWrap.innerHTML = `<table class="ft"><thead><tr><th>ID</th><th>Incident</th><th>Source</th><th>DoD Zero Trust Pillars</th><th>Count</th><th>Escalation</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>`;
+        aWrap.innerHTML = `<table class="ft"><thead><tr><th>ID</th><th>Incident</th><th>Source</th><th>Zero Trust</th><th>Count</th><th>Escalation</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>`;
       }
     }
   }catch(e){console.warn('loadAlertingState error:', e);}
+}
+
+function toggleAlertDetail(id){
+  const row=document.getElementById('adet-'+id);
+  if(row) row.style.display=row.style.display==='table-row'?'none':'table-row';
 }
 
 async function ackCriticalAlert(aid){
@@ -1895,20 +1909,6 @@ async function ackCriticalAlert(aid){
       toast('Failed to acknowledge alert', 'err');
     }
   }catch(e){toast('Error connecting to alert service', 'err');}
-}
-
-async function sendTestCriticalAlert(){
-  toast('Dispatching simulated critical alert...');
-  try{
-    const res = await fetch('/api/alerting/test', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'Simulated Ransomware Lateral Movement (Test)', target:'192.168.10.50'})});
-    const d = await res.json();
-    if(d.ok){
-      toast(`Simulated alert ${d.alert_id} generated and routed`, 'ok');
-      loadAlertingState();
-    } else {
-      toast('Simulation failed', 'err');
-    }
-  }catch(e){toast('Network error triggering test', 'err');}
 }
 
 async function loadThreat(){

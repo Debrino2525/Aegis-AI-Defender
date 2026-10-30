@@ -224,8 +224,10 @@ def restore_history() -> None:
     loaded = store.load_scans()
     scans.clear()
     scans.update(loaded)
-    from aegis.monitor.threat_patterns import is_routine_web_edge_beacon
-    monitor.alerts = [a for a in store.load_monitor_alerts() if not is_routine_web_edge_beacon(a)]
+    from aegis.monitor.threat_patterns import visible_monitor_alerts
+    monitor.alerts = visible_monitor_alerts(store.load_monitor_alerts())
+    alert_router.queue.drop_routine_web_beacons()
+    alert_router.queue.drop_simulated_alerts()
     monitor.stats["alerts_generated"] = len(monitor.alerts)
     analyst.restore_operator_state(store.load_incident_states())
 

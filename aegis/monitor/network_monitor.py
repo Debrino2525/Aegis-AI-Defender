@@ -19,9 +19,9 @@ from urllib.parse import urlparse
 from aegis.monitor.behavioral_engine import BehavioralEngine
 from aegis.monitor.geoip import collect_monitor_ips, geoip_snapshot
 from aegis.monitor.threat_patterns import (
-    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS,
-    is_routine_web_edge_traffic,
+    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS, WEB_EDGE_PORTS,
     is_well_known_web_edge,
+    suppress_web_beacon,
 )
 
 
@@ -425,13 +425,25 @@ class NetworkMonitor:
                 technique="T1110",
             )
 
+    def _web_destinations(self, src: str) -> int:
+        """Distinct public web-port peers this host has talked to recently."""
+        dests = set()
+        for (host, dst, port), stamps in self.conn_history.items():
+            if host != src or not stamps or port not in WEB_EDGE_PORTS:
+                continue
+            if is_private_ip(dst):
+                continue
+            dests.add(dst)
+        return len(dests)
+
     def _check_beaconing(self, src: str, dsts: Set[str], now: float):
         """Detects regular interval beaconing (C2 check-in pattern)."""
+        siblings = self._web_destinations(src)
         for dst in dsts:
             if is_private_ip(dst):
                 continue
             for port in [80, 443, 8080, 8443, 4444, 4443]:
-                if is_routine_web_edge_traffic(dst, port):
+                if suppress_web_beacon(dst, port, siblings):
                     continue
                 key = (src, dst, port)
                 timestamps = self.conn_history.get(key, [])

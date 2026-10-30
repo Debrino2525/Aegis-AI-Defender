@@ -42,7 +42,7 @@ Aegis AI is an enterprise-grade cyber defense and vulnerability management platf
 ### 4. 🚨 Critical Alert Routing & DoD Zero Trust Escalation
 - **Autonomous Cascading Dispatch**:
   - **Primary**: Telegram Bot / WhatsApp Cloud API / Webhook (interactive buttons).
-  - **Fallback**: Local Ghanaian SMS via **Arkesel** or **Hubtel** (sub-10s delivery across MTN, Telecel, and AT networks).
+  - **Fallback**: SMS through a configured gateway (Arkesel or Hubtel) after chat dispatch does not succeed.
   - **Out-of-Band (OOB)**: Physical serial 4G/LTE modem (`AT+CMGS` on `COM3`) for air-gapped critical emergency dispatch.
 - **Zero Trust Cryptographic Triage Links**: Outbound SMS/chat alerts contain **no sensitive IP or CVE details**; alerts include short-lived HMAC-SHA256 tokens requiring authentication.
 - **Dead-Man Escalation Matrix**:
@@ -142,7 +142,7 @@ AEGIS_ADMIN_TOKEN=
 # NIST NVD 2.0 API Key (Increases rate limit by 10x)
 NVD_API_KEY=
 
-# Local Ghana SMS Gateways (MTN, Telecel, AT)
+# SMS gateways
 ARKESEL_API_KEY=
 ARKESEL_SENDER_ID=AegisAI
 

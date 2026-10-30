@@ -222,6 +222,9 @@ table.ht{width:100%;border-collapse:collapse;}
 table.ht th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;}
 table.ht td{padding:10px 12px;border-bottom:1px solid rgba(27,48,85,.4);font-size:12px;vertical-align:middle;}
 table.ht tr:hover td{background:var(--surface2);cursor:pointer;}
+.posture-cves{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.posture-cves .cve{font-family:var(--mono);font-size:10px;color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:1px 6px}
+.posture-empty{color:var(--text-dim);font-size:12px;font-weight:400}
 
 /* MONITOR STYLES */
 #mon-statsbar{display:flex;gap:12px;flex-wrap:wrap;}
@@ -1098,7 +1101,7 @@ select option:checked, select option:hover {
 
 <!-- ASSETS -->
 <div class="page" id="page-assets">
-  <div><div class="ph">Asset Inventory</div><div class="ps">Enrolled hosts from real agent heartbeats. Scan inventory stays separate.</div></div>
+  <div><div class="ph">Asset Inventory</div><div class="ps">Enrolled hosts with Prevent findings on the same record. Empty until an agent heartbeats.</div></div>
   <div id="assets-wrap"><div class="empty"><div class="ei"></div><div class="eh">No hosts have enrolled a heartbeat</div><div class="ep">Mint a token under Settings → Host agents and run python -m aegis.agent enroll on a Windows or Linux server.</div></div></div>
 </div>
 
@@ -2092,57 +2095,81 @@ function fleetHostActions(h){
   const investigate = `<a class="btn btn-g btn-sm" href="/investigate?host=${encodeURIComponent(h.agent_id || '')}">Investigate</a>`;
   return `<span style="display:flex;gap:6px;flex-wrap:wrap">${investigate}${revoke}<button class="btn btn-g btn-sm" type="button" onclick='reenrollFleetHost(${id})'>Re-enroll</button></span>`;
 }
+function postureBreakdown(p){
+  const b=(p&&p.severity_breakdown)||{};
+  return {crit:b.CRITICAL||0, high:b.HIGH||0, kev:(p&&p.kev_count)||0, n:(p&&p.finding_count)||0};
+}
+function postureCves(p){
+  const cves=(p&&p.cves)||[];
+  if(!cves.length) return '';
+  return `<div class="posture-cves">${cves.slice(0,8).map(c=>`<span class="cve">${esc(c.cve_id)}</span>`).join('')}</div>`;
+}
 async function loadAssets(){
   const wrap=document.getElementById('assets-wrap');
-  let fleet={hosts:[]}, intelData={hosts:[],tech_categories:{}};
+  let catalog={assets:[], unmatched_scans:[]};
   try{
-    const [fleetRes, intelRes]=await Promise.all([fetch('/api/fleet/hosts'), fetch('/api/intelligence')]);
-    if(fleetRes.ok) fleet=await fleetRes.json();
-    if(intelRes.ok) intelData=await intelRes.json();
+    const res=await fetch('/api/assets');
+    if(res.ok) catalog=await res.json();
   }catch(e){
     wrap.innerHTML='<div class="empty"><div class="ei"></div><div class="eh">Could not load assets</div></div>';
     return;
   }
-  const enrolled=fleet.hosts||[];
-  const scanned=intelData.hosts||[];
-  const cats=intelData.tech_categories||{};
+  const enrolled=catalog.assets||[];
+  const unmatched=catalog.unmatched_scans||[];
   let html='';
   if(!enrolled.length){
     html+='<div class="empty"><div class="ei"></div><div class="eh">No hosts have enrolled a heartbeat</div><div class="ep">Mint a token under Settings → Host agents and run python -m aegis.agent enroll on a Windows or Linux server.</div></div>';
   } else {
     const online=enrolled.filter(h=>h.status==='online').length;
+    const withFindings=enrolled.filter(h=>((h.posture||{}).finding_count||0)>0).length;
+    const fleetCrit=enrolled.reduce((n,h)=>n+(((h.posture||{}).severity_breakdown||{}).CRITICAL||0),0);
     html+=`<div class="g4" style="margin-bottom:16px">
       <div class="mc tc"><div class="ml">Enrolled hosts</div><div class="mv" style="font-size:22px">${enrolled.length}</div><div class="msub">from real heartbeats</div></div>
       <div class="mc tc"><div class="ml">Online</div><div class="mv" style="font-size:22px">${online}</div><div class="msub">seen in the last 90s</div></div>
+      <div class="mc tc"><div class="ml">With findings</div><div class="mv" style="font-size:22px">${withFindings}</div><div class="msub">Prevent joined to this host</div></div>
+      <div class="mc tc"><div class="ml">Critical on fleet</div><div class="mv" style="font-size:22px;color:${fleetCrit?'var(--critical)':'var(--text)'}">${fleetCrit}</div><div class="msub">from matching scans</div></div>
     </div>`;
     const rows=enrolled.map(h=>{
       const addrs=[].concat(h.ipv4||[], h.ipv6||[]).join(', ')||'—';
       const os=[h.os_name,h.arch].filter(Boolean).join(' ')||'—';
+      const p=h.posture||{};
+      const br=postureBreakdown(p);
+      const findingsCell=br.n
+        ? `<div style="font-weight:600">${br.n}</div>${postureCves(p)}`
+        : `<span class="posture-empty">${esc(p.empty_reason||'0 findings on last scan')}</span>`;
       return `<tr>
-        <td style="font-weight:600;color:var(--accent)">${esc(h.hostname)}</td>
-        <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(h.agent_id)}</td>
+        <td style="font-weight:600;color:var(--accent)">${esc(h.hostname)}<div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);font-weight:400">${esc(h.agent_id)}</div></td>
         <td>${esc(os)}</td>
         <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${esc(addrs)}</td>
         <td style="color:${fleetStatusColor(h.status)};font-weight:600">${esc(h.status||'offline')}</td>
         <td>${responseModeControl(h)}</td>
+        <td>${findingsCell}</td>
+        <td style="color:var(--critical);font-weight:600">${br.crit}</td>
+        <td style="color:var(--high);font-weight:600">${br.high}</td>
+        <td style="color:var(--text-dim)">${br.kev}</td>
+        <td style="color:var(--text-dim);font-size:11px">${esc(p.last_scanned_at||'—')}</td>
         <td style="color:var(--text-dim);font-size:11px">${esc(h.last_seen||'—')}</td>
-        <td style="color:var(--text-dim)">${h.listen_count!=null?h.listen_count:'—'}</td>
-        <td style="color:var(--text-dim)">${h.cpu_percent!=null?h.cpu_percent+'%':'—'}</td>
         <td>${fleetHostActions(h)}</td>
       </tr>`;
     }).join('');
     html+=`<div id="assets-reenroll-wrap" style="display:none;margin-bottom:12px" class="card"><div class="ch"><div class="ct">Re-enroll token</div></div><div class="fl">Copy this token now. It is not shown again.</div><input class="fi" id="assets-reenroll-token" readonly spellcheck="false"/><pre id="assets-reenroll-cmd" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap;margin-top:8px"></pre></div>`;
     html+=`<div class="card"><div class="ch"><div class="ct">Enrolled hosts</div></div>
-      <table class="ht"><thead><tr><th>Hostname</th><th>Agent</th><th>OS</th><th>Addresses</th><th>Status</th><th>Response</th><th>Last seen</th><th>Listen</th><th>CPU</th><th></th></tr></thead>
+      <table class="ht"><thead><tr><th>Host</th><th>OS</th><th>Addresses</th><th>Status</th><th>Response</th><th>Posture</th><th>Critical</th><th>High</th><th>KEV</th><th>Last scanned</th><th>Last seen</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
   }
-  if(scanned.length){
-    const catCards=Object.entries(cats).map(([c,i])=>`<div class="mc tc"><div class="ml">${i.icon} ${c}</div><div class="mv" style="font-size:22px">${i.count}</div><div class="msub">service${i.count!==1?'s':''}</div></div>`).join('');
-    const rows=scanned.map(h=>`<tr onclick="viewScan('${h.scan_id}')"><td style="font-weight:600;color:var(--accent)">${esc(h.host)}</td><td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${(h.open_ports||[]).join(', ')||'—'}</td><td style="color:${h.total_findings>0?'var(--medium)':'var(--success)'}">${h.total_findings}</td><td style="color:var(--critical)">${(h.severity_breakdown||{}).CRITICAL||0}</td><td style="color:var(--high)">${(h.severity_breakdown||{}).HIGH||0}</td><td style="color:var(--text-dim)">${h.duration?h.duration+'s':'—'}</td><td style="color:var(--text-dim);font-size:11px">${h.started_at?h.started_at.split('T')[0]:'—'}</td><td><a class="btn btn-g btn-sm" href="/investigate?ip=${encodeURIComponent(h.host)}" onclick="event.stopPropagation()">Investigate</a> <button class="btn btn-g btn-sm" onclick="event.stopPropagation();viewScan('${h.scan_id}')">View</button></td></tr>`).join('');
-    html+=`<div style="margin-top:20px"><div class="ps" style="margin-bottom:8px">Scan inventory (Prevent) — hosts this console scanned, not the enrolled fleet.</div>
-      <div class="g4" style="margin-bottom:16px">${catCards}</div>
-      <div class="card"><div class="ch"><div class="ct">Scan inventory</div></div>
-      <table class="ht"><thead><tr><th>Host</th><th>Ports</th><th>Findings</th><th>Critical</th><th>High</th><th>Duration</th><th>Scanned</th><th></th></tr></thead>
+  if(unmatched.length){
+    const rows=unmatched.map(h=>`<tr>
+      <td style="font-weight:600;color:var(--text-dim)">${esc(h.target)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">${(h.open_ports||[]).join(', ')||'—'}</td>
+      <td>${h.finding_count||0}</td>
+      <td style="color:var(--critical)">${(h.severity_breakdown||{}).CRITICAL||0}</td>
+      <td style="color:var(--high)">${(h.severity_breakdown||{}).HIGH||0}</td>
+      <td style="color:var(--text-dim);font-size:11px">${esc(h.started_at||'—')}</td>
+      <td><a class="btn btn-g btn-sm" href="/investigate?ip=${encodeURIComponent(h.target||'')}">Investigate</a> <button class="btn btn-g btn-sm" type="button" onclick="viewScan(${JSON.stringify(h.scan_id||'')})">View scan</button></td>
+    </tr>`).join('');
+    html+=`<div style="margin-top:20px"><div class="ps" style="margin-bottom:8px">Scanned addresses with no enrolled host — not a second fleet.</div>
+      <div class="card"><div class="ch"><div class="ct">Unmatched Prevent scans</div></div>
+      <table class="ht"><thead><tr><th>Target</th><th>Ports</th><th>Findings</th><th>Critical</th><th>High</th><th>Scanned</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div></div>`;
   }
   wrap.innerHTML=html;

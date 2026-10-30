@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
+from aegis.assets.api import decorate_hosts
 from aegis.fleet.service import get_fleet_service
 from aegis.fleet.tls import heartbeat_requires_client_cert, peer_cert_pem_from_request
 from aegis.response.engine import get_response_engine
@@ -96,11 +97,7 @@ async def agent_heartbeat(body: HeartbeatRequest, request: Request):
 @router.get("/api/fleet/hosts")
 async def list_fleet_hosts(include_all: bool = Query(False, alias="all")):
     payload = get_fleet_service().list_hosts(include_never_seen=include_all)
-    engine = get_response_engine()
-    for host in payload.get("hosts") or []:
-        agent_id = host.get("agent_id") or ""
-        host["response_mode"] = engine.asset_mode(agent_id)
-        host["effective_response_mode"] = engine.effective_asset_mode(agent_id)
+    payload["hosts"] = decorate_hosts(payload.get("hosts") or [])
     return payload
 
 

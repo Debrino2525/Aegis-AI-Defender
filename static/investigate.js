@@ -182,6 +182,8 @@
     if (row.status) bits.push(row.status);
     if (row.alert_count) bits.push(row.alert_count + (row.alert_count === 1 ? " alert" : " alerts"));
     if (row.socket_count) bits.push(row.socket_count + (row.socket_count === 1 ? " socket" : " sockets"));
+    if (row.finding_count) bits.push(row.finding_count + (row.finding_count === 1 ? " finding" : " findings"));
+    if (row.kev_count) bits.push(row.kev_count + " KEV");
     return '<button type="button" class="q-item" data-key="' + esc(row.id) + '"' + current + ">" +
       "<span></span>" +
       '<span class="q-id">' + esc(row.label || row.id) + "</span>" +
@@ -214,6 +216,7 @@
       html += '<p class="muted">Identity is the last agent heartbeat <a class="sample-link" href="#sample-' +
         esc(device.sample.id) + '">' + esc(device.sample.id) + "</a>.</p>";
     }
+    html += postureBlock(device.posture);
     html += assistBlock(inv.analyst_assist || inv);
     html += '<div class="block" id="evidence"><h3>Evidence timeline</h3>';
     var timeline = inv.timeline || [];
@@ -347,6 +350,50 @@
 
   function chip(text) {
     return '<span class="chip">' + esc(text) + "</span>";
+  }
+
+  function postureBlock(posture) {
+    var html = '<div class="block" id="posture"><h3>Prevent posture</h3>';
+    if (!posture) {
+      html += '<p class="muted">No posture object on this device.</p></div>';
+      return html;
+    }
+    var n = posture.finding_count || 0;
+    var breakdown = posture.severity_breakdown || {};
+    if (!n) {
+      html += '<p class="muted">' + esc(posture.empty_reason || "0 findings on last scan") + "</p></div>";
+      return html;
+    }
+    html += '<div class="chips">';
+    html += chip(n + (n === 1 ? " finding" : " findings"));
+    if (breakdown.CRITICAL) html += chip(breakdown.CRITICAL + " critical");
+    if (breakdown.HIGH) html += chip(breakdown.HIGH + " high");
+    if (posture.kev_count) html += chip(posture.kev_count + " KEV");
+    if (posture.risk_label) html += chip("risk " + posture.risk_label);
+    html += "</div>";
+    var cves = list(posture.cves);
+    if (cves.length) {
+      html += "<h3>CVEs on this host</h3>";
+      cves.forEach(function (cve) {
+        html += '<p class="related-row"><span class="mono">' + esc(cve.cve_id) + "</span> " +
+          (cve.severity ? '<span class="' + sevClass(cve.severity) + '">' + esc(sevLabel(cve.severity)) + "</span> " : "") +
+          esc(cve.title || "") +
+          (cve.scan_id ? ' <span class="mono">' + esc(cve.scan_id) + "</span>" : "") +
+          "</p>";
+      });
+    }
+    var findings = list(posture.findings);
+    if (findings.length) {
+      html += "<h3>Findings</h3>";
+      findings.forEach(function (finding) {
+        html += '<p class="related-row">' +
+          (finding.severity ? '<span class="' + sevClass(finding.severity) + '">' + esc(sevLabel(finding.severity)) + "</span> " : "") +
+          '<a class="sample-link" href="#sample-' + esc((finding.scan_id || "") + ":" + (finding.id || "")) + '">' +
+          esc(finding.id || "") + "</a> " + esc(finding.title || "") + "</p>";
+      });
+    }
+    html += "</div>";
+    return html;
   }
 
   function renderDecide() {

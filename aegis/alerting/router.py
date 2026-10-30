@@ -14,6 +14,7 @@ from aegis.alerting.queue import AlertQueue
 from aegis.alerting.classifier import AlertClassifier
 from aegis.alerting.dedup import FlapDamper
 from aegis.alerting.cap import DispatchCap
+from aegis.alerting.integrations import PlatformConnections, deliver, message_text
 from aegis.alerting.escalation import EscalationManager
 from aegis.alerting.security import generate_triage_token
 from aegis.alerting.adapters.sms_local import LocalSMSAdapter
@@ -30,6 +31,7 @@ class AlertRouter:
         self.classifier = AlertClassifier()
         self.damper = FlapDamper(flap_window_seconds=900, max_alerts_per_window=3)
         self.cap = DispatchCap(self.queue)
+        self.platforms = PlatformConnections(self.queue)
         self.escalation = EscalationManager(queue=self.queue)
         
         # Channel Adapters
@@ -137,7 +139,16 @@ class AlertRouter:
 
         return alert
 
+    async def _deliver_platform(self, contact: OnCallContact, title: str, summary: str, link: str):
+        """Page the connected Slack, Teams, or email account. None means none is connected."""
+        connection = self.platforms.destination_for(contact.contact_id)
+        if connection is None:
+            return None
+        return await deliver(connection, message_text(title, summary, link))
+
     def _channel_ready(self, contact: OnCallContact) -> bool:
+        if self.platforms.destination_for(contact.contact_id):
+            return True
         webhook = self.adapter_webhook
         telegram_chat = (contact.telegram_chat_id or webhook.telegram_chat_id or "").strip()
         if webhook.telegram_bot_token and telegram_chat:
@@ -151,7 +162,11 @@ class AlertRouter:
         return bool(self.adapter_modem.port)
 
     async def _send_outside(self, alert: CriticalAlert, contact: OnCallContact, triage_url: str) -> bool:
-        """Page one channel. Chat, then SMS, then the modem. Stops at the first success."""
+        """Page one channel. A connected platform is the only send. Otherwise chat, then SMS, then the modem."""
+        platform_result = await self._deliver_platform(contact, alert.title, alert.summary, triage_url)
+        if platform_result is not None:
+            self.queue.record_dispatch_audit(alert.alert_id, platform_result)
+            return bool(platform_result.success)
         result_primary = await self.adapter_webhook.send(alert, contact, triage_url)
         self.queue.record_dispatch_audit(alert.alert_id, result_primary)
         if result_primary.success:
@@ -182,6 +197,11 @@ class AlertRouter:
             ),
             source_ip=alert.source_ip,
         )
+        platform_result = await self._deliver_platform(
+            contact, summary.title, summary.summary, self.base_console_url
+        )
+        if platform_result is not None:
+            return bool(platform_result.success)
         result_primary = await self.adapter_webhook.send(summary, contact, self.base_console_url)
         if result_primary.success:
             return True
@@ -227,8 +247,13 @@ class AlertRouter:
                             self.cap.release_summary()
                     continue
 
-                # Escalate via SMS directly to team lead / incident commander
-                res = await self.adapter_sms.send(rebuilt_alert, contact, triage_url)
+                platform_result = await self._deliver_platform(
+                    contact, rebuilt_alert.title, rebuilt_alert.summary, triage_url
+                )
+                if platform_result is not None:
+                    res = platform_result
+                else:
+                    res = await self.adapter_sms.send(rebuilt_alert, contact, triage_url)
                 self.queue.record_dispatch_audit(alert_id, res)
                 if not res.success:
                     self.cap.release_page()
@@ -256,6 +281,7 @@ class AlertRouter:
             },
             "canary_heartbeat": self.heartbeat.get_status(),
             "dispatch_cap": self.cap.snapshot(),
+            "platforms": self.platforms.public(),
         }
 
 

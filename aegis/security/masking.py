@@ -21,6 +21,9 @@ ALERTING_SECRETS = {
     "whatsapp_api_token": "WHATSAPP_API_TOKEN",
     "critical_alert_webhook_url": "CRITICAL_ALERT_WEBHOOK_URL",
     "canary_heartbeat_url": "CANARY_HEARTBEAT_URL",
+    "slack_client_secret": "SLACK_CLIENT_SECRET",
+    "microsoft_client_secret": "MICROSOFT_CLIENT_SECRET",
+    "google_client_secret": "GOOGLE_CLIENT_SECRET",
 }
 
 

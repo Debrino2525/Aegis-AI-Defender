@@ -6,55 +6,22 @@ Nothing is invented. A claim is emitted only when it can point at a sample
 
 from __future__ import annotations
 
-import ipaddress
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 from urllib.parse import unquote
 
+from aegis.assets.identity import host_keys as _host_keys
+from aegis.assets.identity import is_unusable_ip as _is_unusable_ip
+from aegis.assets.identity import normalize_host
+from aegis.assets.identity import value_hits as _value_hits
+from aegis.assets.posture import matching_scans, posture_for_keys
 from aegis.monitor.analyst_assist import build_analyst_assist
 from aegis.monitor.remediation import PROTECTED_PROCESS_NAMES, preview_contain_action
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def normalize_host(value: Any) -> str:
-    text = str(value or "").strip().lower()
-    if not text:
-        return ""
-    if "://" in text:
-        text = text.split("://", 1)[1]
-    text = text.split("/", 1)[0]
-    if text.startswith("[") and "]" in text:
-        text = text[1 : text.index("]")]
-    if text.endswith("]") and "[" in text:
-        text = text.split("[", 1)[1]
-    if text.count(":") == 1 and "." in text.split(":", 1)[0]:
-        text = text.split(":", 1)[0]
-    if "%" in text:
-        text = text.split("%", 1)[0]
-    return text.strip()
-
-
-def _is_unusable_ip(value: str) -> bool:
-    host = normalize_host(value)
-    if not host:
-        return True
-    if host in {"unknown", "multiple", "multiple internal", "external", "localhost"}:
-        return True
-    try:
-        addr = ipaddress.ip_address(host)
-    except ValueError:
-        return False
-    return bool(
-        addr.is_loopback
-        or addr.is_unspecified
-        or addr.is_link_local
-        or addr.is_multicast
-        or addr.is_reserved
-    )
 
 
 def parse_investigation_key(raw: str) -> Tuple[str, str]:
@@ -80,35 +47,6 @@ def _sample(kind: str, sample_id: str, **fields: Any) -> Dict[str, Any]:
         if value is not None:
             payload[name] = value
     return payload
-
-
-def _host_keys(host: Dict[str, Any]) -> Set[str]:
-    keys: Set[str] = set()
-    agent_id = str(host.get("agent_id") or "").strip()
-    if agent_id:
-        keys.add(agent_id.lower())
-    hostname = normalize_host(host.get("hostname"))
-    if hostname:
-        keys.add(hostname)
-    remote = normalize_host(host.get("remote_ip"))
-    if remote and not _is_unusable_ip(remote):
-        keys.add(remote)
-    for bucket in ("ipv4", "ipv6"):
-        for item in host.get(bucket) or []:
-            addr = normalize_host(item)
-            if addr and not _is_unusable_ip(addr):
-                keys.add(addr)
-    return keys
-
-
-def _value_hits(value: Any, keys: Set[str]) -> bool:
-    host = normalize_host(value)
-    if not host:
-        return False
-    if host in keys:
-        return True
-    bare = host.split(":")[0]
-    return bare in keys
 
 
 @dataclass
@@ -317,18 +255,13 @@ def _matching_routed_alerts(sources: DeviceSources, keys: Set[str]) -> List[Dict
 
 def _matching_scans(sources: DeviceSources, keys: Set[str]) -> List[Tuple[Dict[str, Any], List[Dict[str, Any]]]]:
     matched: List[Tuple[Dict[str, Any], List[Dict[str, Any]]]] = []
-    for scan in sources.scans or []:
-        scan_hits = _value_hits(scan.get("target"), keys)
-        findings = []
-        for finding in scan.get("findings") or []:
-            if not isinstance(finding, dict):
-                continue
-            if scan_hits or _value_hits(finding.get("target"), keys):
-                sample = _finding_sample(scan, finding)
-                if sample:
-                    findings.append(sample)
-        if scan_hits or findings:
-            matched.append((scan, findings))
+    for scan, findings in matching_scans(sources.scans or [], keys):
+        samples = []
+        for finding in findings:
+            sample = _finding_sample(scan, finding)
+            if sample:
+                samples.append(sample)
+        matched.append((scan, samples))
     return matched
 
 
@@ -431,6 +364,7 @@ def build_investigation(sources: DeviceSources, key: str) -> Optional[Dict[str, 
             "status": host.get("status"),
             "last_seen": host.get("last_seen"),
             "enrolled_at": host.get("enrolled_at"),
+            "posture": posture_for_keys(keys, sources.scans or []),
             "sample": telemetry,
         }
         listen_n = host.get("listen_count")
@@ -487,6 +421,7 @@ def build_investigation(sources: DeviceSources, key: str) -> Optional[Dict[str, 
             "status": None,
             "last_seen": None,
             "enrolled_at": None,
+            "posture": posture_for_keys(keys, sources.scans or []),
             "sample": None,
         }
         gaps.append("No enrolled host matches this address. Investigation is keyed by source IP only.")
@@ -693,6 +628,7 @@ def list_investigations(sources: DeviceSources) -> Dict[str, Any]:
                 "alert_count": inv["counts"]["related_alerts"],
                 "socket_count": inv["counts"]["sockets"],
                 "finding_count": inv["counts"]["findings"],
+                "kev_count": (inv["device"].get("posture") or {}).get("kev_count") or 0,
             }
         )
 
@@ -727,6 +663,7 @@ def list_investigations(sources: DeviceSources) -> Dict[str, Any]:
                 "alert_count": inv["counts"]["related_alerts"],
                 "socket_count": inv["counts"]["sockets"],
                 "finding_count": inv["counts"]["findings"],
+                "kev_count": (inv["device"].get("posture") or {}).get("kev_count") or 0,
             }
         )
 

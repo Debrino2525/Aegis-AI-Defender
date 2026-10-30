@@ -197,6 +197,7 @@ from aegis.security.masking import (
     is_masked_echo,
     mask_secret,
 )
+from aegis.assets.api import router as assets_router, bind_scans as bind_asset_scans
 from aegis.fleet.api import router as fleet_router
 from aegis.fleet.service import get_fleet_service
 from aegis.investigate.api import router as investigate_router, bind_sources as bind_investigation_sources
@@ -205,6 +206,7 @@ from aegis.response.api import router as response_router, bind_context as bind_r
 from aegis.response.engine import ResponseError, get_response_engine
 
 app.include_router(fleet_router)
+app.include_router(assets_router)
 app.include_router(investigate_router)
 app.include_router(response_router)
 install_peer_cert_hook()
@@ -225,6 +227,7 @@ def _investigation_sources() -> DeviceSources:
 
 
 bind_investigation_sources(_investigation_sources)
+bind_asset_scans(lambda: list(scans.values()))
 
 
 def _console_ips() -> List[str]:

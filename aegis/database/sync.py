@@ -7,7 +7,7 @@ Connects to multi-source threat intelligence feeds:
 3. FIRST.org EPSS (Exploit Prediction Scoring System) — 100% Free & Open (No key required).
 4. AbuseIPDB (IP Reputation & Threat Indicators) — Supports optional ABUSEIPDB_API_KEY.
 5. AlienVault OTX (Open Threat Exchange Indicators) — Supports optional OTX_API_KEY.
-6. Abuse.ch URLhaus / ThreatFox (Malware C2 & Payload Feeds) — 100% Free & Open.
+6. Abuse.ch ThreatFox (Malware C2 & Payload Feeds) — Auth-Key header required.
 """
 
 import os
@@ -43,6 +43,7 @@ class ThreatFeedSync:
         self.abuseipdb_api_key = os.getenv("ABUSEIPDB_API_KEY", "").strip()
         self.otx_api_key = os.getenv("OTX_API_KEY", "").strip()
         self.virustotal_api_key = os.getenv("VIRUSTOTAL_API_KEY", "").strip()
+        self.threatfox_auth_key = os.getenv("THREATFOX_AUTH_KEY", "").strip()
 
     def get_feeds_status(self) -> List[Dict[str, Any]]:
         """Returns the configuration and connectivity status of all threat intel feeds."""
@@ -100,15 +101,7 @@ class ThreatFeedSync:
                 "signup_url": "https://www.first.org/epss/",
                 "docs": "Open access. No API key needed."
             },
-            self._unwired_feed(
-                feed_id="threatfox",
-                name="Abuse.ch ThreatFox C2 & Payload IOCs",
-                provider="Abuse.ch Security Research",
-                feed_type="Malware C2 & Payload Hashes",
-                description="Not connected. Aegis does not sync ThreatFox, so no indicator count is available.",
-                signup_url="https://threatfox.abuse.ch/",
-                has_key=False,
-            ),
+            self._threatfox_feed(),
             self._unwired_feed(
                 feed_id="abuseipdb",
                 name="AbuseIPDB Threat Intelligence",
@@ -155,6 +148,63 @@ class ThreatFeedSync:
             "docs": "Unavailable. No live sync or lookup is implemented.",
         }
 
+    def _threatfox_feed(self) -> Dict[str, Any]:
+        """Status from the last real ThreatFox response. Never invents a count."""
+        from aegis.intel.threatfox import snapshot
+
+        base = {
+            "id": "threatfox",
+            "name": "Abuse.ch ThreatFox C2 & Payload IOCs",
+            "provider": "Abuse.ch Security Research",
+            "type": "Malware C2 & Payload Hashes",
+            "auth_required": True,
+            "signup_url": "https://threatfox.abuse.ch/",
+        }
+        if not self.threatfox_auth_key:
+            return {
+                **base,
+                "status": "NOT_WIRED",
+                "has_key": False,
+                "record_count": None,
+                "description": "Not connected. Set THREATFOX_AUTH_KEY. Requests send it as the Auth-Key header.",
+                "docs": "No live sync until an Auth-Key is set.",
+            }
+        stored = snapshot(self.db)
+        if stored is None:
+            return {
+                **base,
+                "status": "CONFIGURED",
+                "has_key": True,
+                "record_count": None,
+                "description": "Auth-Key is set. Sync All Feeds pulls get_iocs for the last day. No snapshot is stored yet.",
+                "docs": "POST https://threatfox-api.abuse.ch/api/v1/ with header Auth-Key.",
+            }
+        count = stored["ioc_count"]
+        return {
+            **base,
+            "status": "ACTIVE",
+            "has_key": True,
+            "record_count": count,
+            "description": (
+                f"Last sync stored {count} indicators from ThreatFox get_iocs "
+                f"(days={stored['days']})."
+            ),
+            "docs": "Count is the number of indicators in the last successful response.",
+        }
+
+    async def sync_threatfox(self, days: int = 1) -> Optional[int]:
+        """Store one ThreatFox response. Returns None when the response is not usable."""
+        from aegis.intel.threatfox import fetch_iocs, replace_snapshot
+
+        result = await fetch_iocs(days=days)
+        if not result["ok"] or result["iocs"] is None:
+            reason = result.get("reason") or "unavailable"
+            console.print(f"[yellow][!] ThreatFox sync skipped: {reason}[/yellow]")
+            return None
+        count = replace_snapshot(self.db, result["iocs"], result["query_status"], days)
+        console.print(f"[green][+] ThreatFox sync stored {count} indicators.[/green]")
+        return count
+
     async def sync_all(self) -> Dict[str, int]:
         """Runs multi-source feed synchronization."""
         kev_count = await self.sync_cisa_kev()
@@ -164,12 +214,16 @@ class ThreatFeedSync:
             "apache", "nginx", "openssh", "redis", "mysql", "postgresql",
             "mongodb", "docker", "kubernetes", "tomcat", "smb", "windows"
         ])
-        return {
+        counts = {
             "cisa_kev": kev_count,
             "epss_updated": epss_count,
             "nvd_recent": nvd_count,
-            "nvd_keywords": keyword_count
+            "nvd_keywords": keyword_count,
         }
+        threatfox_count = await self.sync_threatfox(days=1)
+        if threatfox_count is not None:
+            counts["threatfox"] = threatfox_count
+        return counts
 
     async def sync_cisa_kev(self) -> int:
         """Fetches the official CISA KEV catalog and enriches the database."""

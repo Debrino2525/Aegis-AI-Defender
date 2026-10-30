@@ -18,27 +18,23 @@ class _Sender:
     def __init__(self, ok=True):
         self.ok = ok
         self.sent = []
-        self.telegram_bot_token = "token"
-        self.telegram_chat_id = "chat"
-        self.whatsapp_token = ""
-        self.whatsapp_phone_id = ""
-        self.generic_webhook_url = "https://example.test/hook"
-        self.arkesel_api_key = ""
-        self.hubtel_client_id = ""
-        self.port = ""
 
-    async def send(self, alert, contact, url):
-        self.sent.append(alert.title)
-        return DispatchResult(channel=ChannelType.WEBHOOK, success=self.ok, recipient="ops")
+    async def deliver(self, connection, text, client=None):
+        self.sent.append(text.split("\n", 1)[0])
+        return DispatchResult(channel=ChannelType.WEBHOOK, success=self.ok, recipient="#soc")
 
 
-def _router(tmp_path, sender):
+def _router(tmp_path, sender, monkeypatch):
     queue = AlertQueue(tmp_path / "alerts.sqlite3")
     router = AlertRouter(queue=queue)
     router.cap.set_hourly_cap(2)
-    router.adapter_webhook = sender
-    router.adapter_sms = _Sender(ok=False)
-    router.adapter_modem = _Sender(ok=False)
+    router.platforms.save("slack", "", {
+        "account_label": "Acme",
+        "destination_label": "#soc",
+        "secret": "https://example.test/hook",
+        "secret_kind": "webhook",
+    })
+    monkeypatch.setattr("aegis.alerting.router.deliver", sender.deliver)
     router.escalation.add_contact(OnCallContact(contact_id="ops", name="Ops", phone="+15555550100"))
     router.escalation.add_owner_mapping(AssetOwnerMapping(
         cidr_or_host="10.8.0.0/16",
@@ -80,9 +76,9 @@ def test_cap_persists_and_clamps(tmp_path):
     assert picture["hourly_cap"] == 2
 
 
-def test_router_pages_then_summarizes_and_holds(tmp_path):
+def test_router_pages_then_summarizes_and_holds(tmp_path, monkeypatch):
     sender = _Sender()
-    router = _router(tmp_path, sender)
+    router = _router(tmp_path, sender, monkeypatch)
 
     async def run():
         for host in ("10.8.0.1", "10.8.0.2", "10.8.0.3", "10.8.0.4"):
@@ -108,9 +104,9 @@ def test_router_pages_then_summarizes_and_holds(tmp_path):
     assert restored["held_this_hour"] == 3
 
 
-def test_failed_page_does_not_use_up_the_cap(tmp_path):
+def test_failed_page_does_not_use_up_the_cap(tmp_path, monkeypatch):
     sender = _Sender(ok=False)
-    router = _router(tmp_path, sender)
+    router = _router(tmp_path, sender, monkeypatch)
     router.cap.set_hourly_cap(1)
 
     async def run():

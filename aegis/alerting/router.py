@@ -54,7 +54,6 @@ class AlertRouter:
         if self._running:
             return
         self._running = True
-        await self.heartbeat.start()
         self._escalation_task = asyncio.create_task(self._escalation_loop())
 
     def stop(self):
@@ -146,43 +145,16 @@ class AlertRouter:
             return None
         return await deliver(connection, message_text(title, summary, link))
 
-    def _channel_ready(self, contact: OnCallContact) -> bool:
-        if self.platforms.destination_for(contact.contact_id):
-            return True
-        webhook = self.adapter_webhook
-        telegram_chat = (contact.telegram_chat_id or webhook.telegram_chat_id or "").strip()
-        if webhook.telegram_bot_token and telegram_chat:
-            return True
-        if webhook.whatsapp_token and webhook.whatsapp_phone_id:
-            return True
-        if webhook.generic_webhook_url:
-            return True
-        if self.adapter_sms.arkesel_api_key or self.adapter_sms.hubtel_client_id:
-            return True
-        return bool(self.adapter_modem.port)
-
     async def _send_outside(self, alert: CriticalAlert, contact: OnCallContact, triage_url: str) -> bool:
-        """Page one channel. A connected platform is the only send. Otherwise chat, then SMS, then the modem."""
+        """Page the connected Slack, Teams, or email account."""
         platform_result = await self._deliver_platform(contact, alert.title, alert.summary, triage_url)
-        if platform_result is not None:
-            self.queue.record_dispatch_audit(alert.alert_id, platform_result)
-            return bool(platform_result.success)
-        result_primary = await self.adapter_webhook.send(alert, contact, triage_url)
-        self.queue.record_dispatch_audit(alert.alert_id, result_primary)
-        if result_primary.success:
-            return True
-        result_sms = await self.adapter_sms.send(alert, contact, triage_url)
-        self.queue.record_dispatch_audit(alert.alert_id, result_sms)
-        if result_sms.success:
-            return True
-        result_modem = await self.adapter_modem.send(alert, contact, triage_url)
-        self.queue.record_dispatch_audit(alert.alert_id, result_modem)
-        return bool(result_modem.success)
+        if platform_result is None:
+            return False
+        self.queue.record_dispatch_audit(alert.alert_id, platform_result)
+        return bool(platform_result.success)
 
     async def _send_cap_summary(self, alert: CriticalAlert, contact: OnCallContact) -> bool:
         """One message for the hour after the cap is used. Not a new incident."""
-        if not self._channel_ready(contact):
-            return False
         picture = self.cap.snapshot()
         summary = CriticalAlert(
             alert_id=f"CAP-{picture['hour']}",
@@ -200,16 +172,9 @@ class AlertRouter:
         platform_result = await self._deliver_platform(
             contact, summary.title, summary.summary, self.base_console_url
         )
-        if platform_result is not None:
-            return bool(platform_result.success)
-        result_primary = await self.adapter_webhook.send(summary, contact, self.base_console_url)
-        if result_primary.success:
-            return True
-        result_sms = await self.adapter_sms.send(summary, contact, self.base_console_url)
-        if result_sms.success:
-            return True
-        result_modem = await self.adapter_modem.send(summary, contact, self.base_console_url)
-        return bool(result_modem.success)
+        if platform_result is None:
+            return False
+        return bool(platform_result.success)
 
     async def process_escalations(self):
         """Scans unacknowledged alerts and advances escalation levels if timers have elapsed."""
@@ -250,12 +215,11 @@ class AlertRouter:
                 platform_result = await self._deliver_platform(
                     contact, rebuilt_alert.title, rebuilt_alert.summary, triage_url
                 )
-                if platform_result is not None:
-                    res = platform_result
-                else:
-                    res = await self.adapter_sms.send(rebuilt_alert, contact, triage_url)
-                self.queue.record_dispatch_audit(alert_id, res)
-                if not res.success:
+                if platform_result is None:
+                    self.cap.release_page()
+                    continue
+                self.queue.record_dispatch_audit(alert_id, platform_result)
+                if not platform_result.success:
                     self.cap.release_page()
 
     def acknowledge_alert(self, alert_id: str, acknowledged_by: str) -> bool:
@@ -271,15 +235,6 @@ class AlertRouter:
             "total_recent_critical_alerts": len(recent),
             "unacknowledged_critical_count": len(unacked),
             "contacts_count": len(self.escalation.contacts),
-            "channels": {
-                "sms_local_arkesel": bool(self.adapter_sms.arkesel_api_key),
-                "sms_local_hubtel": bool(self.adapter_sms.hubtel_client_id),
-                "telegram": bool(self.adapter_webhook.telegram_bot_token),
-                "whatsapp": bool(self.adapter_webhook.whatsapp_token),
-                "generic_webhook": bool(self.adapter_webhook.generic_webhook_url),
-                "modem_oob_configured": bool(self.adapter_modem.port)
-            },
-            "canary_heartbeat": self.heartbeat.get_status(),
             "dispatch_cap": self.cap.snapshot(),
             "platforms": self.platforms.public(),
         }

@@ -64,8 +64,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
 .g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
-details.other-channels{margin-top:16px}
-details.other-channels>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:10px}
 .g12{display:grid;grid-template-columns:1fr 2fr;gap:14px;}
 @media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr);}.g12{grid-template-columns:1fr;}}
 
@@ -1356,75 +1354,6 @@ select option:checked, select option:hover {
       <input class="fi" id="cfg-alert-hourly-cap" inputmode="numeric" placeholder="10" value="10"/>
       <div style="font-size:10px;color:var(--text-dim);margin-top:4px">After this many messages to Slack, Teams, or email in an hour, those platforms get one summary. Further alerts stay on the incident.</div>
     </div>
-    <details class="other-channels">
-      <summary>Other channels</summary>
-    <div class="g2">
-      <!-- SMS gateway -->
-      <div class="card">
-        <div class="ch"><div class="ct">SMS gateway</div><span class="badge badge-done" id="badge-sms-status">Active</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Optional. Used only when Slack, Teams, and email are not connected.</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div><div class="fl">Arkesel API Key (Recommended)</div><input class="fi" type="password" id="cfg-arkesel-key" placeholder="Enter Arkesel API v2 Key..."/></div>
-          <div><div class="fl">Arkesel sender ID</div><input class="fi" id="cfg-arkesel-sender" placeholder="AegisAI (max 11 characters)" value="AegisAI"/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Hubtel SMS (Secondary Gateway)</div></div>
-          <div class="g2">
-            <div><div class="fl">Hubtel Client ID</div><input class="fi" id="cfg-hubtel-id" placeholder="Hubtel Client ID..."/></div>
-            <div><div class="fl">Hubtel Client Secret</div><input class="fi" type="password" id="cfg-hubtel-secret" placeholder="Hubtel Secret..."/></div>
-          </div>
-          <div><div class="fl">Hubtel Sender ID</div><input class="fi" id="cfg-hubtel-sender" placeholder="AegisAI" value="AegisAI"/></div>
-          <!-- Test SMS Box -->
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test SMS</div>
-            <div style="display:flex;gap:6px">
-              <input class="fi" id="test-sms-phone" placeholder="E.164 phone number" style="flex:1"/>
-              <button class="btn btn-g btn-sm" onclick="testDispatchGateway('sms')">Verify SMS</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ChatOps Dispatch Gateways -->
-      <div class="card">
-        <div class="ch"><div class="ct">ChatOps &amp; Messaging Gateways</div><span class="badge badge-done" id="badge-chat-status">Active</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Real-time interactive alerts with one-time HMAC cryptographic triage links.</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div><div class="fl">Telegram Bot Token (via @BotFather)</div><input class="fi" type="password" id="cfg-tg-token" placeholder="e.g. 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"/></div>
-          <div><div class="fl">Default Telegram Chat / Group ID</div><input class="fi" id="cfg-tg-chat" placeholder="e.g. -100123456789 or @SecurityChannel"/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">WhatsApp Business Cloud API</div></div>
-          <div><div class="fl">WhatsApp System User Token</div><input class="fi" type="password" id="cfg-wa-token" placeholder="EAAB..."/></div>
-          <div><div class="fl">WhatsApp Phone Number ID</div><input class="fi" id="cfg-wa-phone-id" placeholder="1045239..."/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Pasted webhook</div></div>
-          <div><div class="fl">Critical Alert Webhook URL</div><input class="fi" id="cfg-webhook-url" placeholder="https://siem.example/webhook"/></div>
-          <!-- Test ChatOps Box -->
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test ChatOps</div>
-            <div style="display:flex;gap:6px">
-              <input class="fi" id="test-chat-target" placeholder="Telegram Chat ID or Webhook recipient" style="flex:1"/>
-              <button class="btn btn-g btn-sm" onclick="testDispatchGateway('telegram')">Verify ChatOps</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="g2" style="margin-top:14px">
-      <!-- Out-of-band Serial Modem -->
-      <div class="card">
-        <div class="ch"><div class="ct">Cellular Out-of-Band Serial Modem</div><span class="badge badge-running">Hardware</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Air-gapped 4G LTE emergency dispatch via physical serial connection (AT+CMGS).</div>
-        <div class="g2">
-          <div><div class="fl">Serial Device / COM Port</div><input class="fi" id="cfg-modem-port" placeholder="/dev/ttyUSB0" value=""/></div>
-          <div><div class="fl">Baud Rate</div><input class="fi" id="cfg-modem-baud" placeholder="115200" value=""/></div>
-        </div>
-      </div>
-      <!-- Dead-Man Canary Heartbeat -->
-      <div class="card">
-        <div class="ch"><div class="ct">Dead-Man Canary Heartbeat</div><span class="badge badge-done">Watchdog</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Periodic off-premises ping detecting if Aegis was silenced or terminated by an attacker.</div>
-        <div><div class="fl">Off-Premises Canary Ping URL</div><input class="fi" id="cfg-canary-url" placeholder="https://canary.corp/ping or https://hc-ping.com/uuid"/></div>
-      </div>
-    </div>
-    </details>
   </div>
 
   <!-- TAB 2: On-Call Responders Directory -->
@@ -4150,34 +4079,8 @@ async function loadSettings(){
     const geoPath = document.getElementById('cfg-geoip-path');
     if (geoPath) geoPath.value = ti.geoip_db_path || '';
 
-    // Alerting Gateways fields
-    document.getElementById('cfg-arkesel-key').value = al.arkesel_api_key || '';
-    document.getElementById('cfg-arkesel-sender').value = al.arkesel_sender_id || 'AegisAI';
-    document.getElementById('cfg-hubtel-id').value = al.hubtel_client_id || '';
-    document.getElementById('cfg-hubtel-secret').value = al.hubtel_client_secret || '';
-    document.getElementById('cfg-hubtel-sender').value = al.hubtel_sender_id || 'AegisAI';
-    document.getElementById('cfg-tg-token').value = al.telegram_bot_token || '';
-    document.getElementById('cfg-tg-chat').value = al.telegram_chat_id || '';
-    document.getElementById('cfg-wa-token').value = al.whatsapp_api_token || '';
-    document.getElementById('cfg-wa-phone-id').value = al.whatsapp_phone_number_id || '';
-    document.getElementById('cfg-webhook-url').value = al.critical_alert_webhook_url || '';
     const capField = document.getElementById('cfg-alert-hourly-cap');
     if (capField) capField.value = al.alert_hourly_cap || 10;
-    document.getElementById('cfg-modem-port').value = al.modem_serial_port || '';
-    document.getElementById('cfg-modem-baud').value = al.modem_baudrate || '';
-    document.getElementById('cfg-canary-url').value = al.canary_heartbeat_url || '';
-
-    // Status Badges
-    const smsBadge = document.getElementById('badge-sms-status');
-    if(smsBadge){
-      smsBadge.textContent = (al.arkesel_api_key || al.hubtel_client_id) ? 'Active' : 'Unconfigured';
-      smsBadge.className = 'badge ' + ((al.arkesel_api_key || al.hubtel_client_id) ? 'badge-done' : 'badge-queued');
-    }
-    const chatBadge = document.getElementById('badge-chat-status');
-    if(chatBadge){
-      chatBadge.textContent = (al.telegram_bot_token || al.whatsapp_api_token || al.critical_alert_webhook_url) ? 'Active' : 'Unconfigured';
-      chatBadge.className = 'badge ' + ((al.telegram_bot_token || al.whatsapp_api_token || al.critical_alert_webhook_url) ? 'badge-done' : 'badge-queued');
-    }
   } catch(e) {
     console.warn('loadSettings error:', e);
   }
@@ -4195,20 +4098,7 @@ async function saveCurrentSettingsTab(){
       geoip_db_path: (document.getElementById('cfg-geoip-path').value || '').trim()
     },
     alerting: {
-      arkesel_api_key: document.getElementById('cfg-arkesel-key').value.trim(),
-      arkesel_sender_id: document.getElementById('cfg-arkesel-sender').value.trim(),
-      hubtel_client_id: document.getElementById('cfg-hubtel-id').value.trim(),
-      hubtel_client_secret: document.getElementById('cfg-hubtel-secret').value.trim(),
-      hubtel_sender_id: document.getElementById('cfg-hubtel-sender').value.trim(),
-      telegram_bot_token: document.getElementById('cfg-tg-token').value.trim(),
-      telegram_chat_id: document.getElementById('cfg-tg-chat').value.trim(),
-      whatsapp_api_token: document.getElementById('cfg-wa-token').value.trim(),
-      whatsapp_phone_number_id: document.getElementById('cfg-wa-phone-id').value.trim(),
-      critical_alert_webhook_url: document.getElementById('cfg-webhook-url').value.trim(),
-      alert_hourly_cap: (document.getElementById('cfg-alert-hourly-cap') || {value:''}).value.trim(),
-      modem_serial_port: document.getElementById('cfg-modem-port').value.trim(),
-      modem_baudrate: +document.getElementById('cfg-modem-baud').value || 115200,
-      canary_heartbeat_url: document.getElementById('cfg-canary-url').value.trim()
+      alert_hourly_cap: (document.getElementById('cfg-alert-hourly-cap') || {value:''}).value.trim()
     }
   };
   try {
@@ -4402,26 +4292,6 @@ async function deleteMapping(cidr){
   } catch(e){ toast('Delete failed', 'err'); }
 }
 
-async function testDispatchGateway(channel){
-  let recipient = '';
-  if(channel === 'sms') recipient = document.getElementById('test-sms-phone').value.trim();
-  else recipient = document.getElementById('test-chat-target').value.trim() || 'default';
-  if(!recipient){ toast('Enter recipient phone number or Chat ID', 'err'); return; }
-  toast(`Sending test dispatch via ${channel.toUpperCase()}...`);
-  try {
-    const res = await fetch('/api/settings/test-channel', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({channel, recipient})
-    });
-    const d = await res.json();
-    if(d.success){
-      toast(`${channel.toUpperCase()} test dispatched successfully! Ref: ${d.provider_ref}`, 'ok');
-    } else {
-      toast(`${channel.toUpperCase()} test failed: ${d.error}`, 'err');
-    }
-  } catch(e){ toast('Gateway test error: ' + e, 'err'); }
-}
 </script>
 <script>
 // ── PREMIUM LAYER: breadcrumb, ⌘K, hero status card ─────────────────────────

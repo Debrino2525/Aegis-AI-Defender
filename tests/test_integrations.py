@@ -160,12 +160,19 @@ def test_console_leads_with_connect_not_sms():
     assert "Slack, Microsoft Teams, or email" in html
     assert 'id="platform-setup"' in html
     assert "function connectPlatform" in html
-    assert "Configured SMS gateway" not in html
-    details = html.index("<summary>Other channels</summary>")
-    assert html.index("ChatOps") > details
-    sms = html.index("SMS gateway")
-    threat = html.index('id="alert-channels-grid"')
-    assert threat < details < sms
+    for gone in (
+        "Other channels",
+        "SMS gateway",
+        "Telegram",
+        "WhatsApp",
+        "ChatOps",
+        "Cellular",
+        "Canary",
+        "cfg-arkesel-key",
+        "cfg-canary-url",
+    ):
+        assert gone not in html
+    assert 'id="alert-channels-grid"' in html
     cards = html[html.index("function platformCardsHtml"):html.index("function paintPlatformCards")]
     assert "Slack" in cards
     assert "Microsoft Teams" in cards

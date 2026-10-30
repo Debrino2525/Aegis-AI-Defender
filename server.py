@@ -983,31 +983,12 @@ class ChannelTestPayload(BaseModel):
 
 @app.post("/api/settings/test-channel")
 async def test_dispatch_channel(req: ChannelTestPayload):
-    """Sends an instant test alert message through the selected gateway to verify setup."""
-    from aegis.alerting.models import CriticalAlert, SeverityLevel, OnCallContact
-    dummy_contact = OnCallContact(
-        contact_id="TEST-USER",
-        name="Verification Test",
-        phone=req.recipient,
-        whatsapp_number=req.recipient,
-        telegram_chat_id=req.recipient
+    """Retired. Alerts leave through a connected Slack, Teams, or email account."""
+    del req
+    raise HTTPException(
+        status_code=410,
+        detail="Connect Slack, Microsoft Teams, or email from the console.",
     )
-    dummy_alert = CriticalAlert(
-        alert_id="CALT-TEST-VERIFY",
-        fingerprint="TEST-FINGERPRINT",
-        title="Aegis AI Gateway Setup Verification",
-        severity=SeverityLevel.CRITICAL,
-        summary="This is an automated verification test sent from Aegis AI Settings.",
-        source_ip="127.0.0.1"
-    )
-    triage_url = f"{alert_router.base_console_url}/#settings"
-    if req.channel == "sms":
-        res = await alert_router.adapter_sms.send(dummy_alert, dummy_contact, triage_url)
-    elif req.channel in ("telegram", "whatsapp", "webhook"):
-        res = await alert_router.adapter_webhook.send(dummy_alert, dummy_contact, triage_url)
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported test channel")
-    return res.model_dump()
 
 
 # ── Incident Containment & Machine Remediation ─────────────────────────────

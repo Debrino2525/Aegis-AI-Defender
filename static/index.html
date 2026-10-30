@@ -496,9 +496,9 @@ body::after{
 ::selection{background:rgba(94,234,212,.28)}
 
 /* ── TOP BAR ─────────────────────────────────────────────────────── */
-#topnav{height:100px;padding:0 24px 0 18px;gap:20px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
-.brand{border:none;margin:0;padding:0;gap:12px}
-.brand-logo{height:88px;width:auto;display:block;}
+#topnav{height:64px;padding:0 24px 0 14px;gap:16px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
+.brand{display:flex;align-items:center;border:none;margin:0;padding:4px 10px 4px 6px;gap:0;background:#0B0E12;border-radius:8px}
+.brand-logo{height:48px;width:auto;display:block;background:transparent;border:0;box-shadow:none;}
 .brand-mark{width:32px;height:32px;border-radius:4px;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--border2);box-shadow:none}
 .wordmark{font-weight:600;font-size:15px;letter-spacing:.01em;color:var(--text)}
 .wordmark i{font-style:normal;font-weight:400;color:var(--accent2);margin-left:5px}
@@ -814,7 +814,7 @@ select option:checked, select option:hover {
 <!-- TOP BAR -->
 <nav id="topnav">
   <div class="brand">
-    <img class="brand-logo" src="/static/globitech-logo.png" alt="Globitech Ghana"/>
+    <img class="brand-logo" src="/static/globitech-logo.png" alt="Globitech"/>
   </div>
   <div class="crumb"><span>Platform</span><span style="opacity:.4">/</span><b id="crumb-page">Dashboard</b></div>
   <button class="cmdk" onclick="openCmdK()">
@@ -1242,7 +1242,7 @@ select option:checked, select option:hover {
     </div>
 
     <div class="dt-model-carousel" id="dt-model-carousel">
-      <!-- Populated dynamically / pre-populated with Darktrace model alerts -->
+      <!-- Filled from live monitor alerts only -->
     </div>
   </div>
 
@@ -1404,7 +1404,7 @@ select option:checked, select option:hover {
   <div class="settings-tab-pane" id="stab-threat" style="display:none">
     <div class="card">
       <div class="ch"><div class="ct">Threat Intelligence Feeds &amp; CVE Enrichment API Keys</div></div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox syncs the last day of IOCs when an Auth-Key is saved. AbuseIPDB syncs its blacklist when an API key is saved. OTX and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox, AbuseIPDB, OTX, and VirusTotal counts come only from a successful API response. Unwired or empty feeds show Not Wired or 0 — never a leftover mock count.</div>
       <div class="g2">
         <div>
           <div class="fl">NIST National Vulnerability Database (NVD 2.0) API Key</div>
@@ -1418,12 +1418,12 @@ select option:checked, select option:hover {
         </div>
         <div>
           <div class="fl">AlienVault Open Threat Exchange (OTX) API Key</div>
-          <input class="fi" type="password" id="cfg-otx-key" placeholder="Stored only. Lookups are not implemented."/>
+          <input class="fi" type="password" id="cfg-otx-key" placeholder="Sent as the X-OTX-API-KEY header" autocomplete="off"/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://otx.alienvault.com" target="_blank" style="color:var(--accent)">otx.alienvault.com &rarr;</a></div>
         </div>
         <div>
           <div class="fl">VirusTotal API Key (Optional)</div>
-          <input class="fi" type="password" id="cfg-vt-key" placeholder="Stored only. Lookups are not implemented."/>
+          <input class="fi" type="password" id="cfg-vt-key" placeholder="Sent as the x-apikey header" autocomplete="off"/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.virustotal.com/gui/join-us" target="_blank" style="color:var(--accent)">virustotal.com &rarr;</a></div>
         </div>
         <div>
@@ -2218,6 +2218,8 @@ async function triggerUpdate(){
 async function resetPlatform(){
   if(!confirm('Reset dashboard and clear all historical scans, findings, and threat alerts?')) return;
   try {
+    if(typeof applyMonitorGeo === 'function') applyMonitorGeo({configured:false, database:'missing', points:[]});
+    if(typeof updateGraphSim === 'function') updateGraphSim([], []);
     const res = await fetch('/api/reset', {method: 'POST'});
     if(res.ok){
       toast('Dashboard reset to clean state', 'ok');
@@ -2265,7 +2267,7 @@ async function loadFeedConnectors(){
       const statusLabel=unwired?'NOT WIRED':f.status;
       const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':f.status==='CONFIGURED'?'var(--accent)':'var(--text-dim)';
       const statusBg=f.status==='ACTIVE'?'rgba(0,200,150,.08)':f.status==='RATE_LIMITED'?'rgba(255,159,10,.08)':'transparent';
-      const countLabel=f.record_count==null?'—':Number(f.record_count).toLocaleString();
+      const countLabel=unwired?'Not Wired':(f.record_count==null? '0': Number(f.record_count).toLocaleString());
       return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px">`
         +`<div style="display:flex;justify-content:space-between;align-items:center">`
         +`<span style="font-weight:700;font-size:13px;color:var(--text)">${f.name}</span>`
@@ -4238,11 +4240,17 @@ function renderGeoMap() {
   layer.classList.toggle('has-points', showPoints);
   if (!showPoints) {
     hideGeoTip();
+    const stage = document.getElementById('tv-world-stage');
+    if (stage) {
+      stage.replaceChildren();
+      stage.dataset.ready = '';
+    }
+    geoMapPromise = null;
     if (count) count.hidden = true;
     if (noteK) noteK.textContent = geoConfigured ? 'No coordinates' : 'Unavailable';
     if (noteTitle) noteTitle.textContent = geoConfigured ? 'No public coordinates to plot' : 'GeoIP database is missing';
     if (noteBody) noteBody.textContent = geoConfigured
-      ? 'The GeoLite2 City database is loaded. None of the public addresses on this host resolved to a location. Private addresses stay on site topology.'
+      ? 'The GeoLite2 City database is loaded. None of the public addresses on this host resolved to a location. Private addresses and well-known web edges stay off this map.'
       : 'Set GEOIP_DB_PATH to a local GeoLite2-City.mmdb file, or save that path under Settings. This console does not invent coordinates. Private addresses stay on site topology.';
     return;
   }

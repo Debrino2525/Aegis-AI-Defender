@@ -12,16 +12,26 @@ body::after {
 }
 
 #topnav {
+  height: 64px;
   background: var(--surface) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   border-bottom: 1px solid var(--border);
 }
 
+.brand {
+  background: #0B0E12;
+  border-radius: 8px;
+  padding: 4px 10px 4px 6px;
+}
+
 .brand-logo {
-  height: 88px;
+  height: 48px;
   width: auto;
   display: block;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .wordmark i {

@@ -177,13 +177,21 @@ def geoip_snapshot(ips: Iterable[Any]) -> Dict[str, Any]:
     return service().snapshot(ips)
 
 
-def collect_monitor_ips(connections: Iterable[Dict[str, Any]], nodes: Iterable[Dict[str, Any]]) -> list:
-    """Public-looking candidates from the live monitor. Private addresses are dropped later."""
+def collect_monitor_ips(connections: Iterable[Dict[str, Any]], nodes: Iterable[Dict[str, Any]] = ()) -> list:
+    """Public remotes from live sockets on this host.
+
+    Graph leftovers and well-known web-edge ranges are omitted so the threat
+    map cannot keep a globe of CDN or hashed-IP dots after a reset. Private
+    addresses are dropped later by ``lookup``. ``nodes`` is ignored.
+    """
+    from aegis.monitor.threat_patterns import is_well_known_web_edge
+
     found = []
     for conn in connections or []:
-        found.append(conn.get("remote_ip"))
-        found.append(conn.get("local_ip"))
-    for node in nodes or []:
-        found.append(node.get("ip"))
-        found.append(node.get("id"))
+        remote = conn.get("remote_ip")
+        if not remote:
+            continue
+        if is_well_known_web_edge(str(remote)):
+            continue
+        found.append(remote)
     return found

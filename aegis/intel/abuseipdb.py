@@ -80,6 +80,15 @@ def _ensure(conn) -> None:
     )
 
 
+def clear_snapshot(db) -> None:
+    """Drop stored AbuseIPDB rows. Used by platform reset."""
+    with db._get_connection() as conn:
+        _ensure(conn)
+        conn.execute("DELETE FROM abuseipdb_addresses")
+        conn.execute("DELETE FROM abuseipdb_meta")
+        conn.commit()
+
+
 def snapshot(db) -> Optional[Dict[str, Any]]:
     with db._get_connection() as conn:
         _ensure(conn)

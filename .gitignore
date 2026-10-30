@@ -39,6 +39,7 @@ alert_signing_key
 *.sqlite3-wal
 *.sqlite3-shm
 *.db
+*.mmdb
 
 # Reverse Engineering Artifacts & Temp Binaries
 HackerAI-windows-x64.exe

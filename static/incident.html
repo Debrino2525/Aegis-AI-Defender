@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Incident Workspace — Aegis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/static/design-tokens.css"/>
+<link rel="stylesheet" href="/static/incident.css"/>
+<script src="/static/theme.js"></script>
+</head>
+<body>
+<a class="skip" href="#story">Skip to evidence</a>
+<div class="shell">
+  <header class="top">
+    <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>Aegis</a>
+    <div class="product">Incident Workspace</div>
+    <div class="top-spacer"></div>
+    <div class="top-actions">
+      <button type="button" class="btn" data-theme-toggle onclick="aegisToggleTheme()">Light</button>
+      <a class="btn" href="/">Console</a>
+      <button type="button" class="btn" id="lock-btn" hidden>Lock</button>
+    </div>
+  </header>
+  <div id="status" class="status" role="status">Checking session</div>
+
+  <div id="gate" class="gate" hidden>
+    <form id="unlock-form">
+      <h2>Unlock Aegis</h2>
+      <p>This console requires the admin token or password. Set <code>AEGIS_ADMIN_TOKEN</code> or <code>AEGIS_ADMIN_PASSWORD</code>. If neither is set, the first start prints a token and stores it in <code>~/.aegis/admin_token</code>.</p>
+      <input id="unlock-secret" type="password" autocomplete="current-password" placeholder="Admin token or password" required/>
+      <button class="btn btn-primary" type="submit">Unlock</button>
+      <div class="err" id="unlock-err"></div>
+    </form>
+  </div>
+
+  <div id="workspace" class="workspace" hidden>
+    <section class="pane" aria-label="Queue">
+      <div class="pane-h">
+        <h2>Queue</h2>
+        <p class="hint"><kbd>j</kbd> <kbd>k</kbd> next <kbd>e</kbd> evidence <kbd>c</kbd> review</p>
+      </div>
+      <div id="queue"></div>
+    </section>
+    <section class="pane" id="story" aria-label="Evidence">
+      <div id="story-body" class="story"></div>
+    </section>
+    <section class="pane" aria-label="Decision and response">
+      <div id="decide" class="decide"></div>
+    </section>
+  </div>
+</div>
+
+<dialog id="confirm">
+  <h2 id="confirm-title">Review action</h2>
+  <p>Confirm sends this action to the host. The server does not return a separate dry-run.</p>
+  <dl id="confirm-facts"></dl>
+  <label class="confirm-check"><input type="checkbox" id="confirm-check"/> I have reviewed this action</label>
+  <div class="dialog-actions">
+    <button type="button" class="btn" id="confirm-cancel">Cancel</button>
+    <button type="button" class="btn btn-danger" id="confirm-run" disabled>Run action</button>
+  </div>
+</dialog>
+<script src="/static/incident.js"></script>
+</body>
+</html>

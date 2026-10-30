@@ -58,6 +58,7 @@ def test_shell_links_workspace_and_keeps_unlock(client):
         "/api/scans",
         "/api/alerting/alerts",
         "/api/incidents/action",
+        "/api/fleet/hosts",
     ):
         assert path in body
 

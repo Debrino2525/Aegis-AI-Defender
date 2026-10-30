@@ -80,6 +80,9 @@ def _request_needs_auth(request: Request) -> bool:
         return False
     if (request.method, path) in _PUBLIC_API:
         return False
+    # Host agents authenticate with an enrollment token or a client cert, not the admin session.
+    if request.method == "POST" and path in ("/api/fleet/enroll", "/api/fleet/heartbeat"):
+        return False
     # The HMAC triage token is the credential for this one alert.
     if path.startswith("/api/alerting/triage/"):
         return False
@@ -188,10 +191,15 @@ from aegis.runtime import all_interfaces_warning, listen_host, listen_port
 from aegis.security.console_auth import console_auth
 from aegis.security.masking import (
     ALERTING_SECRETS,
+    FLEET_SECRETS,
     THREAT_INTEL_SECRETS,
     is_masked_echo,
     mask_secret,
 )
+from aegis.fleet.api import router as fleet_router
+from aegis.fleet.service import get_fleet_service
+
+app.include_router(fleet_router)
 
 def _env_file_path() -> Path:
     override = os.getenv("AEGIS_ENV_FILE", "").strip()
@@ -239,6 +247,7 @@ def restore_history() -> None:
 async def _startup():
     """Auto-start the network monitor and alert router when the server boots."""
     announce_console_security()
+    get_fleet_service().bootstrap()
     restore_history()
     if not monitor.running:
         await monitor.start()
@@ -847,11 +856,16 @@ async def get_platform_settings():
             "alert_signing_key_rejected_default": signing_key_is_public_default(),
             "alert_hourly_cap": alert_router.cap.hourly_cap(),
         }),
+        "fleet": _masked_section(FLEET_SECRETS, {
+            **get_fleet_service().status(),
+            "aegis_console_url": os.getenv("AEGIS_CONSOLE_URL", "http://127.0.0.1:8000"),
+        }),
     }
 
 class SettingsPayload(BaseModel):
     threat_intel: Optional[Dict[str, Any]] = None
     alerting: Optional[Dict[str, Any]] = None
+    fleet: Optional[Dict[str, Any]] = None
 
 @app.post("/api/settings")
 async def save_platform_settings(payload: SettingsPayload):
@@ -878,6 +892,8 @@ async def save_platform_settings(payload: SettingsPayload):
     _take_secrets(payload.threat_intel, THREAT_INTEL_SECRETS)
     _take_plain(payload.threat_intel, "geoip_db_path", "GEOIP_DB_PATH")
     _take_secrets(payload.alerting, ALERTING_SECRETS)
+    _take_secrets(payload.fleet, FLEET_SECRETS)
+    _take_plain(payload.fleet, "aegis_console_url", "AEGIS_CONSOLE_URL")
     al = payload.alerting
     _take_plain(al, "arkesel_sender_id", "ARKESEL_SENDER_ID")
     _take_plain(al, "hubtel_sender_id", "HUBTEL_SENDER_ID")

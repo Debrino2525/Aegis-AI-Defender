@@ -123,11 +123,26 @@ Aegis is a single-process console for the operator sitting at this host. It is n
 
 What this build actually enforces:
 
-- HTTP routes under `/api` and both WebSockets (`/ws/monitor`, `/ws/scan/{id}`) require the admin session cookie or bearer token. `/api/alerting/triage/{token}` is the exception: the short-lived HMAC token is the credential for that one alert, which is how an on-call link works without putting the admin token in an SMS.
+- HTTP routes under `/api` and both WebSockets (`/ws/monitor`, `/ws/scan/{id}`) require the admin session cookie or bearer token. Exceptions: `/api/alerting/triage/{token}` (the HMAC token is the credential for that one alert) and `/api/fleet/enroll` / `/api/fleet/heartbeat` (one-time enrollment token, then the host’s client certificate). Listing Assets still requires the admin session.
 - `GET /api/settings` masks API keys, client secrets, bot tokens, webhook URLs, the canary URL, and the signing key. Saving the masked preview back does not overwrite the stored secret.
 - Scan reports, behavioral monitor alerts, and incident containment notes are stored in `~/.aegis/history.sqlite3` and are loaded again after a restart. Critical alert routing was already stored in `~/.aegis/alert_queue.sqlite3`. A scan that was still running when the process died is marked `interrupted`.
 
 Still true, and not fixed here: there are no user accounts, RBAC, or SSO. Host containment is Windows-oriented (`netsh`, process kill). OTX and VirusTotal cards record whether a key is present; they do not perform live lookups. ThreatFox syncs when `THREATFOX_AUTH_KEY` is set. AbuseIPDB syncs its blacklist when `ABUSEIPDB_API_KEY` is set. Do not bind this process on a public interface.
+
+---
+
+## Host agents (fleet)
+
+A thin collector enrolls Windows and Linux hosts into this console. Assets lists only hosts that have sent a real heartbeat. There are no placeholder hosts and no packet tap.
+
+```bash
+# On the console: Settings → Host agents → Mint one-time token
+# On each server:
+python -m aegis.agent enroll --url http://CONSOLE:8000 --token PASTE
+python -m aegis.agent run
+```
+
+Cert files land in `~/.aegis/agent/` (`ca.crt`, `client.crt`, `client.key`). The site CA lives on the console under `~/.aegis/ca/`. Lab bootstrap can set `AEGIS_ENROLLMENT_TOKEN` in `.env` instead of minting; that value is reusable until rotated. This is not NDR: the agent sends identity, host health, and listen-port counts — not pcap.
 
 ---
 

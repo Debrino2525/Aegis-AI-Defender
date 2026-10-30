@@ -952,11 +952,12 @@ select option:checked, select option:hover {
     <div class="ch">
       <div>
         <div class="ct">Critical alert routing</div>
-        <div style="font-size:11px;color:var(--text-dim)">Chat, then SMS, then a cellular modem. A dead-man canary is separate and does not notify a person.</div>
+        <div style="font-size:11px;color:var(--text-dim)">Slack, Microsoft Teams, or email. Tap Connect and sign in on that platform. One account is paged. Further alerts stay on the incident.</div>
+        <div id="dispatch-cap-note" style="font-size:12px;color:var(--text);margin-top:6px"></div>
       </div>
     </div>
-    <div class="g4" id="alert-channels-grid" style="margin-top:12px;margin-bottom:16px">
-      <div class="empty"><div class="ei"></div><div class="eh">Loading routing channels...</div></div>
+    <div class="g3" id="alert-channels-grid" style="margin-top:12px;margin-bottom:16px">
+      <div class="empty"><div class="ei"></div><div class="eh">Loading Slack, Teams, and email...</div></div>
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Active Emergency Dispatches &amp; Escalation Ledger</div>
     <div id="critical-alerts-wrap">
@@ -1309,7 +1310,7 @@ select option:checked, select option:hover {
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div>
       <div class="ph">Platform Settings &amp; Alert Configurations</div>
-      <div class="ps">Configure Threat Intelligence APIs, emergency SMS &amp; ChatOps dispatch gateways, on-call responder directories, and asset ownership rules. API keys and tokens are masked; leave a masked value unchanged to keep the stored secret.</div>
+      <div class="ps">Connect Slack, Microsoft Teams, or an email account. Each responder can connect their own. API keys stay masked; leave a masked value unchanged to keep the stored secret.</div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-p btn-sm" onclick="saveCurrentSettingsTab()">&#128190; Save Configuration</button>
@@ -1318,7 +1319,7 @@ select option:checked, select option:hover {
 
   <!-- Settings Navigation Sub-Tabs -->
   <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px">
-    <button class="btn btn-g btn-sm on" id="stab-btn-channels" onclick="switchSettingsTab('channels')">&#128225; Alert Dispatch Gateways</button>
+    <button class="btn btn-g btn-sm on" id="stab-btn-channels" onclick="switchSettingsTab('channels')">Slack, Teams, and email</button>
     <button class="btn btn-g btn-sm" id="stab-btn-responders" onclick="switchSettingsTab('responders')">&#128101; On-Call Responders</button>
     <button class="btn btn-g btn-sm" id="stab-btn-ownership" onclick="switchSettingsTab('ownership')">&#127963; Asset Ownership Rules</button>
     <button class="btn btn-g btn-sm" id="stab-btn-threat" onclick="switchSettingsTab('threat')">&#128273; Threat Intel APIs</button>
@@ -1326,71 +1327,13 @@ select option:checked, select option:hover {
 
   <!-- TAB 1: Alert Dispatch Gateways -->
   <div class="settings-tab-pane" id="stab-channels">
-    <div class="g2">
-      <!-- SMS gateway -->
-      <div class="card">
-        <div class="ch"><div class="ct">SMS gateway</div><span class="badge badge-done" id="badge-sms-status">Active</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Optional. Used only after chat dispatch does not succeed. Leave the fields empty until a gateway is configured.</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div><div class="fl">Arkesel API Key (Recommended)</div><input class="fi" type="password" id="cfg-arkesel-key" placeholder="Enter Arkesel API v2 Key..."/></div>
-          <div><div class="fl">Arkesel sender ID</div><input class="fi" id="cfg-arkesel-sender" placeholder="AegisAI (max 11 characters)" value="AegisAI"/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Hubtel SMS (Secondary Gateway)</div></div>
-          <div class="g2">
-            <div><div class="fl">Hubtel Client ID</div><input class="fi" id="cfg-hubtel-id" placeholder="Hubtel Client ID..."/></div>
-            <div><div class="fl">Hubtel Client Secret</div><input class="fi" type="password" id="cfg-hubtel-secret" placeholder="Hubtel Secret..."/></div>
-          </div>
-          <div><div class="fl">Hubtel Sender ID</div><input class="fi" id="cfg-hubtel-sender" placeholder="AegisAI" value="AegisAI"/></div>
-          <!-- Test SMS Box -->
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test SMS</div>
-            <div style="display:flex;gap:6px">
-              <input class="fi" id="test-sms-phone" placeholder="E.164 phone number" style="flex:1"/>
-              <button class="btn btn-g btn-sm" onclick="testDispatchGateway('sms')">Verify SMS</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ChatOps Dispatch Gateways -->
-      <div class="card">
-        <div class="ch"><div class="ct">ChatOps &amp; Messaging Gateways</div><span class="badge badge-done" id="badge-chat-status">Active</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Real-time interactive alerts with one-time HMAC cryptographic triage links.</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div><div class="fl">Telegram Bot Token (via @BotFather)</div><input class="fi" type="password" id="cfg-tg-token" placeholder="e.g. 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"/></div>
-          <div><div class="fl">Default Telegram Chat / Group ID</div><input class="fi" id="cfg-tg-chat" placeholder="e.g. -100123456789 or @SecurityChannel"/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">WhatsApp Business Cloud API</div></div>
-          <div><div class="fl">WhatsApp System User Token</div><input class="fi" type="password" id="cfg-wa-token" placeholder="EAAB..."/></div>
-          <div><div class="fl">WhatsApp Phone Number ID</div><input class="fi" id="cfg-wa-phone-id" placeholder="1045239..."/></div>
-          <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px">Enterprise Webhook (Slack / Teams / SIEM)</div></div>
-          <div><div class="fl">Critical Alert Webhook URL</div><input class="fi" id="cfg-webhook-url" placeholder="https://hooks.slack.com/services/... or https://siem.corp/webhook"/></div>
-          <!-- Test ChatOps Box -->
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px">Send Verification Test ChatOps</div>
-            <div style="display:flex;gap:6px">
-              <input class="fi" id="test-chat-target" placeholder="Telegram Chat ID or Webhook recipient" style="flex:1"/>
-              <button class="btn btn-g btn-sm" onclick="testDispatchGateway('telegram')">Verify ChatOps</button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="g3" id="platform-connect-cards">
+      <div class="empty"><div class="eh">Loading Slack, Teams, and email...</div></div>
     </div>
-
-    <div class="g2" style="margin-top:14px">
-      <!-- Out-of-band Serial Modem -->
-      <div class="card">
-        <div class="ch"><div class="ct">Cellular Out-of-Band Serial Modem</div><span class="badge badge-running">Hardware</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Air-gapped 4G LTE emergency dispatch via physical serial connection (AT+CMGS).</div>
-        <div class="g2">
-          <div><div class="fl">Serial Device / COM Port</div><input class="fi" id="cfg-modem-port" placeholder="/dev/ttyUSB0" value=""/></div>
-          <div><div class="fl">Baud Rate</div><input class="fi" id="cfg-modem-baud" placeholder="115200" value=""/></div>
-        </div>
-      </div>
-      <!-- Dead-Man Canary Heartbeat -->
-      <div class="card">
-        <div class="ch"><div class="ct">Dead-Man Canary Heartbeat</div><span class="badge badge-done">Watchdog</span></div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Periodic off-premises ping detecting if Aegis was silenced or terminated by an attacker.</div>
-        <div><div class="fl">Off-Premises Canary Ping URL</div><input class="fi" id="cfg-canary-url" placeholder="https://canary.corp/ping or https://hc-ping.com/uuid"/></div>
-      </div>
+    <div style="margin-top:12px;max-width:320px">
+      <div class="fl">Outside messages per hour</div>
+      <input class="fi" id="cfg-alert-hourly-cap" inputmode="numeric" placeholder="10" value="10"/>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:4px">After this many messages to Slack, Teams, or email in an hour, those platforms get one summary. Further alerts stay on the incident.</div>
     </div>
   </div>
 
@@ -1401,7 +1344,7 @@ select option:checked, select option:hover {
         <div class="ct">Active On-Call Responders Directory</div>
         <button class="btn btn-p btn-sm" onclick="openNewContactModal()">+ Add New Responder</button>
       </div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Security personnel and incident commanders registered to receive automated emergency dispatches.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Threat responders. Tap Connect on a row to attach that person's Slack, Teams, or email. The console does not mark an account connected until the platform sign-in finishes.</div>
       <div id="contacts-tbl-wrap"><div class="empty"><div class="eh">Loading responders...</div></div></div>
     </div>
     <!-- Add Contact Form Inline Card -->
@@ -1410,12 +1353,11 @@ select option:checked, select option:hover {
       <div class="g3" style="margin-bottom:10px">
         <div><div class="fl">Full Name</div><input class="fi" id="new-c-name" placeholder="e.g. Samuel K. Mensah"/></div>
         <div><div class="fl">SOC Role</div><select class="fsel" id="new-c-role"><option>Tier-1 Security Analyst</option><option>SOC Team Lead</option><option>Incident Commander</option><option>Security Director</option><option>DevOps On-Call</option></select></div>
-        <div><div class="fl">Primary phone</div><input class="fi" id="new-c-phone" placeholder="E.164 phone number"/></div>
+        <div><div class="fl">Phone on file</div><input class="fi" id="new-c-phone" placeholder="E.164 phone number"/></div>
       </div>
       <div class="g3" style="margin-bottom:14px">
-        <div><div class="fl">WhatsApp Number (Optional)</div><input class="fi" id="new-c-whatsapp" placeholder="+233244123456"/></div>
-        <div><div class="fl">Telegram Chat ID (Optional)</div><input class="fi" id="new-c-telegram" placeholder="e.g. 987654321"/></div>
-        <div><div class="fl">Corporate Email (Optional)</div><input class="fi" id="new-c-email" placeholder="analyst@corp.com"/></div>
+        <div><div class="fl">Email on file</div><input class="fi" id="new-c-email" placeholder="analyst@corp.com"/></div>
+        <div style="grid-column:span 2;font-size:11px;color:var(--text-dim);align-self:end">After this person is saved, tap Connect on their row for Slack, Teams, or their mailbox. The phone is kept on the directory.</div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px">
         <button class="btn btn-p btn-sm" onclick="submitNewContact()">Save Responder</button>
@@ -1872,35 +1814,102 @@ async function loadRisks(){
 }
 
 // ── THREAT PAGE ────────────────────────────────────────────────────────────
+function workspaceLink(connections, provider){
+  return (connections || []).find(function(c){ return c.provider === provider && !c.contact_id; }) || null;
+}
+function linkFor(connections, provider, contactId){
+  const wanted = contactId || '';
+  return (connections || []).find(function(c){ return c.provider === provider && (c.contact_id || '') === wanted; }) || null;
+}
+function platformStatusLine(link){
+  if(!link) return 'Not connected';
+  const name = link.account_label || 'Connected account';
+  const dest = link.destination_label || '';
+  if(dest && dest.indexOf('/') === -1) return name + ' · ' + dest;
+  return name;
+}
+function connectButton(provider, label, contactId){
+  return `<button class="btn btn-p btn-sm" data-provider="${esc(provider)}" data-contact="${esc(contactId||'')}" onclick="connectPlatform(this.dataset.provider, this.dataset.contact)">${esc(label || 'Connect')}</button>`;
+}
+function disconnectButton(provider, contactId, label){
+  return `<button class="btn btn-g btn-sm" data-provider="${esc(provider)}" data-contact="${esc(contactId||'')}" onclick="disconnectPlatform(this.dataset.provider, this.dataset.contact)">${esc(label || 'Disconnect')}</button>`;
+}
+function platformActions(link, provider, contactId, label, disconnectLabel){
+  if(link) return disconnectButton(provider, contactId, disconnectLabel);
+  return connectButton(provider, label || 'Connect', contactId);
+}
+function platformCard(title, blurb, link, actionsHtml){
+  const connected = !!link;
+  return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:12px;font-weight:700">${title}</span><span class="badge ${connected?'badge-done':'badge-queued'}">${connected?'CONNECTED':'NOT CONNECTED'}</span></div>
+    <div style="font-size:11px;color:var(--text-dim);min-height:32px">${blurb}</div>
+    <div style="font-size:12px;margin:8px 0;font-weight:600">${esc(platformStatusLine(link))}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${actionsHtml}</div>
+  </div>`;
+}
+function platformCardsHtml(connections){
+  const slack = workspaceLink(connections, 'slack');
+  const teams = workspaceLink(connections, 'teams');
+  const microsoft = workspaceLink(connections, 'email_microsoft');
+  const google = workspaceLink(connections, 'email_google');
+  const emailNames = [microsoft, google].filter(Boolean).map(platformStatusLine);
+  const emailLink = emailNames.length ? {account_label: emailNames.join(' · '), destination_label: ''} : null;
+  const emailActions = platformActions(microsoft, 'email_microsoft', '', 'Connect Microsoft', 'Disconnect Microsoft')
+    + platformActions(google, 'email_google', '', 'Connect Google', 'Disconnect Google');
+  return [
+    platformCard('Slack', 'Tap Connect. The browser opens Slack so you can sign in and allow Aegis.', slack, platformActions(slack, 'slack', '', 'Connect')),
+    platformCard('Microsoft Teams', 'Tap Connect. The browser opens Microsoft so you can sign in and allow Aegis.', teams, platformActions(teams, 'teams', '', 'Connect')),
+    platformCard('Email', 'Tap Connect. The browser opens Microsoft 365 or Google so you can sign in. Alerts go to that mailbox.', emailLink, emailActions),
+  ].join('');
+}
+function paintPlatformCards(connections){
+  ['alert-channels-grid','platform-connect-cards'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = platformCardsHtml(connections);
+  });
+}
+async function connectPlatform(provider, contactId){
+  try{
+    const res = await fetch('/api/integrations/' + encodeURIComponent(provider) + '/start', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({contact_id: contactId || ''})
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if(!res.ok){ toast(data.detail || 'Could not start connect', 'err'); return; }
+    if(data.authorize_url){ location.href = data.authorize_url; return; }
+    const names = {slack:'Slack', teams:'Microsoft', email_microsoft:'Microsoft', email_google:'Google'};
+    toast('Aegis cannot open ' + (names[provider] || 'that') + ' sign-in yet. The browser page exists only when Aegis has its own app there, the same way Cursor has its GitHub app.', 'err');
+  }catch(e){ toast('Could not start connect', 'err'); }
+}
+async function disconnectPlatform(provider, contactId){
+  try{
+    const res = await fetch('/api/integrations/' + encodeURIComponent(provider) + '/disconnect?contact_id=' + encodeURIComponent(contactId || ''), {method:'POST'});
+    if(!res.ok){ toast('Could not disconnect', 'err'); return; }
+    toast('Disconnected', 'ok');
+    loadAlertingState();
+    const responders = document.getElementById('stab-responders');
+    if(responders && responders.style.display !== 'none') loadContactsList();
+  }catch(e){ toast('Could not disconnect', 'err'); }
+}
+
 async function loadAlertingState(){
   try{
-    const [statusRes, alertsRes] = await Promise.all([fetch('/api/alerting/status'), fetch('/api/alerting/alerts')]);
+    const [statusRes, alertsRes, integRes] = await Promise.all([
+      fetch('/api/alerting/status'),
+      fetch('/api/alerting/alerts'),
+      fetch('/api/integrations')
+    ]);
     const status = await statusRes.json();
     const alerts = await alertsRes.json();
-    const chGrid = document.getElementById('alert-channels-grid');
-    if(chGrid){
-      const ch = status.channels || {};
-      const smsOk = ch.sms_local_arkesel || ch.sms_local_hubtel;
-      const chatOk = ch.telegram || ch.whatsapp || ch.generic_webhook;
-      const oobOk = ch.modem_oob_configured;
-      const canaryOk = (status.canary_heartbeat || {}).canary_configured;
-      chGrid.innerHTML = `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">SMS</span><span class="badge ${smsOk?'badge-done':'badge-queued'}">${smsOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Configured SMS gateway</div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">ChatOps Dispatch</span><span class="badge ${chatOk?'badge-done':'badge-queued'}">${chatOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Telegram Bot &amp; WhatsApp Cloud API</div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Cellular Out-of-Band</span><span class="badge ${oobOk?'badge-done':'badge-queued'}">${oobOk?'CONFIGURED':'NOT CONFIGURED'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Hardware Serial 4G LTE Modem</div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700">Dead-Man Canary</span><span class="badge ${canaryOk?'badge-done':'badge-queued'}">${canaryOk?'ACTIVE':'NOT CONFIGURED'}</span></div>
-          <div style="font-size:11px;color:var(--text-dim)">Off-Premises Tamper Heartbeat Watchdog</div>
-        </div>`;
+    const integrations = integRes.ok ? await integRes.json() : {connections:[]};
+    const connections = integrations.connections || status.platforms || [];
+    window._platformConnections = connections;
+    paintPlatformCards(connections);
+    const cap = status.dispatch_cap || {};
+    const capNote = document.getElementById('dispatch-cap-note');
+    if (capNote && cap.hourly_cap) {
+      capNote.textContent = `${cap.sent_this_hour} of ${cap.hourly_cap} messages to Slack, Teams, and email this hour. ${cap.held_this_hour} held on the console.`;
     }
     const aWrap = document.getElementById('critical-alerts-wrap');
     if(aWrap){
@@ -1912,14 +1921,17 @@ async function loadAlertingState(){
           const pillars = (a.zt_pillars||[]).map(p=>`<span style="background:rgba(94,234,212,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-right:4px">${esc(p)}</span>`).join('') || '—';
           const escBadge = a.escalation_level > 0 ? `<span class="badge badge-error">Level ${a.escalation_level} Escalated</span>` : `<span class="badge badge-running">Level 0 Primary</span>`;
           const ackBtn = a.acknowledged ? `<span style="color:var(--success);font-weight:700;font-size:11px">&#10003; Acknowledged</span>` : `<button class="btn btn-p btn-sm" onclick="event.stopPropagation(); ackCriticalAlert('${id}')">Acknowledge</button>`;
+          const held = Number(a.held_count || 0);
+          const countCell = `x${a.occurrence_count||1}` + (held ? `<div style="font-size:10px;color:var(--text-dim);font-weight:500">${held} held</div>` : '');
           const summary = esc(String(a.summary||'').replace(/\s*\|\s*Key:[\s\S]*$/,''));
+          const heldLine = held ? `<div style="margin-top:8px;font-size:12px">Held from outside channels: ${held}. They stay on this incident.</div>` : '';
           const detail = `<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;font-size:11px">`
             + `<div><div style="color:var(--text-dim)">Destination</div><div style="font-family:var(--mono)">${esc(a.dest_ip||'—')}${a.dest_port?':'+esc(a.dest_port):''}</div></div>`
             + `<div><div style="color:var(--text-dim)">Tactic</div><div>${esc(a.tactic||'—')}</div></div>`
             + `<div><div style="color:var(--text-dim)">Technique</div><div style="font-family:var(--mono)">${esc(a.technique||'—')}</div></div>`
             + `<div><div style="color:var(--text-dim)">Last seen</div><div>${esc(a.last_occurrence||a.created_at||'—')}</div></div>`
-            + `</div><div style="margin-top:8px;line-height:1.45">${summary||'No additional detail was recorded.'}</div>`;
-          return `<tr style="cursor:pointer" onclick="toggleAlertDetail('${id}')"><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${esc(id)}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">x${a.occurrence_count||1}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`
+            + `</div><div style="margin-top:8px;line-height:1.45">${summary||'No additional detail was recorded.'}</div>${heldLine}`;
+          return `<tr style="cursor:pointer" onclick="toggleAlertDetail('${id}')"><td style="font-family:var(--mono);font-size:11px;color:var(--critical);font-weight:700">${esc(id)}</td><td style="font-weight:600">${esc(a.title)}</td><td style="font-family:var(--mono);font-size:11px">${esc(a.source_ip)}</td><td>${pillars}</td><td style="font-weight:700">${countCell}</td><td>${escBadge}</td><td>${ackBtn}</td></tr>`
             + `<tr id="adet-${id}" style="display:none"><td colspan="7" style="background:var(--surface2);padding:12px 14px">${detail}</td></tr>`;
         }).join('');
         aWrap.innerHTML = `<table class="ft"><thead><tr><th>ID</th><th>Incident</th><th>Source</th><th>Zero Trust</th><th>Count</th><th>Escalation</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -3994,6 +4006,7 @@ function switchSettingsTab(tab){
   if(pane) pane.style.display = 'block';
   const btn = document.getElementById('stab-btn-' + tab);
   if(btn) btn.classList.add('on');
+  if(tab === 'channels') loadAlertingState();
   if(tab === 'responders') loadContactsList();
   if(tab === 'ownership') loadMappingsList();
 }
@@ -4015,32 +4028,8 @@ async function loadSettings(){
     const geoPath = document.getElementById('cfg-geoip-path');
     if (geoPath) geoPath.value = ti.geoip_db_path || '';
 
-    // Alerting Gateways fields
-    document.getElementById('cfg-arkesel-key').value = al.arkesel_api_key || '';
-    document.getElementById('cfg-arkesel-sender').value = al.arkesel_sender_id || 'AegisAI';
-    document.getElementById('cfg-hubtel-id').value = al.hubtel_client_id || '';
-    document.getElementById('cfg-hubtel-secret').value = al.hubtel_client_secret || '';
-    document.getElementById('cfg-hubtel-sender').value = al.hubtel_sender_id || 'AegisAI';
-    document.getElementById('cfg-tg-token').value = al.telegram_bot_token || '';
-    document.getElementById('cfg-tg-chat').value = al.telegram_chat_id || '';
-    document.getElementById('cfg-wa-token').value = al.whatsapp_api_token || '';
-    document.getElementById('cfg-wa-phone-id').value = al.whatsapp_phone_number_id || '';
-    document.getElementById('cfg-webhook-url').value = al.critical_alert_webhook_url || '';
-    document.getElementById('cfg-modem-port').value = al.modem_serial_port || '';
-    document.getElementById('cfg-modem-baud').value = al.modem_baudrate || '';
-    document.getElementById('cfg-canary-url').value = al.canary_heartbeat_url || '';
-
-    // Status Badges
-    const smsBadge = document.getElementById('badge-sms-status');
-    if(smsBadge){
-      smsBadge.textContent = (al.arkesel_api_key || al.hubtel_client_id) ? 'Active' : 'Unconfigured';
-      smsBadge.className = 'badge ' + ((al.arkesel_api_key || al.hubtel_client_id) ? 'badge-done' : 'badge-queued');
-    }
-    const chatBadge = document.getElementById('badge-chat-status');
-    if(chatBadge){
-      chatBadge.textContent = (al.telegram_bot_token || al.whatsapp_api_token || al.critical_alert_webhook_url) ? 'Active' : 'Unconfigured';
-      chatBadge.className = 'badge ' + ((al.telegram_bot_token || al.whatsapp_api_token || al.critical_alert_webhook_url) ? 'badge-done' : 'badge-queued');
-    }
+    const capField = document.getElementById('cfg-alert-hourly-cap');
+    if (capField) capField.value = al.alert_hourly_cap || 10;
   } catch(e) {
     console.warn('loadSettings error:', e);
   }
@@ -4058,19 +4047,7 @@ async function saveCurrentSettingsTab(){
       geoip_db_path: (document.getElementById('cfg-geoip-path').value || '').trim()
     },
     alerting: {
-      arkesel_api_key: document.getElementById('cfg-arkesel-key').value.trim(),
-      arkesel_sender_id: document.getElementById('cfg-arkesel-sender').value.trim(),
-      hubtel_client_id: document.getElementById('cfg-hubtel-id').value.trim(),
-      hubtel_client_secret: document.getElementById('cfg-hubtel-secret').value.trim(),
-      hubtel_sender_id: document.getElementById('cfg-hubtel-sender').value.trim(),
-      telegram_bot_token: document.getElementById('cfg-tg-token').value.trim(),
-      telegram_chat_id: document.getElementById('cfg-tg-chat').value.trim(),
-      whatsapp_api_token: document.getElementById('cfg-wa-token').value.trim(),
-      whatsapp_phone_number_id: document.getElementById('cfg-wa-phone-id').value.trim(),
-      critical_alert_webhook_url: document.getElementById('cfg-webhook-url').value.trim(),
-      modem_serial_port: document.getElementById('cfg-modem-port').value.trim(),
-      modem_baudrate: +document.getElementById('cfg-modem-baud').value || 115200,
-      canary_heartbeat_url: document.getElementById('cfg-canary-url').value.trim()
+      alert_hourly_cap: (document.getElementById('cfg-alert-hourly-cap') || {value:''}).value.trim()
     }
   };
   try {
@@ -4094,25 +4071,39 @@ async function saveThreatKeysOnly(){
 
 async function loadContactsList(){
   try {
-    const res = await fetch('/api/alerting/contacts');
+    const [res, integRes] = await Promise.all([
+      fetch('/api/alerting/contacts'),
+      fetch('/api/integrations')
+    ]);
     _oncallContacts = await res.json();
+    const integrations = integRes.ok ? await integRes.json() : {connections:[]};
+    const connections = integrations.connections || [];
+    window._platformConnections = connections;
     const wrap = document.getElementById('contacts-tbl-wrap');
     if(!wrap) return;
     if(!_oncallContacts.length){
       wrap.innerHTML = '<div class="empty"><div class="eh">No responders registered yet</div></div>';
       return;
     }
-    const rows = _oncallContacts.map(c => `<tr>
-      <td style="font-weight:700;color:var(--text)">${esc(c.name)}</td>
-      <td><span class="badge badge-running" style="font-size:9px">${esc(c.role)}</span></td>
-      <td style="font-family:var(--mono);color:var(--accent);font-size:11px">${esc(c.phone)}</td>
-      <td style="font-family:var(--mono);font-size:11px">${esc(c.whatsapp_number || c.phone)}</td>
-      <td style="font-size:11px;color:var(--text-dim)">${esc(c.telegram_chat_id || '—')}</td>
-      <td style="font-size:11px;color:var(--text-dim)">${esc(c.email || '—')}</td>
+    const rows = _oncallContacts.map(c => {
+      const cid = c.contact_id;
+      const slack = linkFor(connections, 'slack', cid);
+      const teams = linkFor(connections, 'teams', cid);
+      const mailMs = linkFor(connections, 'email_microsoft', cid);
+      const mailGoogle = linkFor(connections, 'email_google', cid);
+      return `<tr>
+      <td style="font-weight:700;color:var(--text)">${esc(c.name)}<div style="font-size:10px;color:var(--text-dim);font-weight:500">${esc(c.role)}</div></td>
+      <td>${slack ? `<div style="font-size:11px;margin-bottom:4px">${esc(platformStatusLine(slack))}</div>` : ''}${platformActions(slack, 'slack', cid, 'Connect')}</td>
+      <td>${teams ? `<div style="font-size:11px;margin-bottom:4px">${esc(platformStatusLine(teams))}</div>` : ''}${platformActions(teams, 'teams', cid, 'Connect')}</td>
+      <td>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">${esc(c.email || 'No email on file')}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${platformActions(mailMs, 'email_microsoft', cid, 'Connect Microsoft')}${platformActions(mailGoogle, 'email_google', cid, 'Connect Google')}</div>
+      </td>
       <td><span class="badge ${c.is_active ? 'badge-done' : 'badge-queued'}">${c.is_active ? 'ACTIVE' : 'OFFLINE'}</span></td>
-      <td style="text-align:right"><button class="btn btn-d btn-sm" onclick="deleteContact('${c.contact_id}')">&#10005;</button></td>
-    </tr>`).join('');
-    wrap.innerHTML = `<table class="ft"><thead><tr><th>Name</th><th>Role</th><th>Primary Phone</th><th>WhatsApp</th><th>Telegram</th><th>Email</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>${rows}</tbody></table>`;
+      <td style="text-align:right"><button class="btn btn-d btn-sm" onclick="deleteContact('${esc(cid)}')">&#10005;</button></td>
+    </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table class="ft"><thead><tr><th>Responder</th><th>Slack</th><th>Teams</th><th>Email</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>${rows}</tbody></table>`;
     populateMappingDropdowns();
   } catch(e) {
     console.warn('loadContactsList error:', e);
@@ -4133,8 +4124,8 @@ async function submitNewContact(){
     name,
     role,
     phone,
-    whatsapp_number: document.getElementById('new-c-whatsapp').value.trim() || phone,
-    telegram_chat_id: document.getElementById('new-c-telegram').value.trim(),
+    whatsapp_number: '',
+    telegram_chat_id: '',
     email: document.getElementById('new-c-email').value.trim(),
     is_active: true
   };
@@ -4250,26 +4241,6 @@ async function deleteMapping(cidr){
   } catch(e){ toast('Delete failed', 'err'); }
 }
 
-async function testDispatchGateway(channel){
-  let recipient = '';
-  if(channel === 'sms') recipient = document.getElementById('test-sms-phone').value.trim();
-  else recipient = document.getElementById('test-chat-target').value.trim() || 'default';
-  if(!recipient){ toast('Enter recipient phone number or Chat ID', 'err'); return; }
-  toast(`Sending test dispatch via ${channel.toUpperCase()}...`);
-  try {
-    const res = await fetch('/api/settings/test-channel', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({channel, recipient})
-    });
-    const d = await res.json();
-    if(d.success){
-      toast(`${channel.toUpperCase()} test dispatched successfully! Ref: ${d.provider_ref}`, 'ok');
-    } else {
-      toast(`${channel.toUpperCase()} test failed: ${d.error}`, 'err');
-    }
-  } catch(e){ toast('Gateway test error: ' + e, 'err'); }
-}
 </script>
 <script>
 // ── PREMIUM LAYER: breadcrumb, ⌘K, hero status card ─────────────────────────

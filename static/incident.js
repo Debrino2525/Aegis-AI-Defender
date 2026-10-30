@@ -434,6 +434,7 @@
     if (alert.status) html += chip(alert.status);
     if (alert.escalation_level != null) html += chip("Escalation " + alert.escalation_level);
     if (alert.occurrence_count != null) html += chip("Seen " + alert.occurrence_count);
+    if (Number(alert.held_count) > 0) html += chip("Held " + alert.held_count);
     html += "</div>";
     if (alert.title) html += '<p class="narrative">' + esc(alert.title) + "</p>";
     html += '<div class="block" id="evidence"><h3>Fields</h3><ul class="facts">';

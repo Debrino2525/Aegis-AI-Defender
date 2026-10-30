@@ -83,6 +83,9 @@ def _request_needs_auth(request: Request) -> bool:
     # The HMAC triage token is the credential for this one alert.
     if path.startswith("/api/alerting/triage/"):
         return False
+    # The provider sends the browser back here. The one-time state is the credential.
+    if request.method == "GET" and path.startswith("/api/integrations/") and path.endswith("/callback"):
+        return False
     return True
 
 
@@ -665,6 +668,118 @@ async def trigger_test_critical_alert(req: TestAlertRequest):
     )
 
 
+class IntegrationStart(BaseModel):
+    contact_id: Optional[str] = ""
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+
+
+def _integration_base(request: Request) -> str:
+    configured = os.getenv("AEGIS_CONSOLE_URL", "").strip()
+    if configured:
+        return configured.rstrip("/")
+    return str(request.base_url).rstrip("/")
+
+
+def _clean_contact_id(contact_id: Optional[str]) -> str:
+    text = (contact_id or "").strip()
+    if not text:
+        return ""
+    allowed = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
+    if len(text) > 64 or any(ch not in allowed for ch in text):
+        raise HTTPException(status_code=400, detail="Unknown responder")
+    return text
+
+
+def _save_provider_app(provider: str, client_id: str, client_secret: str) -> None:
+    from aegis.alerting.integrations import credential_env_names
+    id_name, secret_name = credential_env_names(provider)
+    client_id = client_id.strip()
+    client_secret = client_secret.strip()
+    if not client_id or not client_secret or any(ch in client_id + client_secret for ch in "\r\n"):
+        raise HTTPException(status_code=400, detail="Enter both the client ID and the client secret")
+    os.environ[id_name] = client_id
+    os.environ[secret_name] = client_secret
+    _update_env_file({id_name: client_id, secret_name: client_secret})
+
+
+_CONNECTED_PAGE = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Connected</title></head>
+<body style="font-family:Segoe UI,sans-serif;padding:40px;line-height:1.5">
+<p>Connected. You can return to the console.</p>
+<p><a href="/">Back to Aegis</a></p>
+</body></html>"""
+
+_CONNECT_FAILED_PAGE = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Not connected</title></head>
+<body style="font-family:Segoe UI,sans-serif;padding:40px;line-height:1.5">
+<p>The account could not be connected. Return to the console and tap Connect again.</p>
+<p>Teams needs a team and a channel on the signed-in account. Email needs a mailbox.</p>
+<p><a href="/">Back to Aegis</a></p>
+</body></html>"""
+
+
+@app.get("/api/integrations")
+async def list_integrations():
+    """Connected Slack, Teams, and email accounts. Secrets stay on this machine."""
+    from aegis.alerting.integrations import PROVIDERS, app_credentials
+    return {
+        "connections": alert_router.platforms.public(),
+        "apps": {provider: {"ready": app_credentials(provider) is not None} for provider in PROVIDERS},
+    }
+
+
+@app.post("/api/integrations/{provider}/start")
+async def start_integration(provider: str, body: IntegrationStart, request: Request):
+    """Begin Connect. Opens the provider sign-in, or asks for the app credentials first."""
+    from aegis.alerting.integrations import PROVIDERS, app_credentials, authorize_url, redirect_uri
+    if provider not in PROVIDERS:
+        raise HTTPException(status_code=404, detail="Unknown platform")
+    contact_id = _clean_contact_id(body.contact_id)
+    client_id = (body.client_id or "").strip()
+    client_secret = (body.client_secret or "").strip()
+    if client_id or client_secret:
+        _save_provider_app(provider, client_id, client_secret)
+    base = _integration_base(request)
+    if app_credentials(provider) is None:
+        return {
+            "setup_required": True,
+            "provider": provider,
+            "redirect_uri": redirect_uri(base, provider),
+        }
+    state = alert_router.platforms.begin(provider, contact_id)
+    return {"authorize_url": authorize_url(provider, base, state)}
+
+
+@app.get("/api/integrations/{provider}/callback")
+async def integration_callback(provider: str, request: Request):
+    """Provider sign-in return. A matching one-time state is required. The code is not shown."""
+    from aegis.alerting.integrations import PROVIDERS, exchange_code
+    if provider not in PROVIDERS:
+        return HTMLResponse(_CONNECT_FAILED_PAGE, status_code=404)
+    if request.query_params.get("error"):
+        return HTMLResponse(_CONNECT_FAILED_PAGE, status_code=400)
+    state = request.query_params.get("state") or ""
+    code = request.query_params.get("code") or ""
+    row = alert_router.platforms.take_state(state)
+    if row is None or row["provider"] != provider:
+        return HTMLResponse(_CONNECT_FAILED_PAGE, status_code=400)
+    fields = await exchange_code(provider, _integration_base(request), code)
+    if not fields:
+        return HTMLResponse(_CONNECT_FAILED_PAGE, status_code=400)
+    alert_router.platforms.save(provider, row["contact_id"], fields)
+    return HTMLResponse(_CONNECTED_PAGE)
+
+
+@app.post("/api/integrations/{provider}/disconnect")
+async def disconnect_integration(provider: str, contact_id: str = ""):
+    from aegis.alerting.integrations import PROVIDERS
+    if provider not in PROVIDERS:
+        raise HTTPException(status_code=404, detail="Unknown platform")
+    alert_router.platforms.disconnect(provider, _clean_contact_id(contact_id))
+    return {"ok": True}
+
+
 # ── WebSocket: real-time monitor stream ─────────────────────────────────────
 
 # ── REST: Platform Settings, Integrations & On-Call Directory ─────────────
@@ -730,6 +845,7 @@ async def get_platform_settings():
             "alert_signing_key": mask_secret(signing),
             "alert_signing_key_source": signing_key_source(),
             "alert_signing_key_rejected_default": signing_key_is_public_default(),
+            "alert_hourly_cap": alert_router.cap.hourly_cap(),
         }),
     }
 
@@ -770,6 +886,7 @@ async def save_platform_settings(payload: SettingsPayload):
     _take_plain(al, "modem_serial_port", "MODEM_SERIAL_PORT")
     _take_plain(al, "modem_baudrate", "MODEM_BAUDRATE")
     _take_plain(al, "aegis_console_url", "AEGIS_CONSOLE_URL")
+    _take_plain(al, "alert_hourly_cap", "ALERT_HOURLY_CAP")
 
     # Apply to os.environ and write to .env. Masked echoes were dropped above.
     if updates:
@@ -791,6 +908,9 @@ async def save_platform_settings(payload: SettingsPayload):
     alert_router.adapter_modem.port = os.getenv("MODEM_SERIAL_PORT", "").strip()
     alert_router.heartbeat.canary_url = os.getenv("CANARY_HEARTBEAT_URL", "").strip()
     alert_router.base_console_url = os.getenv("AEGIS_CONSOLE_URL", "http://localhost:8000").rstrip("/")
+    raw_cap = os.getenv("ALERT_HOURLY_CAP", "").strip()
+    if raw_cap.isdigit():
+        alert_router.cap.set_hourly_cap(int(raw_cap))
     from aegis.monitor.geoip import reload_geoip
     reload_geoip()
     return {"ok": True, "message": "Settings successfully saved and reloaded!"}
@@ -863,31 +983,12 @@ class ChannelTestPayload(BaseModel):
 
 @app.post("/api/settings/test-channel")
 async def test_dispatch_channel(req: ChannelTestPayload):
-    """Sends an instant test alert message through the selected gateway to verify setup."""
-    from aegis.alerting.models import CriticalAlert, SeverityLevel, OnCallContact
-    dummy_contact = OnCallContact(
-        contact_id="TEST-USER",
-        name="Verification Test",
-        phone=req.recipient,
-        whatsapp_number=req.recipient,
-        telegram_chat_id=req.recipient
+    """Retired. Alerts leave through a connected Slack, Teams, or email account."""
+    del req
+    raise HTTPException(
+        status_code=410,
+        detail="Connect Slack, Microsoft Teams, or email from the console.",
     )
-    dummy_alert = CriticalAlert(
-        alert_id="CALT-TEST-VERIFY",
-        fingerprint="TEST-FINGERPRINT",
-        title="Aegis AI Gateway Setup Verification",
-        severity=SeverityLevel.CRITICAL,
-        summary="This is an automated verification test sent from Aegis AI Settings.",
-        source_ip="127.0.0.1"
-    )
-    triage_url = f"{alert_router.base_console_url}/#settings"
-    if req.channel == "sms":
-        res = await alert_router.adapter_sms.send(dummy_alert, dummy_contact, triage_url)
-    elif req.channel in ("telegram", "whatsapp", "webhook"):
-        res = await alert_router.adapter_webhook.send(dummy_alert, dummy_contact, triage_url)
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported test channel")
-    return res.model_dump()
 
 
 # ── Incident Containment & Machine Remediation ─────────────────────────────

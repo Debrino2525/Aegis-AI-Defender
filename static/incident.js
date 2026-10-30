@@ -407,6 +407,7 @@
     } else {
       html += '<p class="muted">No Analyst Assist summary returned.</p>';
     }
+    html += loopBlock(inc.loop);
     html += assistBlock(inc.analyst_assist || inc);
     html += '<div class="block"><h3>Facts</h3><ul class="facts">';
     html += fact("Sources", list(inc.source_ips).join(", "));
@@ -602,6 +603,35 @@
     return html;
   }
 
+  function loopBlock(loop) {
+    if (!loop || !loop.closed) return "";
+    var findings = list((loop.prevent || {}).findings);
+    var detections = list((loop.detect || {}).alerts);
+    var patterns = list((loop.detect || {}).pattern_ids);
+    var host = (loop.host || {}).hostname || "";
+    var html = '<div class="block" id="loop"><h3>Prevent → Detect → Respond</h3>';
+    html += '<div class="loop-rail"><span class="loop-step">Prevent</span><span class="loop-arrow">→</span><span class="loop-step">Detect</span><span class="loop-arrow">→</span><span class="loop-step">Respond</span></div>';
+    html += '<p class="muted">One incident. Evidence from the enrolled host posture and a later behavioral match. Recommend isolate, then confirm.</p>';
+    if (host) html += '<p class="mono">' + esc(host) + "</p>";
+    html += "<h3>Prevent</h3>";
+    if (!findings.length) html += '<p class="muted">No verified HIGH or KEV finding on this host.</p>';
+    findings.forEach(function (row) {
+      html += '<p class="related-row"><span class="mono">' + esc(row.finding_id || row.id || "") + "</span> " +
+        esc(row.title || "") + (row.is_cisa_kev ? " · KEV" : "") + "</p>";
+      if (row.evidence) html += '<p class="muted">' + esc(row.evidence) + "</p>";
+    });
+    html += "<h3>Detect</h3>";
+    if (!detections.length) html += '<p class="muted">No later behavioral sample on this host.</p>';
+    detections.forEach(function (row) {
+      html += '<p class="related-row"><span class="mono">' + esc(row.id || "") + "</span> " +
+        esc(row.pattern_id || "") + " · " + esc(row.title || "") + "</p>";
+      if (row.evidence) html += '<p class="muted">' + esc(row.evidence) + "</p>";
+    });
+    if (patterns.length) html += '<p class="mono">' + esc(patterns.join(", ")) + "</p>";
+    html += "</div>";
+    return html;
+  }
+
   function assistBlock(assist) {
     if (!assist) return "";
     var groups = list(assist.groups);
@@ -762,6 +792,7 @@
       if (row[key] != null && row[key] !== "") bits.push(key + ": " + row[key]);
     });
     if (row.audit && row.audit.signature) bits.push("sig: " + String(row.audit.signature).slice(0, 12));
+    if (row.paging && row.paging.status) bits.push("page: " + row.paging.status);
     return bits.join(" · ") || "Action recorded";
   }
 
@@ -836,6 +867,7 @@
       ["Target", preview.target],
       ["Asset", preview.asset_id || "none"],
       ["Evidence", (evidence.alert_ids || []).join(", ")],
+      ["Findings", (evidence.finding_ids || []).join(", ")],
       ["Dry-run", dry.would],
       ["Commands", (dry.commands || []).join(" ; ")],
       ["Rollback", preview.rollback_possible ? (preview.rollback_action || "available") : "not reversible"]

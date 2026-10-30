@@ -200,6 +200,11 @@ class ResponseEngine:
                 )
             if action != rule["action"] and action != rule.get("rollback_action"):
                 raise ResponseError("Unsupported action type", status_code=400)
+            loop_findings = [
+                str(row.get("finding_id") or row.get("id"))
+                for row in ((incident.get("loop") or {}).get("prevent") or {}).get("findings") or []
+                if row.get("finding_id") or row.get("id")
+            ]
             proposal = {
                 "rule_id": rule["rule_id"],
                 "title": rule["title"],
@@ -209,6 +214,7 @@ class ResponseEngine:
                 "rollback_possible": bool(rule.get("rollback_possible")),
                 "evidence": {
                     "alert_ids": evidence_ids,
+                    "finding_ids": loop_findings,
                     "pattern_ids": sorted({str(a.get("pattern_id") or "") for a in (incident.get("alerts") or []) if a.get("pattern_id")}),
                     "incident_id": incident.get("id"),
                 },
@@ -484,6 +490,7 @@ class ResponseEngine:
             "status": record.get("status"),
             "applied": bool(record.get("applied")),
             "evidence_alert_ids": list(evidence.get("alert_ids") or []),
+            "evidence_finding_ids": list(evidence.get("finding_ids") or []),
             "dry_run_commands": list((record.get("dry_run") or {}).get("commands") or []),
             "timestamp": record.get("updated_at") or record.get("created_at") or _now(),
         }

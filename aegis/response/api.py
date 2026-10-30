@@ -26,7 +26,7 @@ def _engine() -> ResponseEngine:
 
 def _context() -> Dict[str, Any]:
     if _get_context is None:
-        return {"hosts": [], "console_ips": [], "incident": None}
+        return {"hosts": [], "console_ips": [], "incident": None, "page_isolate": None}
     return _get_context()
 
 
@@ -176,9 +176,13 @@ async def preview_action(body: PreviewRequest):
 @router.post("/api/response/confirm")
 async def confirm_action(body: ConfirmRequest):
     try:
-        return _engine().confirm(body.action_id, actor="operator", confirm=body.confirm)
+        record = _engine().confirm(body.action_id, actor="operator", confirm=body.confirm)
     except ResponseError as exc:
         raise _http(exc) from exc
+    pager = _context().get("page_isolate")
+    if callable(pager):
+        record = await pager(record)
+    return record
 
 
 @router.post("/api/response/rollback")

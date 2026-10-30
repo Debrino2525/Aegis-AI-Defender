@@ -66,3 +66,26 @@
 }
 
 #posture .chips { margin: 8px 0 12px; }
+
+.loop-rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.loop-step {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.loop-arrow {
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}

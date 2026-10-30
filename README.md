@@ -33,12 +33,14 @@ Aegis AI is an enterprise-grade cyber defense and vulnerability management platf
   - `AEGIS-BEH-010`: SMB Ransomware Propagation
   - `AEGIS-BEH-012`: Target DNS Drift Detection
 - **Analyst Assist**: Groups behavioral alerts by host, time, and tactic. Multi-phase lists and hop paths appear only when a sample exists. Related detections are other pattern IDs on that host.
+- **Prevent → Detect → Respond loop**: One incident when an enrolled host already has a verified HIGH or CISA KEV finding on its posture and later matches a real behavioral pattern. Evidence is finding IDs plus detect samples. Empty if this site has no matching host, finding, or detection.
 
 ### 3. ⚡ Respond: Auditable host containment
 - **Observe / Recommend / Auto** per enrolled host. New sites default to **Recommend**. Auto never arms itself.
 - Every action carries a **rule ID**, **evidence**, a **dry-run**, an operator **confirm** (or Auto after the site is armed), a **signed HMAC audit**, and a **rollback** when the change is reversible (unblock / unquarantine).
 - Fleet contain runs on the **agent host** via heartbeat commands. The console box is not a stand-in for a remote server. A failed firewall change is reported as not applied — never a fake block.
 - Process termination, IP block, socket isolate, and host quarantine. Process kill and socket isolate are not reversible.
+- Closed-loop **Recommend isolate**: operator confirms, the audit is signed, then Slack, Teams, or email is paged under the existing hourly cap. The dashboard shows routing status only.
 
 ### 4. 🚨 Critical Alert Routing & DoD Zero Trust Escalation
 - **Autonomous Cascading Dispatch**:

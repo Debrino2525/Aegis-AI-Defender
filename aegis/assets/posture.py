@@ -12,6 +12,8 @@ from aegis.assets.identity import host_keys, normalize_host, value_hits
 from aegis.intel.asset_intelligence import compute_aegis_risk_score, compute_risk_label
 
 SEVERITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
+HIGH_SEV = {"HIGH", "CRITICAL"}
+VERIFY_OK = {"VULNERABLE", "CONFIRMED"}
 
 NO_SCANS = "No completed scans on this site."
 NO_MATCH = "No completed scan matches this host's addresses."
@@ -89,13 +91,37 @@ def matching_scans(
     return matched
 
 
+def finding_is_verified(finding: Dict[str, Any]) -> bool:
+    """CISA KEV, HIGH confidence, or a live re-test that still holds. Needs id + evidence."""
+    finding_id = str(finding.get("id") or finding.get("finding_id") or "").strip()
+    evidence = str(finding.get("evidence") or "").strip()
+    if not finding_id or not evidence:
+        return False
+    verification = finding.get("verification") if isinstance(finding.get("verification"), dict) else {}
+    status = str(verification.get("status") or "").upper()
+    if verification.get("is_vulnerable") or status in VERIFY_OK:
+        return True
+    if bool(finding.get("is_cisa_kev")):
+        return True
+    return str(finding.get("confidence") or "").upper() == "HIGH"
+
+
+def is_verified_high_kev(finding: Dict[str, Any]) -> bool:
+    if not finding_is_verified(finding):
+        return False
+    if bool(finding.get("is_cisa_kev")):
+        return True
+    return str(finding.get("severity") or "").upper() in HIGH_SEV
+
+
 def _public_finding(scan: Dict[str, Any], finding: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     finding_id = str(finding.get("id") or "").strip()
     scan_id = str(scan.get("id") or "").strip()
     if not finding_id or not scan_id:
         return None
     cve_id = str(finding.get("cve_id") or "").strip() or None
-    return {
+    verification = finding.get("verification") if isinstance(finding.get("verification"), dict) else None
+    public = {
         "id": finding_id,
         "scan_id": scan_id,
         "title": finding.get("title") or finding_id,
@@ -103,10 +129,20 @@ def _public_finding(scan: Dict[str, Any], finding: Dict[str, Any]) -> Optional[D
         "cve_id": cve_id,
         "port": finding.get("port"),
         "is_cisa_kev": bool(finding.get("is_cisa_kev")),
+        "confidence": finding.get("confidence"),
         "target": finding.get("target") or scan.get("target"),
         "timestamp": _iso(finding.get("timestamp") or scan.get("started_at")),
         "evidence": finding.get("evidence") or "",
     }
+    if verification:
+        public["verification"] = {
+            "status": verification.get("status"),
+            "is_vulnerable": bool(verification.get("is_vulnerable")),
+            "timestamp": _iso(verification.get("timestamp")),
+            "summary": verification.get("summary") or "",
+        }
+    public["verified"] = finding_is_verified(public) or finding_is_verified(finding)
+    return public
 
 
 def _public_cve(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:

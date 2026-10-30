@@ -636,8 +636,29 @@ table.ft tr:hover td,table.ht tr:hover td{background:rgba(255,255,255,.035)}
 #tv-world-stage svg{width:100%;height:100%;display:block;}
 #tv-world-stage path{fill:#1e3348;stroke:#8eb4d4;stroke-width:.45;stroke-linejoin:round;}
 .geo-pin{cursor:pointer;}
-.geo-pin-halo{fill:rgba(255,92,92,.22);stroke:rgba(255,160,150,.7);stroke-width:.7;}
-.geo-pin-dot{fill:#ff5d57;}
+.geo-pin-halo{fill:rgba(255,92,92,.22);stroke:rgba(255,160,150,.75);stroke-width:.7;transform-box:fill-box;transform-origin:center;animation:geo-heartbeat 1.8s ease-out infinite;}
+.geo-pin-dot{fill:#ff5d57;transform-box:fill-box;transform-origin:center;animation:geo-dot-beat 1.8s ease-in-out infinite;}
+@keyframes geo-heartbeat{
+  0%{transform:scale(.65);opacity:.75}
+  14%{transform:scale(1.45);opacity:.35}
+  22%{transform:scale(.8);opacity:.6}
+  36%{transform:scale(2.2);opacity:0}
+  100%{transform:scale(2.2);opacity:0}
+}
+@keyframes geo-dot-beat{
+  0%,100%{transform:scale(1)}
+  14%{transform:scale(1.4)}
+  22%{transform:scale(1)}
+  36%{transform:scale(1.2)}
+}
+html[data-theme="light"] .tv-stage-wrap{
+  --text:#E7EDF4;
+  --text-dim:#D5DEE8;
+  --text-muted:#C5D0DC;
+  --border:rgba(231,237,244,.16);
+  --border2:rgba(231,237,244,.28);
+  color:#E7EDF4;
+}
 .geo-tip{position:absolute;z-index:4;pointer-events:none;max-width:280px;padding:8px 10px;border-radius:8px;background:rgba(247,248,250,.96);color:#12161c;box-shadow:0 10px 28px rgba(0,0,0,.35);}
 .geo-tip[hidden]{display:none;}
 .geo-tip-ip{font-family:var(--mono);font-size:12px;font-weight:600;}

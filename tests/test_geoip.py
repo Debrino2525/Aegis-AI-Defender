@@ -183,3 +183,5 @@ def test_map_does_not_invent_coordinates():
     assert "/static/world_map.svg" in html
     assert "tv-world-markers" in html
     assert "for (let lon = -180" not in html
+    assert "geo-heartbeat" in html
+    assert 'html[data-theme="light"] .tv-stage-wrap' in html

@@ -57,6 +57,7 @@ _WEB_EDGE_CIDRS = (
     "209.85.128.0/17",
     "216.58.192.0/19",
     "216.239.32.0/19",
+    "192.178.0.0/15",
     # Cloudflare
     "104.16.0.0/12",
     "108.162.192.0/18",
@@ -92,6 +93,13 @@ def is_routine_web_edge_traffic(ip: str, port: int) -> bool:
     except (TypeError, ValueError):
         return False
     return port_n in WEB_EDGE_PORTS and is_well_known_web_edge(ip)
+
+
+def is_routine_web_edge_beacon(alert: dict) -> bool:
+    """A saved C2 beacon that only describes routine web-edge traffic."""
+    if not isinstance(alert, dict) or alert.get("pattern_id") != "AEGIS-BEH-002":
+        return False
+    return is_routine_web_edge_traffic(alert.get("dest_ip") or "", alert.get("dest_port") or 0)
 
 # Connection state patterns
 THREAT_PATTERNS: List[Dict[str, Any]] = [

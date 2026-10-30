@@ -12,8 +12,20 @@ def _seed(mon, src, dst, port, now):
 
 def test_google_address_is_a_web_edge():
     assert is_well_known_web_edge("172.217.113.4")
+    assert is_well_known_web_edge("192.178.155.132")
     assert is_routine_web_edge_traffic("172.217.113.4", 443)
     assert not is_routine_web_edge_traffic("172.217.113.4", 4444)
+    from aegis.monitor.threat_patterns import is_routine_web_edge_beacon
+    assert is_routine_web_edge_beacon({
+        "pattern_id": "AEGIS-BEH-002",
+        "dest_ip": "172.217.113.4",
+        "dest_port": 443,
+    })
+    assert not is_routine_web_edge_beacon({
+        "pattern_id": "AEGIS-BEH-002",
+        "dest_ip": "45.33.32.156",
+        "dest_port": 443,
+    })
 
 
 def test_google_https_is_not_a_c2_beacon():

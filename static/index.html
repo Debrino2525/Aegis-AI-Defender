@@ -74,6 +74,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex
 .ct{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px;}
 .ca{font-size:11px;color:var(--accent);cursor:pointer;opacity:.7;}
 .ca:hover{opacity:1;}
+.routing-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px;font-size:12px;}
+.routing-chip{display:inline-flex;align-items:center;gap:6px;}
+.routing-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
+.routing-dot.on{background:var(--success);}
+.routing-cap{font-family:var(--mono);font-size:12px;font-weight:600;}
+.routing-cap span{color:var(--text-dim);font-weight:500;font-family:var(--font);}
 
 /* METRIC CARDS */
 .mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:all .2s;position:relative;overflow:hidden;}
@@ -939,19 +945,18 @@ select option:checked, select option:hover {
     </div>
   </div>
 
-  <!-- Critical Alert Routing & Zero Trust Dispatcher -->
+  <!-- Alert routing status. Connect lives in Settings. -->
   <div class="card" style="margin-bottom:16px">
     <div class="ch">
       <div>
-        <div class="ct">Critical alert routing</div>
-        <div style="font-size:11px;color:var(--text-dim)">Slack, Microsoft Teams, or email. Tap Connect and sign in on that platform. One account is paged. Further alerts stay on the incident.</div>
-        <div id="dispatch-cap-note" style="font-size:12px;color:var(--text);margin-top:6px"></div>
+        <div class="ct">Alert routing</div>
+        <div id="routing-status" class="routing-status">
+          <span style="color:var(--text-dim)">Loading channel status...</span>
+        </div>
       </div>
+      <div class="ca" onclick="openAlertRoutingSettings()">Settings →</div>
     </div>
-    <div class="g3" id="alert-channels-grid" style="margin-top:12px;margin-bottom:16px">
-      <div class="empty"><div class="ei"></div><div class="eh">Loading Slack, Teams, and email...</div></div>
-    </div>
-    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Active Emergency Dispatches &amp; Escalation Ledger</div>
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;margin-top:12px">Active incidents</div>
     <div id="critical-alerts-wrap">
       <div class="empty"><div class="ei"></div><div class="eh">No active critical alerts in queue</div></div>
     </div>
@@ -1901,10 +1906,30 @@ function platformCardsHtml(connections){
   ].join('');
 }
 function paintPlatformCards(connections){
-  ['alert-channels-grid','platform-connect-cards'].forEach(function(id){
-    const el = document.getElementById(id);
-    if(el) el.innerHTML = platformCardsHtml(connections);
-  });
+  const el = document.getElementById('platform-connect-cards');
+  if(el) el.innerHTML = platformCardsHtml(connections);
+}
+function routingChannelChip(name, link){
+  const on = !!link;
+  const label = on ? platformStatusLine(link) : 'not connected';
+  return `<span class="routing-chip"><span class="routing-dot${on?' on':''}"></span>${esc(name)} · ${esc(label)}</span>`;
+}
+function paintRoutingStatus(connections, cap){
+  const el = document.getElementById('routing-status');
+  if(!el) return;
+  const slack = workspaceLink(connections, 'slack');
+  const teams = workspaceLink(connections, 'teams');
+  const mail = workspaceLink(connections, 'email_microsoft') || workspaceLink(connections, 'email_google');
+  const sent = Number((cap || {}).sent_this_hour || 0);
+  const hourly = Number((cap || {}).hourly_cap || 10);
+  el.innerHTML = routingChannelChip('Slack', slack)
+    + routingChannelChip('Teams', teams)
+    + routingChannelChip('Email', mail)
+    + `<span class="routing-cap">${sent} of ${hourly} <span>this hour</span></span>`;
+}
+function openAlertRoutingSettings(){
+  showPage('settings');
+  switchSettingsTab('channels');
 }
 async function connectPlatform(provider, contactId){
   try{
@@ -1945,10 +1970,7 @@ async function loadAlertingState(){
     window._platformConnections = connections;
     paintPlatformCards(connections);
     const cap = status.dispatch_cap || {};
-    const capNote = document.getElementById('dispatch-cap-note');
-    if (capNote && cap.hourly_cap) {
-      capNote.textContent = `${cap.sent_this_hour} of ${cap.hourly_cap} messages to Slack, Teams, and email this hour. ${cap.held_this_hour} held on the console.`;
-    }
+    paintRoutingStatus(connections, cap);
     const aWrap = document.getElementById('critical-alerts-wrap');
     if(aWrap){
       if(!alerts || !alerts.length){

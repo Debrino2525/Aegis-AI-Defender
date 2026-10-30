@@ -157,7 +157,7 @@ def test_connected_platform_is_paged_and_sms_is_not(tmp_path, monkeypatch):
 
 def test_console_leads_with_connect_not_sms():
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
-    assert "Slack, Microsoft Teams, or email" in html
+    assert "Connect Slack, Microsoft Teams, or an email account" in html
     assert 'id="platform-setup"' not in html
     assert "Client secret" not in html
     assert "function connectPlatform" in html
@@ -174,9 +174,21 @@ def test_console_leads_with_connect_not_sms():
         "cfg-canary-url",
     ):
         assert gone not in html
-    assert 'id="alert-channels-grid"' in html
+    assert 'id="alert-channels-grid"' not in html
+    assert 'id="routing-status"' in html
+    assert 'id="platform-connect-cards"' in html
+    assert "function openAlertRoutingSettings" in html
+    assert "function paintRoutingStatus" in html
+    paint = html[html.index("function paintPlatformCards"):html.index("function routingChannelChip")]
+    assert "platform-connect-cards" in paint
+    assert "alert-channels-grid" not in paint
     cards = html[html.index("function platformCardsHtml"):html.index("function paintPlatformCards")]
     assert "Slack" in cards
     assert "Microsoft Teams" in cards
     assert "Connect Microsoft" in cards
     assert ">SMS<" not in cards
+    dash = html[html.index("Alert routing status"):html.index("page-scan")]
+    assert "Tap Connect" not in dash
+    assert "Settings →" in dash
+    assert 'class="routing-cap"' in html
+    assert "openAlertRoutingSettings()" in dash

@@ -8,9 +8,11 @@
     monitorOk: false,
     scansOk: false,
     alertsOk: false,
+    fleetOk: false,
     incidents: [],
     alerts: [],
     scans: [],
+    fleetHosts: [],
     scanDetails: {},
     errors: [],
     key: null,
@@ -223,6 +225,7 @@
     }
     parts.push(state.alertsOk ? (state.alerts.length + " routed alerts") : "Routed alerts unavailable");
     parts.push(state.scansOk ? (state.scans.length + " scans") : "Scans unavailable");
+    parts.push(state.fleetOk ? (state.fleetHosts.length + (state.fleetHosts.length === 1 ? " enrolled host" : " enrolled hosts")) : "Fleet unavailable");
     if (state.errors.length) parts.push(state.errors.join(" · "));
     return parts.join(" · ");
   }
@@ -231,7 +234,8 @@
     var settled = await Promise.allSettled([
       getJSON("/api/monitor"),
       getJSON("/api/scans"),
-      getJSON("/api/alerting/alerts")
+      getJSON("/api/alerting/alerts"),
+      getJSON("/api/fleet/hosts")
     ]);
     if (settled.some(isAuth)) {
       showGate();
@@ -263,6 +267,15 @@
       state.alertsOk = false;
       state.alerts = [];
       state.errors.push("Alerts " + reasonText(settled[2].reason));
+    }
+    if (settled[3].status === "fulfilled") {
+      state.fleetOk = true;
+      var fleetBody = settled[3].value || {};
+      state.fleetHosts = Array.isArray(fleetBody.hosts) ? fleetBody.hosts : [];
+    } else {
+      state.fleetOk = false;
+      state.fleetHosts = [];
+      state.errors.push("Fleet " + reasonText(settled[3].reason));
     }
     if (!state.key) state.key = readFocusFromUrl();
     if (state.key && state.key.indexOf("inc:") === 0 && !state.incidents.some(function (inc) { return "inc:" + inc.id === state.key; })) {
@@ -423,6 +436,7 @@
     }
     html += "</div>";
     html += findingsBlock(matchingScans(inc), hostsOf(inc));
+    html += fleetBlock(hostsOf(inc));
     return html;
   }
 
@@ -449,6 +463,7 @@
     if (alert.source_ip) hosts[String(alert.source_ip).toLowerCase()] = true;
     var related = state.scans.filter(function (scan) { return hostHit(scan.target, hosts); });
     html += findingsBlock(related, hosts);
+    html += fleetBlock(hosts);
     return html;
   }
 
@@ -480,6 +495,42 @@
     var findings = list(body.findings);
     html += '<div class="block" id="evidence"><h3>Findings</h3>';
     html += findingsTable(findings);
+    html += "</div>";
+    return html;
+  }
+
+  function matchingFleet(hosts) {
+    return (state.fleetHosts || []).filter(function (row) {
+      var keys = [row.hostname, row.agent_id, row.remote_ip]
+        .concat(row.ipv4 || [])
+        .concat(row.ipv6 || []);
+      return keys.some(function (value) { return hostHit(value, hosts); });
+    });
+  }
+
+  function fleetBlock(hosts) {
+    var html = '<div class="block"><h3>Fleet host</h3>';
+    if (!state.fleetOk) {
+      html += '<p class="muted">Enrolled hosts could not be loaded.</p></div>';
+      return html;
+    }
+    var matched = matchingFleet(hosts);
+    if (!matched.length) {
+      html += '<p class="muted">No enrolled host matches the addresses on this record.</p></div>';
+      return html;
+    }
+    matched.forEach(function (row) {
+      html += '<ul class="facts">';
+      html += fact("Hostname", row.hostname);
+      html += fact("Agent", row.agent_id);
+      html += fact("OS", [row.os_name, row.arch].filter(Boolean).join(" "));
+      html += fact("Status", row.status);
+      html += fact("Last seen", row.last_seen);
+      var addrs = [].concat(row.ipv4 || [], row.ipv6 || []);
+      if (addrs.length) html += fact("Addresses", addrs.join(", "));
+      if (row.listen_count != null) html += fact("Listening ports", row.listen_count);
+      html += "</ul>";
+    });
     html += "</div>";
     return html;
   }

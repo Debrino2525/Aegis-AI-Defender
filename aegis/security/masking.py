@@ -13,6 +13,10 @@ THREAT_INTEL_SECRETS = {
     "threatfox_auth_key": "THREATFOX_AUTH_KEY",
 }
 
+FLEET_SECRETS = {
+    "enrollment_token": "AEGIS_ENROLLMENT_TOKEN",
+}
+
 ALERTING_SECRETS = {
     "arkesel_api_key": "ARKESEL_API_KEY",
     "hubtel_client_id": "HUBTEL_CLIENT_ID",

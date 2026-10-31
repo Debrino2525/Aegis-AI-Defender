@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from aegis.alerting.models import CriticalAlert, DispatchResult, SeverityLevel, DoDZTPillar
+from aegis.runtime import aegis_data_dir
 
 
 class AlertQueue:
@@ -18,7 +19,7 @@ class AlertQueue:
 
     def __init__(self, db_path: Optional[Path] = None):
         if db_path is None:
-            self.db_path = Path.home() / ".aegis" / "alert_queue.sqlite3"
+            self.db_path = aegis_data_dir() / "alert_queue.sqlite3"
         else:
             self.db_path = Path(db_path)
             

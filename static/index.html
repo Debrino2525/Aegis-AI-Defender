@@ -57,6 +57,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex
 #main{flex:1;overflow-y:auto;}
 .page{display:none;padding:20px 22px;flex-direction:column;gap:16px;}
 .page.active{display:flex;}
+#aegis-login{position:fixed;inset:0;z-index:9999;background:rgba(10,11,14,.94);display:none;align-items:center;justify-content:center;padding:16px;}
+#aegis-login.on{display:flex;}
+#aegis-login form{width:min(440px,100%);background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:28px 24px;display:flex;flex-direction:column;gap:12px;}
+#aegis-login h2{font-size:18px;font-weight:700;letter-spacing:.3px;}
+#aegis-login p{font-size:12px;color:var(--text-dim);line-height:1.5;}
+#aegis-login code{font-family:var(--mono);color:var(--accent);font-size:11px;}
+#aegis-login input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--font);}
+#aegis-login button{background:var(--accent);color:#0a0b0e;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;font-family:var(--font);}
+#aegis-login .err{color:var(--critical);min-height:1.1em;font-size:12px;}
 .ph{font-size:20px;font-weight:700;}
 .ps{font-size:12px;color:var(--text-dim);margin-top:2px;}
 
@@ -741,6 +750,16 @@ select option:checked, select option:hover {
 </style>
 </head>
 <body>
+<div id="aegis-login" class="on" role="dialog" aria-modal="true" aria-labelledby="aegis-login-title">
+  <form id="aegis-login-form">
+    <h2 id="aegis-login-title">Unlock Aegis</h2>
+    <p>This console requires the admin token or password. Set <code>AEGIS_ADMIN_TOKEN</code> or <code>AEGIS_ADMIN_PASSWORD</code>. If neither is set, the first start prints a token and stores it in <code>~/.aegis/admin_token</code>.</p>
+    <input id="aegis-login-secret" type="password" autocomplete="current-password" placeholder="Admin token or password" required />
+    <button type="submit">Unlock</button>
+    <div class="err" id="aegis-login-err"></div>
+  </form>
+</div>
+
 
 <svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
   <defs>
@@ -783,6 +802,7 @@ select option:checked, select option:hover {
     <div class="dt-status-tag" title="All engines operational"><span class="dt-status-dot"></span><span>All systems operational</span></div>
     <div class="hp">VDB <b id="vdb-st">Ready</b></div>
     <button class="sync-btn" onclick="triggerUpdate()">Sync</button>
+    <button class="sync-btn" onclick="aegisLogout()" title="Lock the console">Lock</button>
     <button class="sync-btn danger" onclick="resetPlatform()" title="Reset all scans and alerts to clean state">Reset</button>
   </div>
 </nav>
@@ -1277,7 +1297,7 @@ select option:checked, select option:hover {
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div>
       <div class="ph">Platform Settings &amp; Alert Configurations</div>
-      <div class="ps">Configure Threat Intelligence APIs, emergency SMS &amp; ChatOps dispatch gateways, on-call responder directories, and asset ownership rules</div>
+      <div class="ps">Configure Threat Intelligence APIs, emergency SMS &amp; ChatOps dispatch gateways, on-call responder directories, and asset ownership rules. API keys and tokens are masked; leave a masked value unchanged to keep the stored secret.</div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-p btn-sm" onclick="saveCurrentSettingsTab()">&#128190; Save Configuration</button>
@@ -1467,6 +1487,78 @@ let currentScan=null;
 let ws=null;
 let presetPorts='80,443,22,21,25,53,8080,8443,3306,5432,6379,27017,9200,2375,3389,5900';
 let sfilt='ALL',rfilt='ALL';
+window.__aegisAuthed = false;
+
+const _aegisFetch = window.fetch.bind(window);
+window.fetch = function(input, init){
+  return _aegisFetch(input, init).then(res => {
+    const url = typeof input === 'string' ? input : ((input && input.url) || '');
+    if (res.status === 401 && url.indexOf('/api/auth/') === -1) {
+      window.__aegisAuthed = false;
+      showAegisLogin();
+    }
+    return res;
+  });
+};
+
+function showAegisLogin(){
+  const el = document.getElementById('aegis-login');
+  if (el) el.classList.add('on');
+  const field = document.getElementById('aegis-login-secret');
+  if (field) field.focus();
+}
+function hideAegisLogin(){
+  const el = document.getElementById('aegis-login');
+  if (el) el.classList.remove('on');
+  const err = document.getElementById('aegis-login-err');
+  if (err) err.textContent = '';
+}
+async function aegisBoot(){
+  try {
+    const res = await _aegisFetch('/api/auth/status');
+    const data = await res.json();
+    if (data.authenticated) {
+      window.__aegisAuthed = true;
+      hideAegisLogin();
+      loadDash();
+      return;
+    }
+  } catch (e) {}
+  window.__aegisAuthed = false;
+  showAegisLogin();
+}
+async function aegisLogout(){
+  try { await _aegisFetch('/api/auth/logout', {method:'POST'}); } catch (e) {}
+  window.__aegisAuthed = false;
+  const field = document.getElementById('aegis-login-secret');
+  if (field) field.value = '';
+  showAegisLogin();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('aegis-login-form');
+  if (!form) return;
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const secret = (document.getElementById('aegis-login-secret').value || '').trim();
+    const err = document.getElementById('aegis-login-err');
+    try {
+      const res = await _aegisFetch('/api/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({secret})
+      });
+      if (!res.ok) {
+        if (err) err.textContent = 'That token or password was not accepted.';
+        return;
+      }
+      window.__aegisAuthed = true;
+      hideAegisLogin();
+      loadDash();
+    } catch (e) {
+      if (err) err.textContent = 'Could not reach the console.';
+    }
+  });
+});
 
 // ── NAV ────────────────────────────────────────────────────────────────────
 function showPage(n){
@@ -3278,8 +3370,11 @@ function renderBaselines(baselines){
 }
 
 // Init
-loadDash();
-setInterval(()=>{if(document.querySelector('.page.active')?.id==='page-dashboard') loadDash();},8000);
+aegisBoot();
+setInterval(()=>{
+  if(!window.__aegisAuthed) return;
+  if(document.querySelector('.page.active')?.id==='page-dashboard') loadDash();
+},8000);
 
 // ── FINDING VERIFIER ───────────────────────────────────────────────────────
 let _fvFinding = null;

@@ -97,17 +97,37 @@ cp .env.example .env
 
 ### Starting the Platform
 ```bash
-# Run with python directly
-python -m uvicorn server:app --host 0.0.0.0 --port 8000
+# Listens on 127.0.0.1:8000 unless AEGIS_HOST / AEGIS_PORT say otherwise
+python server.py
 
-# Or launch via the included launcher batch file
+# Or launch via the included launcher batch file (same default)
 START_AEGIS.bat
 ```
 
-Open your browser to:
-```
-http://localhost:8000
-```
+Open your browser to `http://127.0.0.1:8000` and sign in. See [Run securely on this machine](#run-securely-on-this-machine).
+
+---
+
+## Run securely on this machine
+
+Aegis is a single-process console for the operator sitting at this host. It is not a multi-user service, and it does not ship a default password.
+
+1. Copy the template and do not commit the result: `cp .env.example .env`
+2. Set an admin credential in the environment or in `.env`:
+   - `AEGIS_ADMIN_TOKEN` — bearer token (`Authorization: Bearer <token>`) and the value the browser login form accepts.
+   - `AEGIS_ADMIN_PASSWORD` — password for that same form. If no token is set, the password is also accepted as a bearer token.
+   - If both are empty, the first start writes a random token to `~/.aegis/admin_token` (file mode `600`) and prints it **once** on stderr. There is no built-in password.
+3. Leave `ALERT_SIGNING_KEY` empty. The old example value `aegis-defense-secret-key-zt-2026` was published with the repo and is **rejected**. Aegis generates `~/.aegis/alert_signing_key` and uses that for HMAC triage links. A real `ALERT_SIGNING_KEY` in the environment overrides the file.
+4. Start with `python server.py`. The default listen address is `127.0.0.1`. Set `AEGIS_HOST` only when you intend to expose the port. `0.0.0.0` is honored and logged as a warning.
+5. Sign in at `http://127.0.0.1:8000`. Containment (`terminate_process`, `block_ip`, `isolate_connections`, resolve) uses the same session or bearer token.
+
+What this build actually enforces:
+
+- HTTP routes under `/api` and both WebSockets (`/ws/monitor`, `/ws/scan/{id}`) require the admin session cookie or bearer token. `/api/alerting/triage/{token}` is the exception: the short-lived HMAC token is the credential for that one alert, which is how an on-call link works without putting the admin token in an SMS.
+- `GET /api/settings` masks API keys, client secrets, bot tokens, webhook URLs, the canary URL, and the signing key. Saving the masked preview back does not overwrite the stored secret.
+- Scan reports, behavioral monitor alerts, and incident containment notes are stored in `~/.aegis/history.sqlite3` and are loaded again after a restart. Critical alert routing was already stored in `~/.aegis/alert_queue.sqlite3`. A scan that was still running when the process died is marked `interrupted`.
+
+Still true, and not fixed here: there are no user accounts, RBAC, or SSO. Host containment is Windows-oriented (`netsh`, process kill). Several threat-intel cards (ThreatFox, OTX, AbuseIPDB, VirusTotal) record whether a key is present; they do not perform live lookups. Do not bind this process on a public interface.
 
 ---
 
@@ -116,6 +136,9 @@ http://localhost:8000
 You can configure all Threat Intelligence feeds, SMS gateways, and on-call responders directly in the UI under **Settings** (gear icon in sidebar), or by editing `.env`:
 
 ```env
+# Admin credential. No default password. See "Run securely on this machine".
+AEGIS_ADMIN_TOKEN=
+
 # NIST NVD 2.0 API Key (Increases rate limit by 10x)
 NVD_API_KEY=
 
@@ -145,10 +168,12 @@ CANARY_HEARTBEAT_URL=
 
 ## 🧪 Testing
 
-Run the full automated test suite:
 ```bash
-python tests/test_alerting.py
+pip install pytest
+pytest -q
 ```
+
+`python tests/test_alerting.py` still runs the alert-routing checks on their own. GitHub Actions runs `pytest` on push and pull request.
 
 ---
 

@@ -163,6 +163,75 @@ def test_escalation_manager():
     print("[+] test_escalation_manager: PASSED")
 
 
+def test_longest_prefix_beats_default_route_order():
+    """Default route must not steal alerts from a more specific subnet.
+
+    SQLite reloads mappings ordered by cidr string, which places 0.0.0.0/0
+    ahead of every other IPv4 network. First-match routing then pages the
+    enterprise default for every address and never the asset owner.
+    """
+    mgr = EscalationManager()
+    mgr.ownership_mappings = [
+        AssetOwnerMapping(
+            cidr_or_host="0.0.0.0/0",
+            environment="Enterprise Network",
+            owner_team="Security Operations",
+            primary_contact_id="ONCALL-PRIMARY",
+            escalation_contact_id="ONCALL-LEAD",
+            escalation_timeout_mins=5,
+        ),
+        AssetOwnerMapping(
+            cidr_or_host="10.20.0.0/16",
+            environment="Core-Banking-VLAN",
+            owner_team="FinTech-Sec",
+            primary_contact_id="ONCALL-PRIMARY",
+            escalation_contact_id="ONCALL-LEAD",
+            escalation_timeout_mins=5,
+        ),
+        AssetOwnerMapping(
+            cidr_or_host="10.20.5.0/24",
+            environment="Core-Banking-App",
+            owner_team="FinTech-App",
+            primary_contact_id="ONCALL-LEAD",
+            escalation_contact_id="ONCALL-PRIMARY",
+            escalation_timeout_mins=2,
+        ),
+    ]
+
+    _, lead, env, timeout = mgr.resolve_contacts_for_target("10.20.5.12")
+    assert env == "Core-Banking-App"
+    assert timeout == 2
+    assert lead.contact_id == "ONCALL-PRIMARY"
+
+    _, _, env, timeout = mgr.resolve_contacts_for_target("10.20.9.4")
+    assert env == "Core-Banking-VLAN"
+    assert timeout == 5
+
+    _, _, env, timeout = mgr.resolve_contacts_for_target("192.168.1.20")
+    assert env == "Enterprise Network"
+    assert timeout == 5
+
+    # Hostnames are not inside a subnet; they must use the default route,
+    # not whichever specific mapping happens to sit last in the list.
+    _, _, env, _ = mgr.resolve_contacts_for_target("payments.example.com")
+    assert env == "Enterprise Network"
+
+    # Re-saving a rule replaces the previous one instead of stacking a stale copy.
+    mgr.add_owner_mapping(AssetOwnerMapping(
+        cidr_or_host="10.20.0.0/16",
+        environment="Core-Banking-Updated",
+        owner_team="FinTech-Sec",
+        primary_contact_id="ONCALL-LEAD",
+        escalation_contact_id="ONCALL-PRIMARY",
+        escalation_timeout_mins=9,
+    ))
+    assert sum(1 for m in mgr.ownership_mappings if m.cidr_or_host == "10.20.0.0/16") == 1
+    _, _, env, timeout = mgr.resolve_contacts_for_target("10.20.9.4")
+    assert env == "Core-Banking-Updated"
+    assert timeout == 9
+    print("[+] test_longest_prefix_beats_default_route_order: PASSED")
+
+
 if __name__ == "__main__":
     test_classifier_behavioral()
     test_classifier_scan_finding()
@@ -170,4 +239,5 @@ if __name__ == "__main__":
     test_sqlite_alert_queue()
     test_security_tokens()
     test_escalation_manager()
+    test_longest_prefix_beats_default_route_order()
     print("\n[=== ALL CRITICAL ALERT ROUTING TESTS PASSED ===]")

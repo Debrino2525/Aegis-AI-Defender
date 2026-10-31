@@ -85,11 +85,11 @@ class EscalationManager:
         return True
 
     def add_owner_mapping(self, mapping: AssetOwnerMapping):
-        # Insert specific rules at front, generic 0.0.0.0/0 at back
-        if mapping.cidr_or_host in ("0.0.0.0/0", "*"):
-            self.ownership_mappings.append(mapping)
-        else:
-            self.ownership_mappings.insert(0, mapping)
+        # Replace any previous rule for the same key so updates take effect immediately.
+        self.ownership_mappings = [
+            m for m in self.ownership_mappings if m.cidr_or_host != mapping.cidr_or_host
+        ]
+        self.ownership_mappings.append(mapping)
         if self.queue:
             self.queue.save_mapping(mapping.model_dump())
 
@@ -99,36 +99,82 @@ class EscalationManager:
             return self.queue.delete_mapping(cidr_or_host)
         return True
 
+    def _unassigned_contact(self) -> OnCallContact:
+        return OnCallContact(
+            contact_id="UNASSIGNED",
+            name="Unassigned On-Call",
+            role="Unconfigured",
+            phone="",
+        )
+
+    def _contacts_for_mapping(self, mapping: AssetOwnerMapping) -> Tuple[OnCallContact, OnCallContact, str, int]:
+        """Resolves responder contacts for a chosen ownership mapping."""
+        if not self.contacts:
+            unassigned = self._unassigned_contact()
+            return unassigned, unassigned, mapping.environment, mapping.escalation_timeout_mins
+
+        primary = self.contacts.get(mapping.primary_contact_id) or next(iter(self.contacts.values()))
+        escalation = self.contacts.get(mapping.escalation_contact_id) or primary
+        return primary, escalation, mapping.environment, mapping.escalation_timeout_mins
+
+    def _fallback_mapping(self) -> Optional[AssetOwnerMapping]:
+        """Default route used when no specific host or CIDR matches."""
+        for cidr in ("0.0.0.0/0", "::/0", "*"):
+            for mapping in self.ownership_mappings:
+                if mapping.cidr_or_host == cidr:
+                    return mapping
+        if self.ownership_mappings:
+            return self.ownership_mappings[-1]
+        return None
+
     def resolve_contacts_for_target(self, target_ip_or_host: str) -> Tuple[OnCallContact, OnCallContact, str, int]:
         """
         Resolves primary responder, escalation contact, environment label, and timeout
         for a given asset IP address or hostname.
+
+        CIDR rules use longest-prefix match. A default route (0.0.0.0/0) must not
+        shadow a more specific subnet, regardless of list or database order.
         """
-        # Try exact string match first
-        for m in self.ownership_mappings:
-            if m.cidr_or_host == target_ip_or_host:
-                p = self.contacts.get(m.primary_contact_id) or list(self.contacts.values())[0]
-                e = self.contacts.get(m.escalation_contact_id) or p
-                return p, e, m.environment, m.escalation_timeout_mins
+        target = (target_ip_or_host or "").strip()
 
-        # Try CIDR network match
-        try:
-            ip_obj = ipaddress.ip_address(target_ip_or_host.strip())
-            for m in self.ownership_mappings:
-                if "/" in m.cidr_or_host:
-                    net = ipaddress.ip_network(m.cidr_or_host, strict=False)
-                    if ip_obj in net:
-                        p = self.contacts.get(m.primary_contact_id) or list(self.contacts.values())[0]
-                        e = self.contacts.get(m.escalation_contact_id) or p
-                        return p, e, m.environment, m.escalation_timeout_mins
-        except ValueError:
-            pass
+        for mapping in self.ownership_mappings:
+            if mapping.cidr_or_host == target:
+                return self._contacts_for_mapping(mapping)
 
-        # Fallback to default
-        fallback = self.ownership_mappings[-1]
-        p = self.contacts.get(fallback.primary_contact_id) or list(self.contacts.values())[0]
-        e = self.contacts.get(fallback.escalation_contact_id) or p
-        return p, e, fallback.environment, fallback.escalation_timeout_mins
+        best: Optional[AssetOwnerMapping] = None
+        best_prefix = -1
+        ip_obj = None
+        if target:
+            try:
+                ip_obj = ipaddress.ip_address(target)
+            except ValueError:
+                ip_obj = None
+
+        if ip_obj is not None:
+            for mapping in self.ownership_mappings:
+                if "/" not in mapping.cidr_or_host:
+                    continue
+                try:
+                    net = ipaddress.ip_network(mapping.cidr_or_host, strict=False)
+                except ValueError:
+                    continue
+                if ip_obj in net and net.prefixlen >= best_prefix:
+                    best = mapping
+                    best_prefix = net.prefixlen
+
+        if best is not None:
+            return self._contacts_for_mapping(best)
+
+        fallback = self._fallback_mapping()
+        if fallback is not None:
+            return self._contacts_for_mapping(fallback)
+
+        if not self.contacts:
+            unassigned = self._unassigned_contact()
+            return unassigned, unassigned, "Unassigned", 5
+
+        contact = next(iter(self.contacts.values()))
+        return contact, contact, "Unassigned", 5
 
     def check_escalation_needed(self, alert_dict: Dict) -> Tuple[bool, int, Optional[OnCallContact]]:
         """

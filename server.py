@@ -205,11 +205,13 @@ from aegis.investigate.api import router as investigate_router, bind_sources as 
 from aegis.investigate.device import DeviceSources
 from aegis.response.api import router as response_router, bind_context as bind_response_context
 from aegis.response.engine import ResponseError, get_response_engine
+from aegis.integrations.api import router as integrations_router
 
 app.include_router(fleet_router)
 app.include_router(assets_router)
 app.include_router(investigate_router)
 app.include_router(response_router)
+app.include_router(integrations_router)
 install_peer_cert_hook()
 
 

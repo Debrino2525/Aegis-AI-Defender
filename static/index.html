@@ -844,6 +844,7 @@ select option:checked, select option:hover {
   <div class="sb-item" onclick="showPage('risks')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8v4M12 15.5v.5"/><span class="sb-badge" id="sb-cc" style="display:none">0</span></svg></span><span class="lbl">Risks</span></div>
   <div class="sb-item" onclick="showPage('threat')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span><span class="lbl">Threat Intel</span></div>
   <div class="sb-item" onclick="showPage('assets')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></span><span class="lbl">Assets</span></div>
+  <div class="sb-item" onclick="showPage('integrations')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9-9M4 11a9 9 0 0 1 9 9M4 11h2a7 7 0 0 1 7-7M4 11h2a7 7 0 0 0 7 7M13 2v2a7 7 0 0 1 7 7M13 2v2a7 7 0 0 0 7 7M20 13v2a7 7 0 0 1-7 7M20 13v2a7 7 0 0 0-7 7"/></svg></span><span class="lbl">Integrations</span></div>
   <div class="sb-item" onclick="showPage('history')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">Reports</span></div>
   <div class="sb-item" onclick="showPage('settings')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="lbl">Settings</span></div>
   <div class="rail-spacer"></div>
@@ -1308,6 +1309,37 @@ select option:checked, select option:hover {
     <button class="btn btn-p btn-sm" onclick="showPage('scan')">New Scan</button>
   </div>
   <div class="card"><div id="hist-wrap"><div class="empty"><div class="ei"></div><div class="eh">No reports yet</div></div></div></div>
+</div>
+
+<!-- INTEGRATIONS -->
+<div class="page" id="page-integrations">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">External Integrations</div>
+      <div class="ps">Connect SIEM, SOAR, ticketing systems, and firewalls. Configure credentials and test connections.</div>
+    </div>
+  </div>
+
+  <div class="g4" id="integrations-grid" style="margin-bottom:20px">
+    <!-- Integration cards will be loaded here -->
+  </div>
+
+  <!-- Integration Configuration Modal -->
+  <div id="integration-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:min(500px,100%);max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="ph" id="modal-title">Configure Integration</div>
+        <button class="btn btn-g btn-sm" onclick="closeIntegrationModal()">&#10005;</button>
+      </div>
+      <div id="modal-config-form" style="display:flex;flex-direction:column;gap:12px">
+        <!-- Config fields will be loaded here -->
+      </div>
+      <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+        <button class="btn btn-g btn-sm" onclick="closeIntegrationModal()">Cancel</button>
+        <button class="btn btn-p btn-sm" onclick="saveIntegrationConfig()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- SETTINGS & ALERT CONFIGURATION -->
@@ -4817,6 +4849,262 @@ async function deleteMapping(cidr){
     </div>
   </div>
 </div>
+
+<script>
+// ── INTEGRATIONS PAGE ─────────────────────────────────────────────────────────
+let currentIntegrationId = null;
+let integrationConfigs = {};
+
+async function loadIntegrations() {
+  try {
+    const response = await fetch('/api/integrations');
+    const data = await response.json();
+    const grid = document.getElementById('integrations-grid');
+    
+    if (!data.integrations || data.integrations.length === 0) {
+      grid.innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">No integrations available</div></div>';
+      return;
+    }
+
+    grid.innerHTML = data.integrations.map(int => {
+      const statusColor = int.connected ? 'var(--success)' : (int.configured ? 'var(--high)' : 'var(--text-dim)');
+      const statusText = int.connected ? 'Connected' : (int.configured ? 'Configured' : 'Not Configured');
+      // Actual SVG icon files
+      const iconFiles = {
+        splunk: '/static/icons/splunk.svg',
+        microsoft_sentinel: '/static/icons/microsoft-sentinel.svg',
+        elastic_security: '/static/icons/elastic-security.svg',
+        cortex_xsoar: '/static/icons/cortex-xsoar.svg',
+        splunk_soar: '/static/icons/splunk-soar.svg',
+        servicenow: '/static/icons/servicenow.svg',
+        jira: '/static/icons/jira.svg',
+        palo_alto: '/static/icons/palo-alto-networks.svg',
+        cisco_firepower: '/static/icons/cisco-firepower.svg',
+        fortinet: '/static/icons/fortinet-fortigate.svg',
+      };
+      const iconSrc = iconFiles[int.id] || null;
+      const icon = iconSrc ? `<img src="${iconSrc}" width="32" height="32" alt="${int.name}" style="object-fit:contain">` : `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+      
+      return `
+        <div class="card" style="border-left:4px solid ${statusColor}">
+          <div class="ch">
+            <div class="ct" style="display:flex;align-items:center;gap:12px">
+              ${icon}
+              <span>${int.name}</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-g btn-sm" onclick="openIntegrationConfig('${int.id}')">Configure</button>
+              ${int.configured ? `<button class="btn btn-p btn-sm" onclick="testIntegration('${int.id}')">Test</button>` : ''}
+              ${int.connected ? `<button class="btn btn-d btn-sm" onclick="disconnectIntegration('${int.id}')">Disconnect</button>` : ''}
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">
+            Type: <span style="font-weight:600;color:var(--text)">${int.type.toUpperCase()}</span> · 
+            Status: <span style="font-weight:600;color:${statusColor}">${statusText}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);display:flex;flex-wrap:wrap;gap:4px">
+            ${(int.capabilities || []).map(cap => `<span style="background:var(--surface2);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">${cap}</span>`).join('')}
+          </div>
+          ${int.last_tested ? `<div style="font-size:10px;color:var(--text-dim);margin-top:8px">Last tested: ${int.last_tested}</div>` : ''}
+          ${int.last_error ? `<div style="font-size:10px;color:var(--critical);margin-top:4px">Error: ${int.last_error}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Failed to load integrations:', error);
+    document.getElementById('integrations-grid').innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">Failed to load integrations</div></div>';
+  }
+}
+
+function openIntegrationConfig(integrationId) {
+  currentIntegrationId = integrationId;
+  const modal = document.getElementById('integration-modal');
+  const title = document.getElementById('modal-title');
+  const form = document.getElementById('modal-config-form');
+  
+  // Get integration info
+  const integrationTypes = {
+    splunk: { name: 'Splunk', fields: ['hec_url', 'hec_token', 'rest_url', 'api_token', 'index'] },
+    microsoft_sentinel: { name: 'Microsoft Sentinel', fields: ['workspace_id', 'client_id', 'client_secret', 'tenant_id', 'table_name'] },
+    elastic_security: { name: 'Elastic Security', fields: ['url', 'username', 'password', 'api_key', 'alert_index', 'incident_index'] },
+    cortex_xsoar: { name: 'Cortex XSOAR', fields: ['url', 'api_key'] },
+    splunk_soar: { name: 'Splunk SOAR', fields: ['url', 'api_token'] },
+    servicenow: { name: 'ServiceNow', fields: ['url', 'username', 'password', 'client_id', 'client_secret', 'assignment_group'] },
+    jira: { name: 'Jira', fields: ['url', 'email', 'api_token', 'project_key', 'issue_type'] },
+    palo_alto: { name: 'Palo Alto Networks', fields: ['url', 'api_key', 'username', 'vsys'] },
+    cisco_firepower: { name: 'Cisco Firepower', fields: ['url', 'username', 'password', 'domain_id', 'access_policy_id'] },
+    fortinet: { name: 'Fortinet FortiGate', fields: ['url', 'api_token'] },
+  };
+  
+  const integration = integrationTypes[integrationId];
+  if (!integration) {
+    toast('Unknown integration');
+    return;
+  }
+  
+  title.textContent = `Configure ${integration.name}`;
+  
+  // Build form fields
+  form.innerHTML = integration.fields.map(field => {
+    const isSecret = field.includes('token') || field.includes('secret') || field.includes('password') || field.includes('key');
+    const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return `
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;display:block">${label}</label>
+        <input type="${isSecret ? 'password' : 'text'}" 
+               id="field-${field}" 
+               placeholder="${isSecret ? '••••••••' : 'Enter value'}"
+               style="width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+      </div>
+    `;
+  }).join('') + `
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;display:block">Enabled</label>
+      <input type="checkbox" id="field-enabled" style="margin-right:8px">
+      <span style="font-size:12px;color:var(--text-dim)">Enable this integration</span>
+    </div>
+  `;
+  
+  // Load existing config if available
+  loadExistingConfig(integrationId);
+  
+  modal.style.display = 'flex';
+}
+
+async function loadExistingConfig(integrationId) {
+  try {
+    const response = await fetch(`/api/integrations/${integrationId}`);
+    if (response.ok) {
+      const data = await response.json();
+      integrationConfigs[integrationId] = data.config;
+      
+      // Populate fields
+      Object.keys(data.config || {}).forEach(key => {
+        const field = document.getElementById(`field-${key}`);
+        if (field) {
+          // Mask secrets in display
+          if (key.includes('token') || key.includes('secret') || key.includes('password') || key.includes('key')) {
+            field.placeholder = '•••••••• (Leave unchanged)';
+          } else {
+            field.value = data.config[key];
+          }
+        }
+      });
+      
+      const enabledField = document.getElementById('field-enabled');
+      if (enabledField) {
+        enabledField.checked = data.enabled || false;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load existing config:', error);
+  }
+}
+
+function closeIntegrationModal() {
+  document.getElementById('integration-modal').style.display = 'none';
+  currentIntegrationId = null;
+}
+
+async function saveIntegrationConfig() {
+  if (!currentIntegrationId) return;
+  
+  const integrationTypes = {
+    splunk: { fields: ['hec_url', 'hec_token', 'rest_url', 'api_token', 'index'] },
+    microsoft_sentinel: { fields: ['workspace_id', 'client_id', 'client_secret', 'tenant_id', 'table_name'] },
+    elastic_security: { fields: ['url', 'username', 'password', 'api_key', 'alert_index', 'incident_index'] },
+    cortex_xsoar: { fields: ['url', 'api_key'] },
+    splunk_soar: { fields: ['url', 'api_token'] },
+    servicenow: { fields: ['url', 'username', 'password', 'client_id', 'client_secret', 'assignment_group'] },
+    jira: { fields: ['url', 'email', 'api_token', 'project_key', 'issue_type'] },
+    palo_alto: { fields: ['url', 'api_key', 'username', 'vsys'] },
+    cisco_firepower: { fields: ['url', 'username', 'password', 'domain_id', 'access_policy_id'] },
+    fortinet: { fields: ['url', 'api_token'] },
+  };
+  
+  const integration = integrationTypes[currentIntegrationId];
+  if (!integration) return;
+  
+  const config = {};
+  const existingConfig = integrationConfigs[currentIntegrationId] || {};
+  
+  integration.fields.forEach(field => {
+    const fieldEl = document.getElementById(`field-${field}`);
+    if (fieldEl && fieldEl.value) {
+      config[field] = fieldEl.value;
+    } else if (existingConfig[field]) {
+      // Keep existing value if field is empty (for secrets)
+      config[field] = existingConfig[field];
+    }
+  });
+  
+  const enabledField = document.getElementById('field-enabled');
+  const enabled = enabledField ? enabledField.checked : false;
+  
+  try {
+    const response = await fetch(`/api/integrations/${currentIntegrationId}/configure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled, config }),
+    });
+    
+    if (response.ok) {
+      toast('Configuration saved successfully');
+      closeIntegrationModal();
+      loadIntegrations();
+    } else {
+      const error = await response.json();
+      toast(`Failed to save: ${error.detail || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error('Failed to save config:', error);
+    toast('Failed to save configuration');
+  }
+}
+
+async function testIntegration(integrationId) {
+  try {
+    const response = await fetch(`/api/integrations/${integrationId}/test`, { method: 'POST' });
+    const data = await response.json();
+    
+    if (data.status === 'connected') {
+      toast('Connection successful!', 'success');
+      loadIntegrations();
+    } else {
+      toast(`Connection failed: ${data.status}`, 'error');
+    }
+  } catch (error) {
+    console.error('Failed to test integration:', error);
+    toast('Failed to test connection', 'error');
+  }
+}
+
+async function disconnectIntegration(integrationId) {
+  if (!confirm('Are you sure you want to disconnect this integration?')) return;
+  
+  try {
+    const response = await fetch(`/api/integrations/${integrationId}/disconnect`, { method: 'POST' });
+    if (response.ok) {
+      toast('Disconnected successfully');
+      loadIntegrations();
+    } else {
+      toast('Failed to disconnect');
+    }
+  } catch (error) {
+    console.error('Failed to disconnect:', error);
+    toast('Failed to disconnect');
+  }
+}
+
+// Load integrations when page is shown
+const originalShowPage = showPage;
+showPage = function(page) {
+  originalShowPage(page);
+  if (page === 'integrations') {
+    loadIntegrations();
+  }
+};
+</script>
 
 </body>
 </html>

@@ -12,14 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class AzureIngest(BaseIngest):
-    """Azure Activity Logs ingestion adapter."""
-
     def connect(self) -> bool:
         try:
             client_id = self.config.get("client_id")
             client_secret = self.config.get("client_secret")
             tenant_id = self.config.get("tenant_id")
-            if all([client_id, client_secret, tenant_id]):
+            subscription_id = self.config.get("subscription_id")
+            if all([client_id, client_secret, tenant_id, subscription_id]):
                 self._connected = True
                 return True
             return False
@@ -30,8 +29,7 @@ class AzureIngest(BaseIngest):
     def disconnect(self) -> None:
         self._connected = False
 
-    def ingest(self, **kwargs: Any) -> List[TelemetryEvent]:
+    def ingest(self, start_time: Optional[str] = None, end_time: Optional[str] = None) -> List[TelemetryEvent]:
         if not self.is_connected():
             return []
-        # Placeholder - would use Azure Monitor SDK in production
         return []

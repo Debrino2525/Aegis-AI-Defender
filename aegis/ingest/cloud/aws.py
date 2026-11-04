@@ -18,7 +18,6 @@ class AWSIngest(BaseIngest):
     """AWS CloudTrail log ingestion adapter."""
 
     def connect(self) -> bool:
-        """Connect to AWS using boto3."""
         try:
             access_key = self.config.get("access_key_id")
             secret_key = self.config.get("secret_access_key")
@@ -41,27 +40,16 @@ class AWSIngest(BaseIngest):
             return False
 
     def disconnect(self) -> None:
-        """Close AWS connection."""
         self._connected = False
         self.client = None
 
     def ingest(self, start_time: Optional[str] = None, end_time: Optional[str] = None) -> List[TelemetryEvent]:
-        """Ingest CloudTrail events.
-
-        Args:
-            start_time: ISO timestamp for start of range.
-            end_time: ISO timestamp for end of range.
-
-        Returns:
-            List of TelemetryEvent objects.
-        """
         if not self.is_connected():
             return []
 
         events = []
         try:
-            # For simplicity, we'll use lookup_events (would use S3 for production)
-            kwargs = {"LookupAttributes": [{"AttributeKey": "EventSource", "AttributeValue": "s3.amazonaws.com"}]}
+            kwargs = {"LookupAttributes": [{"AttributeKey": "EventSource", "AttributeValue": "*"}]}
             if start_time:
                 kwargs["StartTime"] = start_time
             if end_time:

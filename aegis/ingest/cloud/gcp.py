@@ -12,12 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class GCPIngest(BaseIngest):
-    """GCP Cloud Audit Logs ingestion adapter."""
-
     def connect(self) -> bool:
         try:
             credentials = self.config.get("credentials")
-            if credentials:
+            project_id = self.config.get("project_id")
+            if credentials and project_id:
                 self._connected = True
                 return True
             return False
@@ -28,7 +27,7 @@ class GCPIngest(BaseIngest):
     def disconnect(self) -> None:
         self._connected = False
 
-    def ingest(self, **kwargs: Any) -> List[TelemetryEvent]:
+    def ingest(self, start_time: Optional[str] = None, end_time: Optional[str] = None) -> List[TelemetryEvent]:
         if not self.is_connected():
             return []
         return []

@@ -846,6 +846,7 @@ select option:checked, select option:hover {
   <div class="sb-item" onclick="showPage('assets')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></span><span class="lbl">Assets</span></div>
   <div class="sb-item" onclick="showPage('visibility')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8v4M12 15.5v.5"/></svg></span><span class="lbl">Visibility</span></div>
   <div class="sb-item" onclick="showPage('hunting')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/><circle cx="12" cy="12" r="3"/></svg></span><span class="lbl">Threat Hunting</span></div>
+  <div class="sb-item" onclick="showPage('custom')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="lbl">Customization</span></div>
   <div class="sb-item" onclick="showPage('integrations')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9-9M4 11a9 9 0 0 1 9 9M4 11h2a7 7 0 0 1 7-7M4 11h2a7 7 0 0 0 7 7M13 2v2a7 7 0 0 1 7 7M13 2v2a7 7 0 0 0 7 7M20 13v2a7 7 0 0 1-7 7M20 13v2a7 7 0 0 0-7 7"/></svg></span><span class="lbl">Integrations</span></div>
   <div class="sb-item" onclick="showPage('history')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">Reports</span></div>
   <div class="sb-item" onclick="showPage('settings')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="lbl">Settings</span></div>
@@ -1410,6 +1411,72 @@ select option:checked, select option:hover {
       <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
         <button class="btn btn-g btn-sm" onclick="exportDns()">Export DNS (CSV)</button>
         <button class="btn btn-g btn-sm" onclick="exportHttp()">Export HTTP (CSV)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMIZATION -->
+<div class="page" id="page-custom">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Customization</div>
+      <div class="ps">Custom threat models, business risk tailoring, and STIX/TAXII threat intelligence.</div>
+    </div>
+  </div>
+
+  <div class="g4">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Custom Threat Models</div>
+        <span style="font-size:11px;color:var(--text-dim)">Create custom detection patterns</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <input type="text" id="model-name" placeholder="Model name" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <input type="text" id="model-pattern" placeholder="Detection pattern" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <select id="model-severity" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <button class="btn btn-p btn-sm" onclick="createCustomModel()">Create Model</button>
+        <div id="custom-models" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Business Risk Tailoring</div>
+        <span style="font-size:11px;color:var(--text-dim)">VIP asset criticality and risk frameworks</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <select id="risk-framework" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <option value="NIST">NIST</option>
+          <option value="ISO27001">ISO 27001</option>
+          <option value="CIS">CIS</option>
+        </select>
+        <button class="btn btn-g btn-sm" onclick="setRiskFramework()">Set Framework</button>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="text" id="vip-asset" placeholder="Asset ID" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <select id="vip-criticality" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <button class="btn btn-p btn-sm" onclick="addVipAsset()">Add VIP Asset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">STIX/TAXII Feeds</div>
+        <span style="font-size:11px;color:var(--text-dim)">Threat intelligence integration</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <input type="text" id="stix-url" placeholder="STIX/TAXII URL" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <input type="text" id="stix-key" placeholder="API Key (optional)" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <button class="btn btn-p btn-sm" onclick="addStixFeed()">Add Feed</button>
       </div>
     </div>
   </div>
@@ -5213,6 +5280,9 @@ showPage = function(page) {
   if (page === 'hunting') {
     // Load hunting data if needed
   }
+  if (page === 'custom') {
+    loadCustomModels();
+  }
 };
 
 // Visibility functions
@@ -5328,6 +5398,97 @@ async function exportHttp() {
   } catch (error) {
     console.error('Export error:', error);
     toast('Export failed', 'error');
+  }
+}
+
+// Customization functions
+async function createCustomModel() {
+  const name = document.getElementById('model-name').value;
+  const pattern = document.getElementById('model-pattern').value;
+  const severity = document.getElementById('model-severity').value;
+  if (!name || !pattern) {
+    toast('Please enter model name and pattern', 'error');
+    return;
+  }
+  try {
+    const response = await fetch('/api/custom/models', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, pattern, severity})
+    });
+    const data = await response.json();
+    toast('Custom model created', 'success');
+    loadCustomModels();
+  } catch (error) {
+    console.error('Model error:', error);
+    toast('Failed to create model', 'error');
+  }
+}
+
+async function loadCustomModels() {
+  try {
+    const response = await fetch('/api/custom/models');
+    const data = await response.json();
+    document.getElementById('custom-models').innerHTML = `<div>${data.length} custom models</div>`;
+  } catch (error) {
+    console.error('Load models error:', error);
+  }
+}
+
+async function setRiskFramework() {
+  const framework = document.getElementById('risk-framework').value;
+  try {
+    const response = await fetch('/api/custom/risk/framework', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({framework})
+    });
+    toast(`Risk framework set to ${framework}`, 'success');
+  } catch (error) {
+    console.error('Framework error:', error);
+    toast('Failed to set framework', 'error');
+  }
+}
+
+async function addVipAsset() {
+  const assetId = document.getElementById('vip-asset').value;
+  const criticality = document.getElementById('vip-criticality').value;
+  if (!assetId) {
+    toast('Please enter asset ID', 'error');
+    return;
+  }
+  try {
+    const response = await fetch('/api/custom/risk/vip', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({asset_id: assetId, criticality})
+    });
+    const data = await response.json();
+    toast('VIP asset added', 'success');
+  } catch (error) {
+    console.error('VIP asset error:', error);
+    toast('Failed to add VIP asset', 'error');
+  }
+}
+
+async function addStixFeed() {
+  const url = document.getElementById('stix-url').value;
+  const apiKey = document.getElementById('stix-key').value;
+  if (!url) {
+    toast('Please enter STIX URL', 'error');
+    return;
+  }
+  try {
+    const response = await fetch('/api/custom/stix/feed', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, api_key: apiKey})
+    });
+    const data = await response.json();
+    toast('STIX feed added', 'success');
+  } catch (error) {
+    console.error('STIX error:', error);
+    toast('Failed to add STIX feed', 'error');
   }
 }
 </script>

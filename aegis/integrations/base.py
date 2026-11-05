@@ -39,6 +39,20 @@ class IntegrationConfig:
     last_error: Optional[str] = None
     rate_limit_reset: Optional[str] = None
 
+    def get_config(self) -> Dict[str, Any]:
+        """Get sanitized configuration dictionary."""
+        return {
+            "integration_id": self.integration_id,
+            "name": self.name,
+            "type": self.type,
+            "enabled": self.enabled,
+            "capabilities": self.capabilities,
+            "last_tested": self.last_tested,
+            "last_test_status": self.last_test_status.value if self.last_test_status else None,
+            "last_error": self.last_error,
+            "rate_limit_reset": self.rate_limit_reset,
+        }
+
 
 class IntegrationError(Exception):
     """Base exception for integration errors."""

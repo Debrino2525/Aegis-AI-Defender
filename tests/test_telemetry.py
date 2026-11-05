@@ -8,7 +8,8 @@ from aegis.ingest.logs.jsonl import JSONLogParser
 
 def test_cef_parser():
     parser = CEFParser({})
-    cef_log = "CEF:0|Security|vendor|product|1.0|100|Access Denied|7|src=10.0.0.1 dst=10.0.0.2"
+    # CEF Header: CEF:Version|Device Vendor|Device Product|Device Version|Device Event Class ID (signature)|Name|Severity|Extension
+    cef_log = "CEF:0|Security|vendor|1.0|100|Access Denied|7|src=10.0.0.1 dst=10.0.0.2"
     event = parser.ingest(cef_log)
     assert event is not None
     assert event.data["device_vendor"] == "Security"

@@ -6,8 +6,12 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-import boto3
-from botocore.exceptions import ClientError
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+except ImportError:
+    boto3 = None
+    ClientError = Exception
 
 from aegis.ingest.base import BaseIngest, TelemetryEvent
 

@@ -23,6 +23,7 @@ from aegis.monitor.threat_patterns import (
     is_well_known_web_edge,
     suppress_web_beacon,
 )
+from aegis.topology import get_topology_engine
 
 
 def is_private_ip(ip: str) -> bool:
@@ -589,6 +590,16 @@ class NetworkMonitor:
         stale = [k for k, v in self.graph_edges.items() if time.time() - v["last_seen"] > 30]
         for k in stale:
             del self.graph_edges[k]
+
+        # Sync with topology engine
+        try:
+            topology = get_topology_engine()
+            topology.update_from_monitor_graph(
+                list(self.graph_nodes.values()),
+                list(self.graph_edges.values())
+            )
+        except Exception:
+            pass  # Don't fail monitor if topology sync fails
 
     # ── Monitored Targets Watchlist ──────────────────────────────────────────
     def add_target(self, raw_input: str) -> Dict[str, Any]:

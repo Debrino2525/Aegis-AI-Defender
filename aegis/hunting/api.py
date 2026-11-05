@@ -1,6 +1,8 @@
 """Threat hunting API routes."""
 
+from typing import Optional
 from fastapi import APIRouter
+from pydantic import BaseModel
 from aegis.hunting.pcap import PCAPManager
 from aegis.hunting.search import AdvancedSearch
 from aegis.hunting.export import DataExporter
@@ -10,9 +12,15 @@ pcap_mgr = PCAPManager()
 search = AdvancedSearch()
 exporter = DataExporter()
 
+
+class StartPcapRequest(BaseModel):
+    interface: str
+    duration: int = 60
+
+
 @router.post("/api/hunting/pcap/start")
-async def start_pcap_capture(interface: str, duration: int = 60):
-    return {"success": pcap_mgr.start_capture(interface, duration)}
+async def start_pcap_capture(req: StartPcapRequest):
+    return {"success": pcap_mgr.start_capture(req.interface, req.duration)}
 
 @router.post("/api/hunting/pcap/stop")
 async def stop_pcap_capture():

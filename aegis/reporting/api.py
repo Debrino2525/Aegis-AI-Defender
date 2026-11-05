@@ -1,12 +1,19 @@
 """Executive reporting API routes."""
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 from aegis.reporting.executive import ExecutiveReporter
 from aegis.reporting.trends import TrendTracker
 
 router = APIRouter()
 reporter = ExecutiveReporter()
 tracker = TrendTracker()
+
+
+class ScheduleReportRequest(BaseModel):
+    report_type: str
+    frequency: str
+
 
 @router.get("/api/reporting/weekly")
 async def get_weekly_report():
@@ -17,8 +24,8 @@ async def get_monthly_report():
     return reporter.generate_monthly_report()
 
 @router.post("/api/reporting/schedule")
-async def schedule_report(report_type: str, frequency: str):
-    return {"success": reporter.schedule_report(report_type, frequency)}
+async def schedule_report(req: ScheduleReportRequest):
+    return {"success": reporter.schedule_report(req.report_type, req.frequency)}
 
 @router.get("/api/reporting/trends/{metric_name}")
 async def get_trend(metric_name: str, days: int = 30):

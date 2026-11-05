@@ -848,6 +848,7 @@ select option:checked, select option:hover {
   <div class="sb-item" onclick="showPage('hunting')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/><circle cx="12" cy="12" r="3"/></svg></span><span class="lbl">Threat Hunting</span></div>
   <div class="sb-item" onclick="showPage('custom')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="lbl">Customization</span></div>
   <div class="sb-item" onclick="showPage('executive')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></span><span class="lbl">Executive</span></div>
+  <div class="sb-item" onclick="showPage('ai')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93l-.75.14V14h2v2h-2v2h2v2h-4v-2h-2v-2h2v-3.93l-.75-.14A4.002 4.002 0 0 1 8 6a4 4 0 0 1 4-4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 18h2v2H6zm10 0h2v2h-2z"/></svg></span><span class="lbl">Cyber AI</span></div>
   <div class="sb-item" onclick="showPage('integrations')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9-9M4 11a9 9 0 0 1 9 9M4 11h2a7 7 0 0 1 7-7M4 11h2a7 7 0 0 0 7 7M13 2v2a7 7 0 0 1 7 7M13 2v2a7 7 0 0 0 7 7M20 13v2a7 7 0 0 1-7 7M20 13v2a7 7 0 0 0-7 7"/></svg></span><span class="lbl">Integrations</span></div>
   <div class="sb-item" onclick="showPage('history')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">Reports</span></div>
   <div class="sb-item" onclick="showPage('settings')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="lbl">Settings</span></div>
@@ -1537,6 +1538,143 @@ select option:checked, select option:hover {
         </div>
         <div id="trend-data" style="font-size:12px;color:var(--text-dim)"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- CYBER AI ANALYTICS -->
+<div class="page" id="page-ai">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Cyber AI Analyst & Self-Learning Engine</div>
+      <div class="ps">Unsupervised behavioral baselines, reinforcement learning response policy, ATT&CK predictive chain, and natural language threat hunting.</div>
+    </div>
+  </div>
+
+  <!-- NL Threat Hunting Query Bar -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <div class="ct">Natural Language Threat Hunter</div>
+      <span style="font-size:11px;color:var(--text-dim)">Ask questions in plain English across assets, findings, tactics, and logs</span>
+    </div>
+    <div style="padding:16px;display:flex;gap:10px">
+      <input class="fi" id="ai-nl-query" placeholder="e.g. show critical findings, list open ports on 192.168.1.100, lateral movement alerts, or CVE-2024-21413" style="flex:1" onkeydown="if(event.key==='Enter') runAiQuery()"/>
+      <button class="btn btn-p btn-sm" onclick="runAiQuery()">Ask Cyber AI</button>
+    </div>
+    <div id="ai-query-result" style="padding:0 16px 16px 16px;display:none">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:var(--text)"></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Card 1: ATT&CK Attack Chain Prediction -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Predictive Attack Chain & Preemption</div>
+        <span style="font-size:11px;color:var(--text-dim)">Anticipate next adversary hop</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div class="fl">Current Observed Tactic</div>
+        <div style="display:flex;gap:8px">
+          <select id="ai-pred-tactic" class="fsel" style="flex:1">
+            <option value="Initial Access">Initial Access</option>
+            <option value="Execution">Execution</option>
+            <option value="Persistence">Persistence</option>
+            <option value="Privilege Escalation">Privilege Escalation</option>
+            <option value="Defense Evasion">Defense Evasion</option>
+            <option value="Credential Access">Credential Access</option>
+            <option value="Discovery">Discovery</option>
+            <option value="Lateral Movement" selected>Lateral Movement</option>
+            <option value="Collection">Collection</option>
+            <option value="Command and Control">Command and Control</option>
+            <option value="Exfiltration">Exfiltration</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="predictNextAttack()">Predict Hop</button>
+        </div>
+        <div id="ai-pred-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Select an observed tactic and click 'Predict Hop' to forecast the attacker's trajectory.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Vulnerability Trend Forecasting -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Vulnerability Trend Forecasting</div>
+        <span style="font-size:11px;color:var(--text-dim)">OLS linear regression defect projection</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div class="fl">Forecast Time Horizon</div>
+        <div style="display:flex;gap:8px">
+          <select id="ai-forecast-days" class="fsel" style="flex:1">
+            <option value="7">7 Days Horizon</option>
+            <option value="14">14 Days Horizon</option>
+            <option value="30" selected>30 Days Horizon</option>
+            <option value="60">60 Days Horizon</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="forecastVulnerabilities()">Run Forecast</button>
+        </div>
+        <div id="ai-forecast-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Click 'Run Forecast' to project security posture based on recent scans.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Unsupervised Baseline & Federated Aggregation -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Self-Learning Behavioral Baselines</div>
+        <span style="font-size:11px;color:var(--text-dim)">Z-Score 2.5σ Anomaly Detector</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;color:var(--text-dim)">
+          Models learn continuous normal behavior (connections, bytes, ports) per host without manual labeling.
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g btn-sm" onclick="testLiveAnomaly()">Test Extreme Deviation</button>
+          <button class="btn btn-p btn-sm" onclick="runFederatedAggregation()">Federated Aggregation</button>
+        </div>
+        <div id="ai-anomaly-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Baselines active across monitored nodes. Tap test deviation or federated aggregation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Autonomous Response RL Policy -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Response Policy Reinforcement Learning</div>
+        <span style="font-size:11px;color:var(--text-dim)">Q-Table Policy Optimizer</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="ai-rl-sev" class="fsel" style="flex:1">
+            <option value="critical">Critical Severity</option>
+            <option value="high" selected>High Severity</option>
+            <option value="medium">Medium Severity</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="evaluateRlAction()">Evaluate Action</button>
+        </div>
+        <div id="ai-rl-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Select incident severity and evaluate the recommended autonomous action.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incident Summarization & Executive Report -->
+  <div class="card" style="margin-top:16px">
+    <div class="ch">
+      <div class="ct">Cyber AI Analyst Narrative Summarizer</div>
+      <span style="font-size:11px;color:var(--text-dim)">Template-driven prose briefings for SOC and C-suite</span>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:8px">
+        <input class="fi" id="ai-summary-host" placeholder="Target Host (e.g. srv-db-01.corp)" style="flex:1"/>
+        <button class="btn btn-p btn-sm" onclick="generateIncidentSummary()">Generate Prose Narrative</button>
+        <button class="btn btn-g btn-sm" onclick="generateExecutiveBrief()">Generate Full AI Report</button>
+      </div>
+      <div id="ai-narrative-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:12.5px;line-height:1.6;color:var(--text);white-space:pre-wrap;display:none"></div>
     </div>
   </div>
 </div>
@@ -5345,6 +5483,9 @@ showPage = function(page) {
   if (page === 'executive') {
     loadExecutiveMetrics();
   }
+  if (page === 'ai') {
+    loadAiDashboard();
+  }
 };
 
 // Visibility functions
@@ -5617,6 +5758,297 @@ async function viewTrend() {
     toast('Failed to load trend', 'error');
   }
 }
+
+// ==================== CYBER AI CONTROLLERS ====================
+let currentAiModelId = null;
+
+async function loadAiDashboard() {
+  if (!currentAiModelId) {
+    try {
+      const resp = await fetch('/api/ai/unsupervised/train', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          data: [
+            {connections: 50, bytes: 1200, ports: 3},
+            {connections: 55, bytes: 1400, ports: 4},
+            {connections: 48, bytes: 1100, ports: 3},
+            {connections: 52, bytes: 1350, ports: 3}
+          ]
+        })
+      });
+      const data = await resp.json();
+      currentAiModelId = data.model_id;
+    } catch(e) {
+      console.error('AI Init Error:', e);
+    }
+  }
+}
+
+async function runAiQuery() {
+  const q = document.getElementById('ai-nl-query').value.trim();
+  if (!q) {
+    toast('Please enter a query in natural language', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/ai/nlp/query', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: q})
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-query-result');
+    resDiv.style.display = 'block';
+    resDiv.firstElementChild.innerHTML = `
+      <div style="color:var(--accent);font-weight:600;margin-bottom:6px">&#10004; Interpreted Intent: <span style="color:var(--text)">${data.type}</span></div>
+      <div style="color:var(--text-dim);margin-bottom:6px">Filters: ${JSON.stringify(data.filters)}</div>
+      <div style="color:var(--text);margin-top:6px">${JSON.stringify(data.result, null, 2)}</div>
+    `;
+    toast('Cyber AI parsed query successfully', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to process AI query', 'error');
+  }
+}
+
+async function predictNextAttack() {
+  const tactic = document.getElementById('ai-pred-tactic').value;
+  try {
+    const resp = await fetch('/api/ai/predict/next-attack', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({incident: {tactics: [tactic]}})
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-pred-result');
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:600;color:var(--warning)">Predicted Next Hop: ${data.predicted_tactic}</span>
+        <span class="badge" style="background:rgba(234,179,8,.15);color:var(--warning)">Confidence: ${(data.confidence * 100).toFixed(0)}%</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-dim);margin-bottom:6px">&#9201; Expected Dwell: ${data.timeframe} | Chain: ${data.projected_chain.join(' &rarr; ')}</div>
+      <div style="font-size:12px;background:rgba(255,255,255,.03);padding:8px;border-radius:4px;border-left:3px solid var(--accent)">
+        <strong style="color:var(--accent)">Preemptive Action:</strong> ${data.preemptive_response}
+      </div>
+    `;
+    toast('Next attack trajectory calculated', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to predict attack', 'error');
+  }
+}
+
+async function forecastVulnerabilities() {
+  const days = parseInt(document.getElementById('ai-forecast-days').value, 10);
+  try {
+    const resp = await fetch(`/api/ai/predict/vulnerabilities?time_horizon=${days}`);
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-forecast-result');
+    if (!data || !data.length) {
+      resDiv.innerHTML = '<div style="color:var(--text-dim)">No scan data available to project trends.</div>';
+      return;
+    }
+    const finalDay = data[data.length - 1];
+    const trendIcon = finalDay.trend === 'up' ? '&#8599; Upward' : finalDay.trend === 'down' ? '&#8600; Decreasing' : '&rarr; Flat';
+    const trendColor = finalDay.trend === 'up' ? 'var(--danger)' : 'var(--success)';
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:600;color:var(--text)">${days}-Day Posture Projection</span>
+        <span style="font-weight:600;color:${trendColor}">${trendIcon}</span>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px">
+        <div style="flex:1;background:rgba(239,68,68,.1);padding:8px;border-radius:4px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--danger)">${finalDay.critical_forecast}</div>
+          <div style="font-size:10.5px;color:var(--text-dim)">Projected Criticals</div>
+        </div>
+        <div style="flex:1;background:rgba(249,115,22,.1);padding:8px;border-radius:4px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#f97316">${finalDay.high_forecast}</div>
+          <div style="font-size:10.5px;color:var(--text-dim)">Projected Highs</div>
+        </div>
+        <div style="flex:1;background:rgba(59,130,246,.1);padding:8px;border-radius:4px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#3b82f6">${finalDay.kev_forecast}</div>
+          <div style="font-size:10.5px;color:var(--text-dim)">Projected KEVs</div>
+        </div>
+      </div>
+    `;
+    toast('Posture forecasted successfully', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to forecast vulnerabilities', 'error');
+  }
+}
+
+async function testLiveAnomaly() {
+  await loadAiDashboard();
+  if (!currentAiModelId) {
+    toast('Anomaly model not ready yet', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/ai/unsupervised/detail', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model_id: currentAiModelId,
+        sample: {connections: 450, bytes: 9500000, ports: 80}
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-anomaly-result');
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:600;color:${data.anomalous ? 'var(--danger)' : 'var(--success)'}">
+          ${data.anomalous ? '&#9888; Anomaly Detected (> ' + data.threshold_z + '&sigma;)' : '&#10004; Normal Behavior'}
+        </span>
+        <span style="font-size:11px;color:var(--text-dim)">Top Feature: ${data.top_feature || 'N/A'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim)">Z-Scores: ${JSON.stringify(data.z_scores)}</div>
+    `;
+    toast('Deviation scored', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Anomaly detection test failed', 'error');
+  }
+}
+
+async function runFederatedAggregation() {
+  try {
+    const resp = await fetch('/api/ai/federated/aggregate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        client_data: [
+          {sample_count: 50, conn_rate_mean: 28.4, conn_rate_std: 3.1, bytes_mean: 1100, bytes_std: 150},
+          {sample_count: 75, conn_rate_mean: 31.2, conn_rate_std: 4.2, bytes_mean: 1450, bytes_std: 210}
+        ]
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-anomaly-result');
+    resDiv.innerHTML = `
+      <div style="font-weight:600;color:var(--success);margin-bottom:6px">&#10004; Federated Round #${data.round} Completed</div>
+      <div style="font-size:11.5px;color:var(--text)">Aggregated Nodes: <strong>${data.clients}</strong> | Features Pooled: <strong>${data.features_aggregated}</strong></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Global Baseline: ${JSON.stringify(data.global_baseline)}</div>
+    `;
+    toast('Federated aggregation finished', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Federated aggregation failed', 'error');
+  }
+}
+
+async function evaluateRlAction() {
+  const sev = document.getElementById('ai-rl-sev').value;
+  try {
+    const resp = await fetch('/api/ai/rl/select-action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        state: {severity: sev, confidence: 0.9, is_kev: sev === 'critical', host_risk: 0.8}
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-rl-result');
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:600;color:var(--accent)">Selected Action: <span style="text-transform:uppercase">${data.action}</span></span>
+        <span style="font-size:11px;color:var(--text-dim)">&epsilon;-Greedy: ${data.epsilon}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Q-Values: ${JSON.stringify(data.q_values)}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-g btn-sm" onclick="sendRlFeedback('${data.action}', 10)">&#128077; Reward TP (+10)</button>
+        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.3)" onclick="sendRlFeedback('${data.action}', -10)">&#128078; Penalize FP (-10)</button>
+      </div>
+    `;
+    toast('RL policy action evaluated', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to evaluate RL action', 'error');
+  }
+}
+
+async function sendRlFeedback(action, reward) {
+  const sev = document.getElementById('ai-rl-sev').value;
+  try {
+    await fetch('/api/ai/rl/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        state: {severity: sev, confidence: 0.9, is_kev: sev === 'critical', host_risk: 0.8},
+        action: action,
+        reward: reward
+      })
+    });
+    toast(`Q-Table feedback (${reward > 0 ? '+' : ''}${reward}) recorded`, 'success');
+    evaluateRlAction();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function generateIncidentSummary() {
+  const host = document.getElementById('ai-summary-host').value.trim() || 'db-primary.corp';
+  try {
+    const resp = await fetch('/api/ai/nlp/summarize', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        incident: {
+          id: 'INC-' + Math.floor(1000 + Math.random() * 9000),
+          host: host,
+          severity: 'critical',
+          tactics: ['Credential Access', 'Lateral Movement'],
+          cves: ['CVE-2024-21413'],
+          cvss_score: 9.8,
+          alert_count: 12,
+          status: 'investigating'
+        }
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-narrative-result');
+    resDiv.style.display = 'block';
+    resDiv.innerText = data.summary;
+    toast('Narrative generated', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to generate summary', 'error');
+  }
+}
+
+async function generateExecutiveBrief() {
+  try {
+    const resp = await fetch('/api/ai/nlp/generate-report', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        data: {
+          total_scans: 24,
+          critical_count: 3,
+          high_count: 7,
+          kev_count: 2,
+          resolved_count: 8,
+          new_count: 4,
+          risk_score: 72,
+          risk_grade: 'C',
+          top_tactics: ['Initial Access', 'Lateral Movement'],
+          top_hosts: ['10.0.0.12', '10.0.0.45']
+        },
+        report_type: 'executive'
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-narrative-result');
+    resDiv.style.display = 'block';
+    resDiv.innerText = data.report;
+    toast('Executive brief generated', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to generate brief', 'error');
+  }
+}
+
 </script>
 
 </body>

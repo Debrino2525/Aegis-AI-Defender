@@ -21,6 +21,8 @@ from aegis.fleet.certs import (
 from aegis.fleet.store import FleetStore, get_fleet_store, reset_fleet_store
 from aegis.fleet.tls import cert_reqs_name, heartbeat_requires_client_cert, tls_enabled, tls_proxy
 from aegis.runtime import aegis_data_dir
+from aegis.assets.fingerprint import get_device_fingerprinter
+from aegis.assets.inventory import get_asset_inventory
 
 TOKEN_TTL_HOURS = 24
 HEARTBEAT_SKEW_SECONDS = 300
@@ -297,6 +299,50 @@ class FleetService:
             "last_telemetry_json": json.dumps(payload, default=str)[:65536],
             "remote_ip": remote_ip or host.get("remote_ip"),
         })
+
+        # Update device fingerprint and inventory
+        try:
+            fingerprinter = get_device_fingerprinter()
+            inventory = get_asset_inventory()
+
+            # Build agent data for fingerprinting
+            agent_data = {
+                "agent_id": agent_id,
+                "hostname": hostname,
+                "os_info": {
+                    "name": os_name,
+                    "version": os_version,
+                    "architecture": arch,
+                },
+                "hardware": {
+                    "cpu_count": payload.get("cpu_count"),
+                    "total_memory": payload.get("total_memory"),
+                    "disks": payload.get("disks", []),
+                },
+                "network_interfaces": payload.get("network_interfaces", []),
+                "services": payload.get("services", []),
+            }
+
+            # Create or update fingerprint
+            fp = fingerprinter.fingerprint_from_agent(agent_data)
+            fingerprinter.update_fingerprint(fp)
+
+            # Create or update asset in inventory
+            asset = inventory.get_asset(agent_id)
+            if not asset:
+                asset = inventory.create_asset(
+                    asset_id=agent_id,
+                    hostname=hostname,
+                    fingerprint=fp,
+                    source="agent",
+                )
+            else:
+                inventory.update_asset(agent_id, fp, source="agent")
+
+        except Exception as e:
+            # Don't fail heartbeat if fingerprinting fails
+            pass
+
         return {
             "ok": True,
             "agent_id": agent_id,

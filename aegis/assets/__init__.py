@@ -2,6 +2,21 @@
 
 from aegis.assets.identity import host_keys, is_unusable_ip, normalize_host, value_hits
 from aegis.assets.posture import attach_host_posture, is_verified_high_kev, posture_for_keys
+from aegis.assets.fingerprint import (
+    DeviceFingerprint,
+    DeviceFingerprinter,
+    DeviceRole,
+    OSType,
+    get_device_fingerprinter,
+)
+from aegis.assets.inventory import (
+    Asset,
+    AssetChangeEvent,
+    AssetInventory,
+    AssetRiskLevel,
+    AssetStatus,
+    get_asset_inventory,
+)
 
 __all__ = [
     "attach_host_posture",
@@ -11,4 +26,15 @@ __all__ = [
     "normalize_host",
     "posture_for_keys",
     "value_hits",
+    "DeviceFingerprint",
+    "DeviceFingerprinter",
+    "DeviceRole",
+    "OSType",
+    "get_device_fingerprinter",
+    "Asset",
+    "AssetChangeEvent",
+    "AssetInventory",
+    "AssetRiskLevel",
+    "AssetStatus",
+    "get_asset_inventory",
 ]

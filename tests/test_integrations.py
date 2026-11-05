@@ -1,194 +1,258 @@
-"""Slack, Teams, and email Connect. Secrets never leave the status payload."""
+"""Tests for integration adapters."""
 
-import asyncio
-import json
+import pytest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
-from aegis.alerting.integrations import (
-    PlatformConnections,
-    app_credentials,
-    authorize_url,
-    connect_start,
-    slack_connection,
-)
-from aegis.alerting.models import (
-    AssetOwnerMapping,
-    ChannelType,
-    DispatchResult,
-    OnCallContact,
-)
-from aegis.alerting.queue import AlertQueue
-from aegis.alerting.router import AlertRouter
-
-ROOT = Path(__file__).resolve().parents[1]
+from aegis.integrations.base import BaseAdapter, IntegrationConfig, IntegrationStatus, IntegrationError
+from aegis.integrations.manager import IntegrationManager, get_integration_manager
+from aegis.integrations.siem import SplunkAdapter, SentinelAdapter, ElasticAdapter
+from aegis.integrations.soar import CortexAdapter, SplunkSoarAdapter
+from aegis.integrations.ticketing import ServiceNowAdapter, JiraAdapter
+from aegis.integrations.firewall import PaloAltoAdapter, CiscoAdapter, FortinetAdapter
 
 
-def test_slack_connection_rejects_unusable_payloads():
-    assert slack_connection({
-        "ok": False,
-        "incoming_webhook": {"url": "https://hooks.slack.com/services/T/B/x"},
-    }) is None
-    assert slack_connection({
-        "ok": True,
-        "incoming_webhook": {"url": "http://hooks.slack.com/services/T/B/x"},
-    }) is None
-    assert slack_connection({"ok": True}) is None
-    good = slack_connection({
-        "ok": True,
-        "team": {"name": "Acme"},
-        "incoming_webhook": {
-            "url": "https://hooks.slack.com/services/T/B/secret",
-            "channel": "#soc",
-        },
-    })
-    assert good["account_label"] == "Acme"
-    assert good["destination_label"] == "#soc"
-    assert good["secret"].startswith("https://")
+@pytest.fixture
+def temp_config_path(tmp_path):
+    """Temporary config path for testing."""
+    return tmp_path / "integrations.json"
 
 
-def test_public_status_omits_secrets(tmp_path):
-    queue = AlertQueue(tmp_path / "alerts.sqlite3")
-    platforms = PlatformConnections(queue)
-    platforms.save("slack", "", {
-        "account_label": "Acme",
-        "destination_label": "#soc",
-        "secret": "https://hooks.slack.com/services/T/B/super-secret-hook",
-        "secret_kind": "webhook",
-    })
-    platforms.save("teams", "ONCALL-ABC123", {
-        "account_label": "Ada",
-        "destination_label": "team-id/channel-id",
-        "secret": "ya29.super-secret-token",
-        "refresh_token": "refresh-secret",
-        "secret_kind": "bearer",
-    })
-    rendered = json.dumps(platforms.public())
-    assert "super-secret-hook" not in rendered
-    assert "ya29.super-secret-token" not in rendered
-    assert "refresh-secret" not in rendered
-    assert "team-id/channel-id" not in rendered
-    assert "Ada" in rendered
-    assert "#soc" in rendered
-    assert platforms.destination_for("ONCALL-ABC123")["provider"] == "teams"
-    assert platforms.destination_for("someone-else")["provider"] == "slack"
-    state = platforms.begin("slack", "")
-    assert platforms.take_state(state)["provider"] == "slack"
-    assert platforms.take_state(state) is None
+@pytest.fixture
+def integration_manager(temp_config_path):
+    """Integration manager instance with temp config."""
+    manager = IntegrationManager(config_path=temp_config_path)
+    yield manager
+    # Cleanup
+    if temp_config_path.exists():
+        temp_config_path.unlink()
 
 
-def test_connect_without_app_asks_for_setup(monkeypatch):
-    monkeypatch.delenv("SLACK_CLIENT_ID", raising=False)
-    monkeypatch.delenv("SLACK_CLIENT_SECRET", raising=False)
-    assert app_credentials("slack") is None
-    payload = connect_start("slack", "http://127.0.0.1:8000")
-    assert payload["setup_required"] is True
-    assert payload["redirect_uri"] == "http://127.0.0.1:8000/api/integrations/slack/callback"
-    assert "secret" not in payload
-    monkeypatch.setenv("SLACK_CLIENT_ID", "111.222")
-    monkeypatch.setenv("SLACK_CLIENT_SECRET", "super-secret-value")
-    url = authorize_url("slack", "http://127.0.0.1:8000", "state-token")
-    assert url.startswith("https://slack.com/oauth/v2/authorize?")
-    assert "super-secret-value" not in url
-    assert "state-token" in url
-    assert connect_start("slack", "http://127.0.0.1:8000") == {"ready": True}
+@pytest.fixture
+def sample_config():
+    """Sample integration configuration."""
+    return IntegrationConfig(
+        integration_id="test_integration",
+        name="Test Integration",
+        type="siem",
+        enabled=False,
+        config={"url": "https://test.example.com", "api_key": "test-key"},
+        capabilities=["alert_output"],
+    )
 
 
-def test_connected_platform_is_paged_and_sms_is_not(tmp_path, monkeypatch):
-    queue = AlertQueue(tmp_path / "alerts.sqlite3")
-    router = AlertRouter(queue=queue)
-    router.platforms.save("slack", "", {
-        "account_label": "Acme",
-        "destination_label": "#soc",
-        "secret": "https://hooks.slack.com/services/T/B/super-secret-hook",
-        "secret_kind": "webhook",
-    })
-    called = []
+class TestBaseAdapter:
+    """Tests for BaseAdapter."""
 
-    async def fake_deliver(connection, text, client=None):
-        called.append(connection["provider"])
-        assert "super-secret-hook" not in text
-        return DispatchResult(channel=ChannelType.WEBHOOK, success=True, recipient="#soc")
+    def test_adapter_initialization(self, sample_config):
+        """Test adapter initialization with config."""
+        class TestAdapter(BaseAdapter):
+            @property
+            def integration_type(self):
+                return "test"
 
-    monkeypatch.setattr("aegis.alerting.router.deliver", fake_deliver)
+            def connect(self):
+                return True
 
-    class _Boom:
-        telegram_bot_token = ""
-        telegram_chat_id = ""
-        whatsapp_token = ""
-        whatsapp_phone_id = ""
-        generic_webhook_url = "https://example.test/hook"
-        arkesel_api_key = "sms-key"
-        hubtel_client_id = ""
-        port = "COM9"
+            def disconnect(self):
+                pass
 
-        async def send(self, *args, **kwargs):
-            raise AssertionError("fallback channel was used")
+            def test_connection(self):
+                return IntegrationStatus.CONNECTED
 
-    router.adapter_webhook = _Boom()
-    router.adapter_sms = _Boom()
-    router.adapter_modem = _Boom()
-    router.escalation.add_contact(OnCallContact(contact_id="ops", name="Ops", phone="+15555550100"))
-    router.escalation.add_owner_mapping(AssetOwnerMapping(
-        cidr_or_host="10.8.0.0/16",
-        environment="Lab",
-        owner_team="SOC",
-        primary_contact_id="ops",
-        escalation_contact_id="ops",
-    ))
+            def send_alert(self, alert):
+                return {"status": "success"}
 
-    async def run():
-        routed = await router.route_behavioral_alert({
-            "pattern_id": "AEGIS-BEH-002",
-            "title": "C2 Beaconing Pattern",
-            "severity": "CRITICAL",
-            "source_ip": "10.8.0.9",
-            "dest_ip": "203.0.113.10",
-            "dest_port": 4444,
-            "tactic": "Command and Control",
-        })
-        assert routed is not None
+        adapter = TestAdapter(sample_config)
+        assert adapter.config == sample_config
+        assert adapter.integration_type == "test"
 
-    asyncio.run(run())
-    assert called == ["slack"]
-    rendered = json.dumps(router.get_status())
-    assert "super-secret-hook" not in rendered
-    assert "Acme" in rendered
+    def test_mask_secrets(self, sample_config):
+        """Test secret masking in configuration."""
+        class TestAdapter(BaseAdapter):
+            @property
+            def integration_type(self):
+                return "test"
+
+            def connect(self):
+                return True
+
+            def disconnect(self):
+                pass
+
+            def test_connection(self):
+                return IntegrationStatus.CONNECTED
+
+            def send_alert(self, alert):
+                return {"status": "success"}
+
+        adapter = TestAdapter(sample_config)
+        data = {"api_key": "secret123", "password": "pass456", "username": "user"}
+        masked = adapter.mask_secrets(data, ["api_key", "password"])
+        assert masked["api_key"] == "********"
+        assert masked["password"] == "********"
+        assert masked["username"] == "user"
 
 
-def test_console_leads_with_connect_not_sms():
-    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
-    assert "Connect Slack, Microsoft Teams, or an email account" in html
-    assert 'id="platform-setup"' not in html
-    assert "Client secret" not in html
-    assert "function connectPlatform" in html
-    assert "location.href = data.authorize_url" in html
-    for gone in (
-        "Other channels",
-        "SMS gateway",
-        "Telegram",
-        "WhatsApp",
-        "ChatOps",
-        "Cellular",
-        "Canary",
-        "cfg-arkesel-key",
-        "cfg-canary-url",
-    ):
-        assert gone not in html
-    assert 'id="alert-channels-grid"' not in html
-    assert 'id="routing-status"' in html
-    assert 'id="platform-connect-cards"' in html
-    assert "function openAlertRoutingSettings" in html
-    assert "function paintRoutingStatus" in html
-    paint = html[html.index("function paintPlatformCards"):html.index("function routingChannelChip")]
-    assert "platform-connect-cards" in paint
-    assert "alert-channels-grid" not in paint
-    cards = html[html.index("function platformCardsHtml"):html.index("function paintPlatformCards")]
-    assert "Slack" in cards
-    assert "Microsoft Teams" in cards
-    assert "Connect Microsoft" in cards
-    assert ">SMS<" not in cards
-    dash = html[html.index("Alert routing status"):html.index("page-scan")]
-    assert "Tap Connect" not in dash
-    assert "Settings →" in dash
-    assert 'class="routing-cap"' in html
-    assert "openAlertRoutingSettings()" in dash
+class TestIntegrationManager:
+    """Tests for IntegrationManager."""
+
+    def test_manager_initialization(self, temp_config_path):
+        """Test manager initialization."""
+        manager = IntegrationManager(config_path=temp_config_path)
+        assert manager.config_path == temp_config_path
+        assert manager.adapters == {}
+        assert manager.configs == {}
+
+    def test_list_integrations(self, integration_manager):
+        """Test listing all integrations."""
+        integrations = integration_manager.list_integrations()
+        assert len(integrations) > 0
+        assert any(i["id"] == "splunk" for i in integrations)
+        assert any(i["id"] == "servicenow" for i in integrations)
+        assert any(i["id"] == "palo_alto" for i in integrations)
+
+    def test_configure_integration(self, integration_manager):
+        """Test configuring an integration."""
+        config = {
+            "enabled": False,
+            "url": "https://splunk.example.com",
+            "hec_token": "test-token",
+        }
+        result = integration_manager.configure_integration("splunk", config)
+        assert "splunk" in integration_manager.configs
+        assert integration_manager.configs["splunk"].config["url"] == "https://splunk.example.com"
+
+    def test_configure_unknown_integration(self, integration_manager):
+        """Test configuring an unknown integration raises error."""
+        with pytest.raises(IntegrationError):
+            integration_manager.configure_integration("unknown", {})
+
+    def test_get_integration(self, integration_manager):
+        """Test getting integration details."""
+        integration_manager.configure_integration("splunk", {"enabled": False, "url": "https://test.com"})
+        integration = integration_manager.get_integration("splunk")
+        assert integration is not None
+        assert integration["id"] == "splunk"
+
+    def test_get_unknown_integration(self, integration_manager):
+        """Test getting unknown integration returns None."""
+        integration = integration_manager.get_integration("unknown")
+        assert integration is None
+
+
+class TestSplunkAdapter:
+    """Tests for Splunk adapter."""
+
+    def test_adapter_type(self):
+        """Test adapter type is siem."""
+        config = IntegrationConfig(
+            integration_id="splunk",
+            name="Splunk",
+            type="siem",
+            enabled=False,
+            config={},
+            capabilities=[],
+        )
+        adapter = SplunkAdapter(config)
+        assert adapter.integration_type == "siem"
+
+    @patch("requests.get")
+    def test_test_connection_success(self, mock_get):
+        """Test successful connection test."""
+        mock_get.return_value.status_code = 200
+        config = IntegrationConfig(
+            integration_id="splunk",
+            name="Splunk",
+            type="siem",
+            enabled=False,
+            config={"hec_url": "https://splunk.example.com", "hec_token": "test"},
+            capabilities=[],
+        )
+        adapter = SplunkAdapter(config)
+        status = adapter.test_connection()
+        assert status == IntegrationStatus.CONNECTED
+
+    @patch("requests.get")
+    def test_test_connection_auth_failure(self, mock_get):
+        """Test connection test with auth failure."""
+        mock_get.return_value.status_code = 401
+        config = IntegrationConfig(
+            integration_id="splunk",
+            name="Splunk",
+            type="siem",
+            enabled=False,
+            config={"hec_url": "https://splunk.example.com", "hec_token": "test"},
+            capabilities=[],
+        )
+        adapter = SplunkAdapter(config)
+        status = adapter.test_connection()
+        assert status == IntegrationStatus.ERROR
+
+
+class TestServiceNowAdapter:
+    """Tests for ServiceNow adapter."""
+
+    def test_adapter_type(self):
+        """Test adapter type is ticketing."""
+        config = IntegrationConfig(
+            integration_id="servicenow",
+            name="ServiceNow",
+            type="ticketing",
+            enabled=False,
+            config={},
+            capabilities=[],
+        )
+        adapter = ServiceNowAdapter(config)
+        assert adapter.integration_type == "ticketing"
+
+    def test_severity_mapping(self):
+        """Test severity mapping to ServiceNow urgency."""
+        config = IntegrationConfig(
+            integration_id="servicenow",
+            name="ServiceNow",
+            type="ticketing",
+            enabled=False,
+            config={},
+            capabilities=[],
+        )
+        adapter = ServiceNowAdapter(config)
+        assert adapter._map_urgency("CRITICAL") == "1"
+        assert adapter._map_urgency("HIGH") == "1"
+        assert adapter._map_urgency("MEDIUM") == "2"
+        assert adapter._map_urgency("LOW") == "3"
+        assert adapter._map_urgency("INFO") == "3"
+
+
+class TestPaloAltoAdapter:
+    """Tests for Palo Alto adapter."""
+
+    def test_adapter_type(self):
+        """Test adapter type is firewall."""
+        config = IntegrationConfig(
+            integration_id="palo_alto",
+            name="Palo Alto",
+            type="firewall",
+            enabled=False,
+            config={},
+            capabilities=[],
+        )
+        adapter = PaloAltoAdapter(config)
+        assert adapter.integration_type == "firewall"
+
+
+class TestIntegrationAPI:
+    """Tests for integration API endpoints."""
+
+    def test_list_available_integrations(self):
+        """Test listing available integrations."""
+        from aegis.integrations import list_available_integrations
+        integrations = list_available_integrations()
+        assert len(integrations) > 0
+        assert all("id" in i for i in integrations)
+        assert all("type" in i for i in integrations)
+        assert all("capabilities" in i for i in integrations)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

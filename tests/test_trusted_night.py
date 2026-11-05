@@ -248,7 +248,8 @@ def test_public_default_signing_key_is_rejected(tmp_path, monkeypatch):
     assert key.decode("utf-8") != PUBLIC_DEFAULT_SIGNING_KEY
     assert warning and "WARNING" in warning and "REJECTED" in warning
     assert (tmp_path / "alert_signing_key").read_text(encoding="utf-8").strip() == key.decode("utf-8")
-    assert (tmp_path / "alert_signing_key").stat().st_mode & 0o777 == 0o600
+    if os.name != "nt":
+        assert (tmp_path / "alert_signing_key").stat().st_mode & 0o777 == 0o600
 
     again, source2, _ = resolve_signing_key(
         env_value="",
@@ -286,7 +287,8 @@ def test_admin_token_generated_outside_repo(tmp_path, monkeypatch):
     token_path = tmp_path / "admin_token"
     assert token_path.read_text(encoding="utf-8").strip() == auth.token
     assert auth.token not in ("", "admin", "password", "aegis")
-    assert token_path.stat().st_mode & 0o777 == 0o600
+    if os.name != "nt":
+        assert token_path.stat().st_mode & 0o777 == 0o600
 
     again = ConsoleAuth()
     again.bootstrap()

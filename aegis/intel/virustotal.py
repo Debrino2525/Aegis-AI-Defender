@@ -91,6 +91,15 @@ def _ensure(conn) -> None:
     )
 
 
+def clear_snapshot(db) -> None:
+    """Drop stored VirusTotal rows. Used by platform reset."""
+    with db._get_connection() as conn:
+        _ensure(conn)
+        conn.execute("DELETE FROM virustotal_categories")
+        conn.execute("DELETE FROM virustotal_meta")
+        conn.commit()
+
+
 def snapshot(db) -> Optional[Dict[str, Any]]:
     with db._get_connection() as conn:
         _ensure(conn)

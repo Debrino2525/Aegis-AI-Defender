@@ -212,6 +212,7 @@ from aegis.hunting.api import router as hunting_router
 from aegis.custom.api import router as custom_router
 from aegis.reporting.api import router as reporting_router
 from aegis.api.api import router as api_extensibility_router
+from aegis.ai.api import router as ai_router
 
 app.include_router(fleet_router)
 app.include_router(assets_router)
@@ -224,6 +225,7 @@ app.include_router(hunting_router)
 app.include_router(custom_router)
 app.include_router(reporting_router)
 app.include_router(api_extensibility_router)
+app.include_router(ai_router)
 install_peer_cert_hook()
 
 

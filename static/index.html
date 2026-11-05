@@ -844,6 +844,7 @@ select option:checked, select option:hover {
   <div class="sb-item" onclick="showPage('risks')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8v4M12 15.5v.5"/><span class="sb-badge" id="sb-cc" style="display:none">0</span></svg></span><span class="lbl">Risks</span></div>
   <div class="sb-item" onclick="showPage('threat')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span><span class="lbl">Threat Intel</span></div>
   <div class="sb-item" onclick="showPage('assets')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></span><span class="lbl">Assets</span></div>
+  <div class="sb-item" onclick="showPage('visibility')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8v4M12 15.5v.5"/></svg></span><span class="lbl">Visibility</span></div>
   <div class="sb-item" onclick="showPage('integrations')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9-9M4 11a9 9 0 0 1 9 9M4 11h2a7 7 0 0 1 7-7M4 11h2a7 7 0 0 0 7 7M13 2v2a7 7 0 0 1 7 7M13 2v2a7 7 0 0 0 7 7M20 13v2a7 7 0 0 1-7 7M20 13v2a7 7 0 0 0-7 7"/></svg></span><span class="lbl">Integrations</span></div>
   <div class="sb-item" onclick="showPage('history')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">Reports</span></div>
   <div class="sb-item" onclick="showPage('settings')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="lbl">Settings</span></div>
@@ -1300,6 +1301,53 @@ select option:checked, select option:hover {
   <div class="card">
     <div class="ch"><div class="ct">Host Behavioral Profiles</div></div>
     <div id="baselines-list"><div class="empty"><div class="ei"></div><div class="eh">No hosts profiled yet</div><div class="ep">Profiles build automatically from observed network behavior</div></div></div>
+  </div>
+</div>
+
+<!-- VISIBILITY -->
+<div class="page" id="page-visibility">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Enhanced Visibility</div>
+      <div class="ps">Device fingerprinting, network topology, and asset management integration.</div>
+    </div>
+  </div>
+
+  <div class="g4">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Device Fingerprinting</div>
+        <span style="font-size:11px;color:var(--text-dim)">Passive device type detection</span>
+      </div>
+      <div style="padding:20px">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input type="text" id="fp-mac-input" placeholder="MAC address (e.g., 00:50:56:00:00:01)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <button class="btn btn-p btn-sm" onclick="fingerprintMac()">Fingerprint</button>
+        </div>
+        <div id="fp-result" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Network Topology</div>
+        <span style="font-size:11px;color:var(--text-dim)">2D network visualization</span>
+      </div>
+      <div style="padding:20px">
+        <div id="topology-result" style="font-size:12px;color:var(--text-dim)">Topology data will appear here</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Asset Management</div>
+        <span style="font-size:11px;color:var(--text-dim)">External asset synchronization</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-g btn-sm" onclick="connectServiceNow()">Connect ServiceNow CMDB</button>
+        <button class="btn btn-g btn-sm" onclick="connectLansweeper()">Connect Lansweeper</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -5103,7 +5151,51 @@ showPage = function(page) {
   if (page === 'integrations') {
     loadIntegrations();
   }
+  if (page === 'visibility') {
+    loadTopology();
+  }
 };
+
+// Visibility functions
+async function fingerprintMac() {
+  const mac = document.getElementById('fp-mac-input').value;
+  if (!mac) {
+    toast('Please enter a MAC address', 'error');
+    return;
+  }
+  try {
+    const response = await fetch(`/api/visibility/fingerprint/mac/${mac}`);
+    const data = await response.json();
+    const resultDiv = document.getElementById('fp-result');
+    if (data) {
+      resultDiv.innerHTML = `<div style="color:var(--success)">Vendor: ${data.vendor || 'Unknown'} (Confidence: ${data.confidence || 'low'})</div>`;
+    } else {
+      resultDiv.innerHTML = '<div style="color:var(--text-dim)">No fingerprint data found</div>';
+    }
+  } catch (error) {
+    console.error('Fingerprint error:', error);
+    toast('Failed to fingerprint MAC', 'error');
+  }
+}
+
+async function loadTopology() {
+  try {
+    const response = await fetch('/api/visibility/topology');
+    const data = await response.json();
+    const resultDiv = document.getElementById('topology-result');
+    resultDiv.innerHTML = `<div>Nodes: ${data.nodes.length}, Edges: ${data.edges.length}</div>`;
+  } catch (error) {
+    console.error('Topology error:', error);
+  }
+}
+
+async function connectServiceNow() {
+  toast('ServiceNow CMDB configuration - configure in settings', 'info');
+}
+
+async function connectLansweeper() {
+  toast('Lansweeper configuration - configure in settings', 'info');
+}
 </script>
 
 </body>

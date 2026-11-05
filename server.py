@@ -208,6 +208,7 @@ from aegis.response.engine import ResponseError, get_response_engine
 from aegis.integrations.api import router as integrations_router
 from aegis.ingest.api import router as telemetry_router
 from aegis.visibility.api import router as visibility_router
+from aegis.hunting.api import router as hunting_router
 
 app.include_router(fleet_router)
 app.include_router(assets_router)
@@ -216,6 +217,7 @@ app.include_router(response_router)
 app.include_router(integrations_router)
 app.include_router(telemetry_router)
 app.include_router(visibility_router)
+app.include_router(hunting_router)
 install_peer_cert_hook()
 
 

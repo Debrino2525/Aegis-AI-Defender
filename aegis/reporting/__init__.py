@@ -1,11 +1,11 @@
-from .console_reporter import ConsoleReporter
-from .sarif_reporter import SARIFReporter
-from .html_reporter import HTMLReporter
-from .csv_reporter import CSVReporter
+"""Executive reporting module.
 
-__all__ = [
-    "ConsoleReporter",
-    "SARIFReporter",
-    "HTMLReporter",
-    "CSVReporter",
-]
+Provides automated reports and trend tracking for executive visibility.
+"""
+
+from __future__ import annotations
+
+from aegis.reporting.executive import ExecutiveReporter
+from aegis.reporting.trends import TrendTracker
+
+__all__ = ["ExecutiveReporter", "TrendTracker"]

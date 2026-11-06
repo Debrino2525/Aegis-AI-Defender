@@ -15,8 +15,10 @@ import httpx
 import asyncio
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta, timezone
+from packaging import version
 from rich.console import Console
 from aegis.database.db import VulnerabilityDatabase
+from aegis.database.matcher import VersionMatcher
 
 try:
     from dotenv import load_dotenv
@@ -312,6 +314,8 @@ class ThreatFeedSync:
                         "product": cpe_info.get("product", "generic"),
                         "min_version": cpe_info.get("min_version"),
                         "max_version": cpe_info.get("max_version"),
+                        "min_inclusive": cpe_info.get("min_inclusive", True),
+                        "max_inclusive": cpe_info.get("max_inclusive", False),
                         "remediation": "Apply vendor security updates as documented in the NVD advisory.",
                         "references": [f"https://nvd.nist.gov/vuln/detail/{cve_id}"]
                     })
@@ -377,6 +381,8 @@ class ThreatFeedSync:
                                 "product": cpe_info.get("product", keyword.lower()),
                                 "min_version": cpe_info.get("min_version"),
                                 "max_version": cpe_info.get("max_version"),
+                                "min_inclusive": cpe_info.get("min_inclusive", True),
+                                "max_inclusive": cpe_info.get("max_inclusive", False),
                                 "remediation": f"Apply latest security release for {keyword}.",
                                 "references": [f"https://nvd.nist.gov/vuln/detail/{cve_id}"]
                             })
@@ -387,30 +393,106 @@ class ThreatFeedSync:
 
         return total_count
 
-    def _extract_cpe_info(self, cve: Dict) -> Dict[str, str]:
-        """Extracts vendor, product, and version info from CPE strings."""
-        configurations = cve.get("configurations", [])
-        if not configurations:
+    def _extract_cpe_info(self, cve: Dict) -> Dict[str, Any]:
+        """Extracts vendor, product, and one affected version range from NVD CPE data.
+
+        CVE API 2.0 puts the CPE string in ``criteria``. The 1.0 name ``cpe23Uri``
+        is not present, so reading only that field saved every CVE with empty
+        bounds. Vendor and product keep their CPE underscores (``http_server``)
+        so they match the scanner's lookup keys.
+
+        Several ranges are common (an ancient branch plus the current one). The
+        database stores a single range, so this keeps the application named by
+        the first vulnerable match and, within that product, the range whose end
+        version is newest.
+        """
+        candidates: List[Dict[str, Any]] = []
+
+        def walk(nodes):
+            for node in nodes or []:
+                for match in node.get("cpeMatch") or []:
+                    parsed = self._parse_cpe_match(match)
+                    if parsed:
+                        candidates.append(parsed)
+                walk(node.get("children"))
+
+        for config in cve.get("configurations") or []:
+            walk(config.get("nodes"))
+
+        if not candidates:
             return {}
 
-        for config in configurations:
-            nodes = config.get("nodes", [])
-            for node in nodes:
-                cpe_matches = node.get("cpeMatch", [])
-                for cpe_match in cpe_matches:
-                    cpe_str = cpe_match.get("cpe23Uri", "")
-                    if cpe_str and cpe_str.startswith("cpe:2.3:a:"):
-                        parts = cpe_str.split(":")
-                        if len(parts) >= 6:
-                            vendor = parts[3].replace("_", " ")
-                            product = parts[4].replace("_", " ")
-                            version = parts[5]
-                            if version in ("*", "-"):
-                                version = None
-                            return {
-                                "vendor": vendor,
-                                "product": product,
-                                "min_version": version,
-                                "max_version": version
-                            }
-        return {}
+        primary = (candidates[0]["vendor"], candidates[0]["product"])
+        pool = [c for c in candidates if (c["vendor"], c["product"]) == primary] or candidates
+        return max(pool, key=self._cpe_range_rank)
+
+    def _parse_cpe_match(self, match: Dict) -> Optional[Dict[str, Any]]:
+        """Parses one NVD cpeMatch object into a single inclusive/exclusive range."""
+        if match.get("vulnerable") is False:
+            return None
+        cpe = (match.get("criteria") or match.get("cpe23Uri") or "").strip()
+        parts = cpe.split(":")
+        if len(parts) < 6 or parts[0] != "cpe" or parts[1] != "2.3" or parts[2] != "a":
+            return None
+
+        vendor = parts[3].strip().lower()
+        product = parts[4].strip().lower()
+        if not vendor or not product or vendor == "*" or product == "*":
+            return None
+
+        exact = parts[5].strip()
+        if exact in ("*", "-", ""):
+            exact = None
+
+        if match.get("versionStartExcluding"):
+            min_version = match["versionStartExcluding"]
+            min_inclusive = False
+        elif match.get("versionStartIncluding"):
+            min_version = match["versionStartIncluding"]
+            min_inclusive = True
+        elif exact:
+            min_version = exact
+            min_inclusive = True
+        else:
+            min_version = None
+            min_inclusive = True
+
+        if match.get("versionEndExcluding"):
+            max_version = match["versionEndExcluding"]
+            max_inclusive = False
+        elif match.get("versionEndIncluding"):
+            max_version = match["versionEndIncluding"]
+            max_inclusive = True
+        elif exact and not match.get("versionStartIncluding") and not match.get("versionStartExcluding"):
+            max_version = exact
+            max_inclusive = True
+        else:
+            max_version = None
+            max_inclusive = False
+
+        if not min_version and not max_version:
+            return None
+
+        return {
+            "vendor": vendor,
+            "product": product,
+            "min_version": min_version,
+            "max_version": max_version,
+            "min_inclusive": min_inclusive,
+            "max_inclusive": max_inclusive,
+        }
+
+    def _cpe_range_rank(self, info: Dict[str, Any]):
+        """Prefers a bounded range, then the one that reaches the newest version."""
+        end = info.get("max_version") or info.get("min_version")
+        parsed = None
+        if end:
+            try:
+                parsed = version.parse(VersionMatcher.normalize_version(str(end)))
+            except Exception:
+                parsed = None
+        return (
+            1 if info.get("max_version") else 0,
+            1 if parsed is not None else 0,
+            parsed or version.parse("0"),
+        )

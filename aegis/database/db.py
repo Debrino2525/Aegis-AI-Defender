@@ -56,8 +56,42 @@ class VulnerabilityDatabase:
             conn.commit()
 
     def add_vulnerability(self, vuln: Dict[str, Any]):
-        """Inserts or updates a vulnerability record."""
+        """Inserts or updates a vulnerability record.
+
+        Once a row has an affected-version range, later feed writes keep that
+        range and its vendor/product. CISA KEV entries have no bounds, and an
+        NVD record often contains only one slice of a multi-range CVE. Replacing
+        the curated range either matched every installed version or dropped the
+        CVE from scans. A known-exploited flag is never cleared by a later write.
+        """
+        record = dict(vuln)
         with self._get_connection() as conn:
+            existing = conn.execute(
+                """
+                SELECT vendor, product, min_version, max_version,
+                       min_inclusive, max_inclusive, is_cisa_kev
+                FROM vulnerabilities WHERE id = ?
+                """,
+                (record["id"],)
+            ).fetchone()
+            if existing:
+                old_bounded = bool(existing["min_version"] or existing["max_version"])
+                if old_bounded:
+                    record["vendor"] = existing["vendor"]
+                    record["product"] = existing["product"]
+                    record["min_version"] = existing["min_version"]
+                    record["max_version"] = existing["max_version"]
+                    record["min_inclusive"] = bool(existing["min_inclusive"])
+                    record["max_inclusive"] = bool(existing["max_inclusive"])
+                elif not (record.get("min_version") or record.get("max_version")):
+                    vendor = (record.get("vendor") or "").lower()
+                    product = (record.get("product") or "").lower()
+                    if vendor in ("", "generic", "unknown") or product in ("", "generic", "unknown"):
+                        record["vendor"] = existing["vendor"]
+                        record["product"] = existing["product"]
+                if existing["is_cisa_kev"] and not record.get("is_cisa_kev"):
+                    record["is_cisa_kev"] = True
+
             conn.execute("""
                 INSERT OR REPLACE INTO vulnerabilities (
                     id, title, description, severity, cvss_score, epss_score, is_cisa_kev,
@@ -65,21 +99,21 @@ class VulnerabilityDatabase:
                     remediation, references_json
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                vuln["id"],
-                vuln["title"],
-                vuln["description"],
-                vuln.get("severity", "HIGH"),
-                vuln.get("cvss_score", 0.0),
-                vuln.get("epss_score", 0.0),
-                1 if vuln.get("is_cisa_kev") else 0,
-                vuln["vendor"].lower(),
-                vuln["product"].lower(),
-                vuln.get("min_version"),
-                vuln.get("max_version"),
-                1 if vuln.get("min_inclusive", True) else 0,
-                1 if vuln.get("max_inclusive", False) else 0,
-                vuln.get("remediation"),
-                json.dumps(vuln.get("references", []))
+                record["id"],
+                record["title"],
+                record["description"],
+                record.get("severity", "HIGH"),
+                record.get("cvss_score", 0.0),
+                record.get("epss_score", 0.0),
+                1 if record.get("is_cisa_kev") else 0,
+                record["vendor"].lower(),
+                record["product"].lower(),
+                record.get("min_version"),
+                record.get("max_version"),
+                1 if record.get("min_inclusive", True) else 0,
+                1 if record.get("max_inclusive", False) else 0,
+                record.get("remediation"),
+                json.dumps(record.get("references", []))
             ))
             conn.commit()
 

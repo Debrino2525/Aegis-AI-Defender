@@ -61,6 +61,14 @@ class VersionMatcher:
         if not target_version_str or target_version_str == "*":
             return False
 
+        # A row with no affected range is not evidence this version is vulnerable.
+        # Feed imports (CISA KEV in particular) store null bounds; treating that as
+        # "every version matches" flags fully patched software.
+        has_min = bool(min_ver_str) and min_ver_str != "*"
+        has_max = bool(max_ver_str) and max_ver_str != "*"
+        if not has_min and not has_max:
+            return False
+
         # Normalize target version
         try:
             target_v = version.parse(VersionMatcher.normalize_version(target_version_str))

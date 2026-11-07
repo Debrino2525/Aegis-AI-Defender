@@ -155,6 +155,40 @@ class AlertQueue:
             """, (now, limit)).fetchall()
             return [dict(r) for r in rows]
 
+    def _hydrate_alert_row(self, row: sqlite3.Row) -> Dict[str, Any]:
+        alert = dict(row)
+        alert["zt_pillars"] = json.loads(alert.get("zt_pillars") or "[]")
+        alert["metadata"] = json.loads(alert.get("metadata") or "{}")
+        return alert
+
+    def get_due_retries(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Failed dispatches whose backoff has elapsed. Does not include brand-new PENDING rows."""
+        now = time.time()
+        with self._get_conn() as conn:
+            rows = conn.execute("""
+                SELECT * FROM critical_alerts
+                WHERE status = 'DISPATCHING'
+                  AND next_retry_at <= ?
+                  AND acknowledged = 0
+                ORDER BY next_retry_at ASC
+                LIMIT ?
+            """, (now, limit)).fetchall()
+            return [self._hydrate_alert_row(r) for r in rows]
+
+    def lease_retry(self, alert_id: str, lease_seconds: int = 120) -> bool:
+        """Claims one due retry so a second worker cannot send the same page."""
+        now = time.time()
+        with self._get_conn() as conn:
+            cursor = conn.execute("""
+                UPDATE critical_alerts
+                SET next_retry_at = ?
+                WHERE alert_id = ?
+                  AND status = 'DISPATCHING'
+                  AND next_retry_at <= ?
+                  AND acknowledged = 0
+            """, (now + lease_seconds, alert_id, now))
+            return cursor.rowcount > 0
+
     def mark_dispatched(self, alert_id: str, new_status: str = "DELIVERED"):
         with self._get_conn() as conn:
             conn.execute("UPDATE critical_alerts SET status = ? WHERE alert_id = ?", (new_status, alert_id))

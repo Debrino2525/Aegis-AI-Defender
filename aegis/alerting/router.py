@@ -6,6 +6,8 @@ multi-channel primary/fallback dispatching, and escalation timers.
 
 import os
 import asyncio
+import time
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from aegis.alerting.models import (
     CriticalAlert, OnCallContact, DispatchResult, ChannelType, SeverityLevel
@@ -44,6 +46,9 @@ class AlertRouter:
         # Background escalation worker
         self._escalation_task: Optional[asyncio.Task] = None
         self._running = False
+        # alert_id -> last failed escalation attempt (unix seconds). Stops a
+        # down channel from being retried on every 20s loop tick.
+        self._escalation_attempts: Dict[str, float] = {}
 
     async def start(self):
         """Starts the router's background escalation checker and heartbeat."""
@@ -63,6 +68,7 @@ class AlertRouter:
         """Periodic background task that checks for unacknowledged alerts needing escalation."""
         while self._running:
             try:
+                await self.process_due_retries()
                 await self.process_escalations()
             except asyncio.CancelledError:
                 break
@@ -109,65 +115,121 @@ class AlertRouter:
         triage_url = f"{self.base_console_url}/#triage?token={token}&aid={alert.alert_id}"
 
         # 5. Cascading Dispatch: Primary (ChatOps/Telegram/WhatsApp) -> Fallback (SMS) -> Out-Of-Band (Modem)
-        dispatched_successfully = False
-
-        # Channel 1: Primary ChatOps / Webhook / Telegram
-        result_primary = await self.adapter_webhook.send(alert, primary_contact, triage_url)
-        self.queue.record_dispatch_audit(alert.alert_id, result_primary)
-        if result_primary.success:
-            dispatched_successfully = True
-
-        # Channel 2: Fallback Local Ghanaian SMS (if primary failed or not configured)
-        if not dispatched_successfully:
-            result_sms = await self.adapter_sms.send(alert, primary_contact, triage_url)
-            self.queue.record_dispatch_audit(alert.alert_id, result_sms)
-            if result_sms.success:
-                dispatched_successfully = True
-
-        # Channel 3: Out-Of-Band Cellular Serial Modem (if all IP networks failed)
-        if not dispatched_successfully:
-            result_modem = await self.adapter_modem.send(alert, primary_contact, triage_url)
-            self.queue.record_dispatch_audit(alert.alert_id, result_modem)
-            if result_modem.success:
-                dispatched_successfully = True
-
-        if dispatched_successfully:
+        if await self._cascade_dispatch(alert, primary_contact, triage_url):
             self.queue.mark_dispatched(alert.alert_id, "DELIVERED")
         else:
             self.queue.mark_retry(alert.alert_id, "All dispatch channels unconfigured or failed")
 
         return alert
 
+    async def _cascade_dispatch(self, alert: CriticalAlert, contact: OnCallContact, triage_url: str) -> bool:
+        """Sends through ChatOps, then SMS, then the modem. Stops at the first success.
+
+        An adapter that raises is recorded as a failed attempt so the next
+        channel still runs. One broken gateway must not drop the page.
+        """
+        for adapter in (self.adapter_webhook, self.adapter_sms, self.adapter_modem):
+            try:
+                result = await adapter.send(alert, contact, triage_url)
+            except Exception as exc:
+                result = DispatchResult(
+                    channel=ChannelType.CONSOLE,
+                    success=False,
+                    recipient=contact.contact_id or contact.phone or "unknown",
+                    error=f"{adapter.__class__.__name__} raised {type(exc).__name__}: {exc}",
+                )
+            self.queue.record_dispatch_audit(alert.alert_id, result)
+            if result.success:
+                return True
+        return False
+
+    def _rebuild_alert(self, alert_dict: Dict[str, Any], title: str, summary: str, escalation_level: int) -> CriticalAlert:
+        raw_severity = alert_dict.get("severity", SeverityLevel.CRITICAL)
+        try:
+            severity = raw_severity if isinstance(raw_severity, SeverityLevel) else SeverityLevel(str(raw_severity))
+        except ValueError:
+            severity = SeverityLevel.CRITICAL
+        return CriticalAlert(
+            alert_id=alert_dict["alert_id"],
+            fingerprint=alert_dict["fingerprint"],
+            title=title,
+            severity=severity,
+            summary=summary,
+            source_ip=alert_dict.get("source_ip") or "",
+            dest_ip=alert_dict.get("dest_ip"),
+            dest_port=alert_dict.get("dest_port"),
+            process=alert_dict.get("process"),
+            tactic=alert_dict.get("tactic"),
+            technique=alert_dict.get("technique"),
+            cve_id=alert_dict.get("cve_id"),
+            created_at=alert_dict.get("created_at") or datetime.now(timezone.utc).isoformat(),
+            escalation_level=escalation_level,
+            metadata=alert_dict.get("metadata") or {},
+        )
+
+    async def process_due_retries(self):
+        """Re-sends dispatches that failed and whose backoff has elapsed.
+
+        Fresh PENDING alerts are left to the inline dispatcher. This only
+        picks rows already marked DISPATCHING, so a page is not sent twice
+        while the first attempt is still in flight.
+        """
+        for alert_dict in self.queue.get_due_retries(limit=10):
+            alert_id = alert_dict["alert_id"]
+            if not self.queue.lease_retry(alert_id):
+                continue
+            primary, _, _, _ = self.escalation.resolve_contacts_for_target(alert_dict.get("source_ip") or "")
+            rebuilt = self._rebuild_alert(
+                alert_dict,
+                title=alert_dict["title"],
+                summary=alert_dict["summary"],
+                escalation_level=int(alert_dict.get("escalation_level") or 0),
+            )
+            token = generate_triage_token(alert_id, primary.contact_id, ttl_seconds=900)
+            triage_url = f"{self.base_console_url}/#triage?token={token}&aid={alert_id}"
+            if await self._cascade_dispatch(rebuilt, primary, triage_url):
+                self.queue.mark_dispatched(alert_id, "DELIVERED")
+            else:
+                self.queue.mark_retry(alert_id, "All dispatch channels unconfigured or failed")
+
     async def process_escalations(self):
-        """Scans unacknowledged alerts and advances escalation levels if timers have elapsed."""
+        """Pages the escalation contact on a configured channel once the timer elapses.
+
+        The level is stored only after a channel accepts the page. Recording
+        the level first made a failed SMS look escalated and blocked a retry
+        of that same level. Teams that page through Telegram, WhatsApp, or a
+        webhook never reached the lead, because escalation tried SMS only.
+        """
+        now = time.time()
         unacknowledged = self.queue.get_unacknowledged_alerts()
         for alert_dict in unacknowledged:
             needs_esc, new_level, contact = self.escalation.check_escalation_needed(alert_dict)
-            if needs_esc and contact:
-                alert_id = alert_dict["alert_id"]
-                # Advance level in DB
-                with self.queue._get_conn() as conn:
-                    conn.execute("UPDATE critical_alerts SET escalation_level = ? WHERE alert_id = ?", (new_level, alert_id))
+            if not (needs_esc and contact):
+                continue
+            alert_id = alert_dict["alert_id"]
+            last_attempt = self._escalation_attempts.get(alert_id, 0.0)
+            if now - last_attempt < 60:
+                continue
 
-                # Reconstruct minimal alert model
-                rebuilt_alert = CriticalAlert(
-                    alert_id=alert_id,
-                    fingerprint=alert_dict["fingerprint"],
-                    title=f"[ESCALATION LEVEL {new_level}] {alert_dict['title']}",
-                    severity=SeverityLevel.CRITICAL,
-                    summary=f"UNACKNOWLEDGED INCIDENT ESCALATED TO LEVEL {new_level}. {alert_dict['summary']}",
-                    source_ip=alert_dict["source_ip"],
-                    created_at=alert_dict["created_at"],
-                    escalation_level=new_level,
-                    metadata=alert_dict.get("metadata", {})
+            rebuilt_alert = self._rebuild_alert(
+                alert_dict,
+                title=f"[ESCALATION LEVEL {new_level}] {alert_dict['title']}",
+                summary=f"UNACKNOWLEDGED INCIDENT ESCALATED TO LEVEL {new_level}. {alert_dict['summary']}",
+                escalation_level=new_level,
+            )
+            token = generate_triage_token(alert_id, contact.contact_id, ttl_seconds=900)
+            triage_url = f"{self.base_console_url}/#triage?token={token}&aid={alert_id}"
+
+            self._escalation_attempts[alert_id] = now
+            if not await self._cascade_dispatch(rebuilt_alert, contact, triage_url):
+                continue
+
+            with self.queue._get_conn() as conn:
+                conn.execute(
+                    "UPDATE critical_alerts SET escalation_level = ? WHERE alert_id = ? AND acknowledged = 0",
+                    (new_level, alert_id),
                 )
-
-                token = generate_triage_token(alert_id, contact.contact_id, ttl_seconds=900)
-                triage_url = f"{self.base_console_url}/#triage?token={token}&aid={alert_id}"
-
-                # Escalate via SMS directly to team lead / incident commander
-                res = await self.adapter_sms.send(rebuilt_alert, contact, triage_url)
-                self.queue.record_dispatch_audit(alert_id, res)
+            self._escalation_attempts.pop(alert_id, None)
 
     def acknowledge_alert(self, alert_id: str, acknowledged_by: str) -> bool:
         """Acknowledges an alert, halting all active escalation timers."""

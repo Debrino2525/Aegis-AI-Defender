@@ -2,22 +2,26 @@
 Unit & Integration Tests for Aegis AI Critical Alert Routing Engine.
 """
 
+import asyncio
 import sys
 import time
 import tempfile
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from aegis.alerting.models import (
-    CriticalAlert, SeverityLevel, DoDZTPillar, OnCallContact, AssetOwnerMapping
+    CriticalAlert, SeverityLevel, DoDZTPillar, OnCallContact, AssetOwnerMapping,
+    DispatchResult, ChannelType,
 )
 from aegis.alerting.classifier import AlertClassifier
 from aegis.alerting.dedup import FlapDamper
 from aegis.alerting.queue import AlertQueue
 from aegis.alerting.escalation import EscalationManager
+from aegis.alerting.router import AlertRouter
+from aegis.alerting.adapters.sms_local import LocalSMSAdapter
 from aegis.alerting.security import generate_triage_token, verify_triage_token, sanitize_for_public_channel
 
 
@@ -232,6 +236,165 @@ def test_longest_prefix_beats_default_route_order():
     print("[+] test_longest_prefix_beats_default_route_order: PASSED")
 
 
+class _RecordingAdapter:
+    def __init__(self, success: bool, channel: ChannelType):
+        self.success = success
+        self.channel = channel
+        self.calls = []
+
+    async def send(self, alert, contact, triage_url):
+        self.calls.append({
+            "alert_id": alert.alert_id,
+            "contact_id": contact.contact_id,
+            "title": alert.title,
+        })
+        return DispatchResult(
+            channel=self.channel,
+            success=self.success,
+            recipient=contact.contact_id or contact.phone or "unknown",
+        )
+
+
+def _router(queue: AlertQueue):
+    router = AlertRouter(queue=queue)
+    router.adapter_webhook = _RecordingAdapter(True, ChannelType.TELEGRAM)
+    router.adapter_sms = _RecordingAdapter(False, ChannelType.SMS_LOCAL)
+    router.adapter_modem = _RecordingAdapter(False, ChannelType.MODEM_OOB)
+    return router
+
+
+def _aged_alert(alert_id: str, minutes_old: int) -> CriticalAlert:
+    created = (datetime.now(timezone.utc) - timedelta(minutes=minutes_old)).isoformat()
+    return CriticalAlert(
+        alert_id=alert_id,
+        fingerprint=f"FP-{alert_id}",
+        title="C2 Beaconing",
+        severity=SeverityLevel.CRITICAL,
+        summary="Regular beacon to an external host",
+        source_ip="192.168.1.50",
+        created_at=created,
+    )
+
+
+def test_escalation_pages_the_channel_that_is_actually_configured():
+    """Dead-man escalation must use the same cascade as the original page.
+
+    Escalation previously sent SMS only and committed the new level before
+    the send. A Telegram-only team then showed 'Level 1 Escalated' while the
+    lead was never notified, and the failed level was not retried.
+    """
+    async def scenario():
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
+            queue = AlertQueue(Path(tmpdir) / "queue.sqlite3")
+            router = _router(queue)
+            webhook = router.adapter_webhook
+
+            delivered = _aged_alert("CALT-ESC-OK", minutes_old=6)
+            assert queue.enqueue_alert(delivered) is True
+            queue.mark_dispatched(delivered.alert_id, "DELIVERED")
+
+            await router.process_escalations()
+            row = queue.get_alert(delivered.alert_id)
+            assert row["escalation_level"] == 1
+            assert len(webhook.calls) == 1
+            assert webhook.calls[0]["contact_id"] == "ONCALL-LEAD"
+            assert webhook.calls[0]["title"].startswith("[ESCALATION LEVEL 1]")
+            assert router.adapter_sms.calls == []
+
+            webhook.success = False
+            failed = _aged_alert("CALT-ESC-FAIL", minutes_old=6)
+            assert queue.enqueue_alert(failed) is True
+            queue.mark_dispatched(failed.alert_id, "DELIVERED")
+
+            await router.process_escalations()
+            assert queue.get_alert(failed.alert_id)["escalation_level"] == 0
+            assert len(webhook.calls) == 2
+            assert len(router.adapter_sms.calls) == 1
+            assert len(router.adapter_modem.calls) == 1
+
+            await router.process_escalations()
+            assert len(webhook.calls) == 2
+            assert queue.get_alert(failed.alert_id)["escalation_level"] == 0
+
+    asyncio.run(scenario())
+    print("[+] test_escalation_pages_the_channel_that_is_actually_configured: PASSED")
+
+
+def test_failed_dispatch_is_retried_after_backoff():
+    """A transient channel failure must be sent again once next_retry_at elapses.
+
+    mark_retry stored DISPATCHING plus a backoff, but nothing read those rows,
+    so the on-call was never paged after the first outage.
+    """
+    async def scenario():
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
+            queue = AlertQueue(Path(tmpdir) / "queue.sqlite3")
+            router = _router(queue)
+            webhook = router.adapter_webhook
+            webhook.success = True
+
+            waiting = _aged_alert("CALT-RETRY-WAIT", minutes_old=1)
+            assert queue.enqueue_alert(waiting) is True
+            queue.mark_retry(waiting.alert_id, "telegram timeout")
+            await router.process_due_retries()
+            assert webhook.calls == []
+            assert queue.get_alert(waiting.alert_id)["status"] == "DISPATCHING"
+
+            with queue._get_conn() as conn:
+                conn.execute(
+                    "UPDATE critical_alerts SET next_retry_at = 0 WHERE alert_id = ?",
+                    (waiting.alert_id,),
+                )
+            await router.process_due_retries()
+            assert len(webhook.calls) == 1
+            assert webhook.calls[0]["contact_id"] == "ONCALL-PRIMARY"
+            assert queue.get_alert(waiting.alert_id)["status"] == "DELIVERED"
+
+            webhook.success = False
+            exhausted = _aged_alert("CALT-RETRY-FAIL", minutes_old=1)
+            assert queue.enqueue_alert(exhausted) is True
+            queue.mark_retry(exhausted.alert_id, "telegram timeout")
+            with queue._get_conn() as conn:
+                conn.execute(
+                    "UPDATE critical_alerts SET next_retry_at = 0 WHERE alert_id = ?",
+                    (exhausted.alert_id,),
+                )
+            await router.process_due_retries()
+            failed_row = queue.get_alert(exhausted.alert_id)
+            assert failed_row["status"] == "DISPATCHING"
+            assert failed_row["retry_count"] == 2
+            calls_after_failure = len(webhook.calls)
+            await router.process_due_retries()
+            assert len(webhook.calls) == calls_after_failure
+
+    asyncio.run(scenario())
+    print("[+] test_failed_dispatch_is_retried_after_backoff: PASSED")
+
+
+def test_partial_hubtel_config_does_not_crash_sms():
+    """HUBTEL_CLIENT_ID without a secret must return a failed result, not NameError."""
+    async def scenario():
+        adapter = LocalSMSAdapter()
+        adapter.arkesel_api_key = ""
+        adapter.hubtel_client_id = "client-only"
+        adapter.hubtel_client_secret = ""
+        alert = CriticalAlert(
+            alert_id="CALT-SMS",
+            fingerprint="FP-SMS",
+            title="Gateway check",
+            severity=SeverityLevel.CRITICAL,
+            summary="incomplete hubtel config",
+            source_ip="10.0.0.8",
+        )
+        contact = OnCallContact(contact_id="ONCALL-PRIMARY", name="Primary", phone="+233244000001")
+        result = await adapter.send(alert, contact, "https://console.example/triage")
+        assert result.success is False
+        assert "HUBTEL_CLIENT_SECRET" in (result.error or "")
+
+    asyncio.run(scenario())
+    print("[+] test_partial_hubtel_config_does_not_crash_sms: PASSED")
+
+
 if __name__ == "__main__":
     test_classifier_behavioral()
     test_classifier_scan_finding()
@@ -240,4 +403,7 @@ if __name__ == "__main__":
     test_security_tokens()
     test_escalation_manager()
     test_longest_prefix_beats_default_route_order()
+    test_escalation_pages_the_channel_that_is_actually_configured()
+    test_failed_dispatch_is_retried_after_backoff()
+    test_partial_hubtel_config_does_not_crash_sms()
     print("\n[=== ALL CRITICAL ALERT ROUTING TESTS PASSED ===]")

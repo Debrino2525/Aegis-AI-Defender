@@ -57,6 +57,13 @@ class LocalSMSAdapter(BaseAlertAdapter):
                 latency_ms=round(latency, 2)
             )
 
+        # Set before either gateway runs. A Hubtel client id with no secret
+        # (and no Arkesel key) used to fall through to an unbound err_msg and
+        # raise NameError, aborting the rest of the paging cascade.
+        err_msg = "SMS gateway configuration is incomplete"
+        if self.hubtel_client_id and not self.hubtel_client_secret and not self.arkesel_api_key:
+            err_msg = "HUBTEL_CLIENT_ID is set but HUBTEL_CLIENT_SECRET is missing"
+
         # Try Arkesel first
         if self.arkesel_api_key:
             try:

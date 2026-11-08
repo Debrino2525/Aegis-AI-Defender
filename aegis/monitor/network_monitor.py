@@ -67,8 +67,11 @@ class NetworkMonitor:
         self.alerts: List[Dict[str, Any]] = []
         self.seen_alert_keys: Set[str] = set()
 
-        # Connection history: {(src_ip, dst_ip, dst_port): [timestamps]}
+        # Connection history: {(src_ip, dst_ip, dst_port): [timestamps of new flows]}
         self.conn_history: Dict[Tuple, List[float]] = defaultdict(list)
+        # Flows present on the previous sample. A socket that stays open is not a new flow.
+        self._active_conn_keys: Set[Tuple] = set()
+        self._alert_seq = 0
 
         # Per-source scan tracking: {src_ip: {dst_port: last_seen}}
         self.scan_tracker: Dict[str, Dict[int, float]] = defaultdict(dict)
@@ -161,8 +164,10 @@ class NetworkMonitor:
         # Track per-source stats for this sample
         src_port_map: Dict[str, Set[int]] = defaultdict(set)
         src_dst_map: Dict[str, Set[str]] = defaultdict(set)
-        src_smb: Dict[str, int] = defaultdict(int)
+        src_smb_hosts: Dict[str, Set[str]] = defaultdict(set)
         src_auth: Dict[str, int] = defaultdict(int)
+        previous_keys = self._active_conn_keys
+        current_keys: Set[Tuple] = set()
 
         for conn in conns:
             if not conn.raddr:
@@ -202,18 +207,18 @@ class NetworkMonitor:
             # Track for scan/lateral movement detection
             src_port_map[laddr].add(rport)
             src_dst_map[laddr].add(rip)
-            if rport == 445:
-                src_smb[laddr] += 1
+            # Lateral movement is many internal hosts, not several sessions to one file server.
+            if rport == 445 and is_private_ip(rip):
+                src_smb_hosts[laddr].add(rip)
             if rport in (22, 3389, 23, 110, 143):
                 src_auth[laddr] += 1
 
-            # Log connection history for beaconing detection
+            # Beaconing counts new flows. Re-sampling a socket that stayed open
+            # is the monitor interval, not a C2 check-in.
             key = (laddr, rip, rport)
-            self.conn_history[key].append(now)
-            # Prune old entries
-            self.conn_history[key] = [
-                t for t in self.conn_history[key] if now - t < self.BEACON_WINDOW
-            ]
+            if key not in current_keys:
+                self._note_new_flow(key, now, key not in previous_keys)
+            current_keys.add(key)
 
             # Immediate checks
             self._check_malicious_port(laddr, rip, rport, proc_name)
@@ -225,6 +230,8 @@ class NetworkMonitor:
             self.stats["total_connections_seen"] += 1
 
         self.current_connections = current_snapshot
+        self._active_conn_keys = current_keys
+        self._prune_conn_history(now)
 
         # Prune old scan data
         for src in list(self.scan_tracker.keys()):
@@ -239,7 +246,7 @@ class NetworkMonitor:
         # Run batch detections
         for src_ip, ports in src_port_map.items():
             self._check_port_scan(src_ip, ports, now)
-            self._check_smb_lateral(src_ip, src_smb.get(src_ip, 0))
+            self._check_smb_lateral(src_ip, len(src_smb_hosts.get(src_ip, ())))
             self._check_auth_bruteforce(src_ip, src_auth.get(src_ip, 0))
             self._check_beaconing(src_ip, src_dst_map.get(src_ip, set()), now)
 
@@ -251,7 +258,7 @@ class NetworkMonitor:
                 "bytes_recv_delta": 0,
                 "unique_ports_count": len(ports),
                 "unique_destinations": len(dest_set),
-                "smb_connections": src_smb.get(src_ip, 0),
+                "smb_connections": len(src_smb_hosts.get(src_ip, ())),
                 "auth_connections": src_auth.get(src_ip, 0),
                 "destinations": list(dest_set),
                 "ports": list(ports),
@@ -267,6 +274,25 @@ class NetworkMonitor:
         })
         # Keep last 360 samples (30 min at 5s intervals)
         self.connection_count_history = self.connection_count_history[-360:]
+
+    def _note_new_flow(self, key: Tuple, now: float, is_new: bool) -> None:
+        """Record a flow the first time it is seen, not on every sample it stays up."""
+        if not is_new:
+            return
+        history = self.conn_history[key]
+        history.append(now)
+        self.conn_history[key] = [t for t in history if now - t < self.BEACON_WINDOW]
+
+    def _prune_conn_history(self, now: float) -> None:
+        stale = []
+        for key, stamps in self.conn_history.items():
+            fresh = [t for t in stamps if now - t < self.BEACON_WINDOW]
+            if fresh:
+                self.conn_history[key] = fresh
+            else:
+                stale.append(key)
+        for key in stale:
+            del self.conn_history[key]
 
     # ── Detection methods ───────────────────────────────────────────────────
     def _check_high_risk_egress(self, src: str, dst: str, port: int, proc: str):
@@ -397,7 +423,7 @@ class NetworkMonitor:
                 dest_ip="multiple internal",
                 dest_port=445,
                 process="",
-                evidence=f"SMB (port 445) connections to {smb_count} unique hosts from {src}",
+                evidence=f"SMB (port 445) connections to {smb_count} unique internal hosts from {src}",
                 tactic="Lateral Movement",
                 technique="T1021.002",
             )
@@ -488,8 +514,9 @@ class NetworkMonitor:
                 if now - existing.get("_timestamp", 0) < 300:
                     return  # Suppress duplicate
 
+        self._alert_seq += 1
         alert = {
-            "id": f"ALT-{len(self.alerts)+1:04d}",
+            "id": f"ALT-{self._alert_seq:04d}",
             "pattern_id": pattern_id,
             "severity": severity,
             "title": title,

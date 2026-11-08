@@ -12,3 +12,5 @@ geoip2>=4.8.0
 cryptography>=42.0.0
 requests>=2.31.0
 boto3>=1.28.0
+numpy>=1.24.0
+scikit-learn>=1.4.0

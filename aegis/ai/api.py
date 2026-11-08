@@ -1,22 +1,45 @@
-"""Advanced AI API routes."""
+"""Advanced AI API routes with Real Machine Learning and LLM Capabilities."""
 
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
 from aegis.ai.unsupervised import UnsupervisedLearning
 from aegis.ai.predictive import PredictiveAnalytics
 from aegis.ai.nlp import NaturalLanguageProcessing
+from aegis.ai.llm.provider import LLMConfig, configure_llm, get_llm_provider
+from aegis.ai.llm.investigator import AIInvestigator
+from aegis.ai.llm.remediation_synthesizer import RemediationSynthesizer
+from aegis.ai.ml.semantic_search import SemanticThreatSearch
 
 router = APIRouter()
 unsupervised = UnsupervisedLearning()
 predictive = PredictiveAnalytics()
 nlp = NaturalLanguageProcessing()
+investigator = AIInvestigator()
+remediation_synthesizer = RemediationSynthesizer()
+semantic_search = SemanticThreatSearch()
 
+
+# ---------------------------------------------------------------------------
+# Pydantic Request Models
+# ---------------------------------------------------------------------------
 
 class TrainRequest(BaseModel):
     data: List[Dict[str, Any]]
     threshold_z: float = 2.5
     window: int = 200
+
+
+class IForestFitRequest(BaseModel):
+    data: List[Dict[str, Any]]
+    contamination: float = 0.05
+    n_estimators: int = 100
+
+
+class IForestScoreRequest(BaseModel):
+    model_id: Optional[str] = None
+    sample: Dict[str, Any]
 
 
 class DetectRequest(BaseModel):
@@ -55,6 +78,11 @@ class QueryRequest(BaseModel):
     query: str
 
 
+class SemanticSearchRequest(BaseModel):
+    query: str
+    top_k: int = 5
+
+
 class ReportRequest(BaseModel):
     data: Dict[str, Any]
     report_type: str = "weekly"
@@ -63,6 +91,79 @@ class ReportRequest(BaseModel):
 class EntityExtractRequest(BaseModel):
     text: str
 
+
+class RemediationRequest(BaseModel):
+    finding: Dict[str, Any]
+
+
+# ---------------------------------------------------------------------------
+# LLM Provider Management Endpoints
+# ---------------------------------------------------------------------------
+
+@router.post("/api/ai/llm/config")
+async def configure_llm_provider(req: LLMConfig):
+    """Configure the LLM backend (Gemini API, Ollama, OpenAI)."""
+    provider = configure_llm(req)
+    return {
+        "status": "configured",
+        "provider": provider.provider_name,
+        "model": provider.model_name,
+        "available": provider.is_available(),
+    }
+
+
+@router.get("/api/ai/llm/status")
+async def get_llm_status():
+    """Get active LLM provider connectivity status."""
+    provider = get_llm_provider()
+    return {
+        "provider": provider.provider_name,
+        "model": provider.model_name,
+        "available": provider.is_available(),
+    }
+
+
+@router.post("/api/ai/llm/investigate")
+async def investigate_incident_llm(req: IncidentRequest):
+    """Perform a deep forensic incident investigation using the active LLM."""
+    return await investigator.ainvestigate(req.incident)
+
+
+@router.post("/api/ai/llm/synthesize-remediation")
+async def synthesize_remediation_llm(req: RemediationRequest):
+    """Generate OS-specific PowerShell & Bash remediation scripts using the LLM."""
+    return await remediation_synthesizer.asynthesize(req.finding)
+
+
+# ---------------------------------------------------------------------------
+# Real Machine Learning Endpoints (Isolation Forest & Semantic Search)
+# ---------------------------------------------------------------------------
+
+@router.post("/api/ai/ml/isolation-forest/fit")
+async def fit_isolation_forest(req: IForestFitRequest):
+    """Fit a real scikit-learn Isolation Forest on network observations."""
+    model_id = unsupervised.train_isolation_forest(
+        req.data, contamination=req.contamination, n_estimators=req.n_estimators
+    )
+    return {"model_id": model_id, "algorithm": "IsolationForest", "samples": len(req.data)}
+
+
+@router.post("/api/ai/ml/isolation-forest/score")
+async def score_isolation_forest(req: IForestScoreRequest):
+    """Score a network observation using the trained Isolation Forest."""
+    return unsupervised.score_isolation_forest(req.model_id or "default", req.sample)
+
+
+@router.post("/api/ai/ml/semantic-search")
+async def semantic_threat_search(req: SemanticSearchRequest):
+    """Semantic vector search across CVEs, KEVs, and ATT&CK techniques."""
+    results = semantic_search.search(req.query, top_k=req.top_k)
+    return {"query": req.query, "count": len(results), "results": results}
+
+
+# ---------------------------------------------------------------------------
+# Statistical & Unsupervised Learning Endpoints
+# ---------------------------------------------------------------------------
 
 @router.post("/api/ai/unsupervised/train")
 async def train_anomaly_detector(req: TrainRequest):
@@ -103,6 +204,10 @@ async def aggregate_federated(req: FederatedRequest):
     return unsupervised.federated_learning(req.client_data)
 
 
+# ---------------------------------------------------------------------------
+# Predictive Analytics Endpoints
+# ---------------------------------------------------------------------------
+
 @router.post("/api/ai/predict/next-attack")
 async def predict_next_attack(req: IncidentRequest):
     return predictive.predict_next_attack(req.incident)
@@ -123,6 +228,10 @@ async def forecast_vulnerabilities(time_horizon: int = 30):
 async def optimize_resources(req: LoadRequest):
     return predictive.optimize_resources(req.current_load)
 
+
+# ---------------------------------------------------------------------------
+# Natural Language Processing & Reporting Endpoints
+# ---------------------------------------------------------------------------
 
 @router.post("/api/ai/nlp/summarize")
 async def summarize_incident(req: IncidentRequest):

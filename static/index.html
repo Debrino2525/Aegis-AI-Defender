@@ -1547,19 +1547,64 @@ select option:checked, select option:hover {
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div>
       <div class="ph">Cyber AI Engine & Self-Learning System</div>
-      <div class="ps">Unsupervised behavioral baselines, reinforcement learning response policy, ATT&CK predictive chain, and natural language threat hunting.</div>
+      <div class="ps">Enterprise AI Suite: Generative LLM reasoning (Gemini & Ollama), scikit-learn Isolation Forest ML, vector semantic search, and ATT&CK prediction.</div>
+    </div>
+    <div id="ai-provider-badge" style="display:flex;align-items:center;gap:8px;background:var(--surface2);padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:12px;color:var(--text-dim)">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success)" id="ai-status-dot"></span>
+      <span id="ai-active-provider-label">Checking LLM...</span>
     </div>
   </div>
 
-  <!-- NL Threat Hunting Query Bar -->
+  <!-- LLM Provider & Reasoning Config Card -->
   <div class="card" style="margin-bottom:16px">
     <div class="ch">
-      <div class="ct">Natural Language Threat Hunter</div>
-      <span style="font-size:11px;color:var(--text-dim)">Ask questions in plain English across assets, findings, tactics, and logs</span>
+      <div class="ct">Generative AI Provider & Engine Settings</div>
+      <span style="font-size:11px;color:var(--text-dim)">Select cloud (Google Gemini) or completely offline air-gapped (Local Ollama / vLLM)</span>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div class="fl">AI Provider</div>
+          <select id="llm-cfg-provider" class="fsel" onchange="toggleLlmFields()">
+            <option value="auto">Auto-Detect Best Available</option>
+            <option value="gemini">Google Gemini API (Cloud)</option>
+            <option value="ollama">Local Ollama (Air-Gapped / Offline)</option>
+            <option value="openai">OpenAI / Custom Endpoint</option>
+            <option value="fallback">Offline Heuristic Engine</option>
+          </select>
+        </div>
+        <div style="flex:2;min-width:240px" id="llm-field-key">
+          <div class="fl">API Key / Token</div>
+          <input type="password" class="fi" id="llm-cfg-key" placeholder="AIzaSy... (leave blank to use GEMINI_API_KEY from .env)"/>
+        </div>
+        <div style="flex:2;min-width:240px;display:none" id="llm-field-url">
+          <div class="fl">Base URL</div>
+          <input class="fi" id="llm-cfg-url" placeholder="http://localhost:11434"/>
+        </div>
+        <div style="flex:1;min-width:140px">
+          <div class="fl">Model Identifier</div>
+          <input class="fi" id="llm-cfg-model" placeholder="gemini-2.0-flash / llama3.2"/>
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-p btn-sm" onclick="saveLlmConfig()">Apply & Connect</button>
+        </div>
+      </div>
+      <div id="llm-status-message" style="font-size:11.5px;color:var(--text-dim);display:flex;gap:8px;align-items:center">
+        <span>Active Provider: <strong>Connecting...</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NL Threat Hunting & Semantic Vector Search Bar -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <div class="ct">Natural Language Threat Hunter & Semantic Vector Search</div>
+      <span style="font-size:11px;color:var(--text-dim)">Plain-English queries and vector-space search across CVEs, KEVs, and MITRE techniques</span>
     </div>
     <div style="padding:16px;display:flex;gap:10px">
-      <input class="fi" id="ai-nl-query" placeholder="e.g. show critical findings, list open ports on 192.168.1.100, lateral movement alerts, or CVE-2024-21413" style="flex:1" onkeydown="if(event.key==='Enter') runAiQuery()"/>
+      <input class="fi" id="ai-nl-query" placeholder="e.g. show critical findings, remote code execution in web logging framework, or list open ports on 192.168.1.100" style="flex:1" onkeydown="if(event.key==='Enter') runAiQuery()"/>
       <button class="btn btn-p btn-sm" onclick="runAiQuery()">Ask Cyber AI</button>
+      <button class="btn btn-g btn-sm" onclick="runSemanticSearch()">Vector CVE Search</button>
     </div>
     <div id="ai-query-result" style="padding:0 16px 16px 16px;display:none">
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:var(--text)"></div>
@@ -1620,22 +1665,23 @@ select option:checked, select option:hover {
       </div>
     </div>
 
-    <!-- Card 3: Unsupervised Baseline & Federated Aggregation -->
+    <!-- Card 3: Isolation Forest Real Machine Learning & Federated Learning -->
     <div class="card">
       <div class="ch">
-        <div class="ct">Self-Learning Behavioral Baselines</div>
-        <span style="font-size:11px;color:var(--text-dim)">Z-Score 2.5σ Anomaly Detector</span>
+        <div class="ct">Isolation Forest ML & Federated Baselines</div>
+        <span style="font-size:11px;color:var(--text-dim)">scikit-learn 100-Tree Ensemble</span>
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:12px;color:var(--text-dim)">
-          Models learn continuous normal behavior (connections, bytes, ports) per host without manual labeling.
+          Real multi-dimensional machine learning Isolation Forest models socket features (connections, bytes, ports, rates) without labels.
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-g btn-sm" onclick="testLiveAnomaly()">Test Extreme Deviation</button>
-          <button class="btn btn-p btn-sm" onclick="runFederatedAggregation()">Federated Aggregation</button>
+          <button class="btn btn-p btn-sm" onclick="fitIsolationForestML()">Train Isolation Forest</button>
+          <button class="btn btn-g btn-sm" onclick="testLiveAnomaly()">Score Live Deviation</button>
+          <button class="btn btn-sm" onclick="runFederatedAggregation()">Federated Aggregation</button>
         </div>
         <div id="ai-anomaly-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
-          <div style="color:var(--text-dim)">Baselines active across monitored nodes. Tap test deviation or federated aggregation.</div>
+          <div style="color:var(--text-dim)">Machine learning detectors active. Tap 'Train Isolation Forest' or 'Score Live Deviation'.</div>
         </div>
       </div>
     </div>
@@ -1662,19 +1708,21 @@ select option:checked, select option:hover {
     </div>
   </div>
 
-  <!-- Incident Summarization & Executive Report -->
+  <!-- Deep AI Investigation & Remediation Script Synthesizer -->
   <div class="card" style="margin-top:16px">
     <div class="ch">
-      <div class="ct">Cyber AI Narrative Summarizer</div>
-      <span style="font-size:11px;color:var(--text-dim)">Template-driven prose briefings for SOC and C-suite</span>
+      <div class="ct">Deep Forensic AI Investigation & Remediation Synthesizer</div>
+      <span style="font-size:11px;color:var(--text-dim)">Autonomous incident reasoning and OS-specific PowerShell/Bash containment scripts</span>
     </div>
-    <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-      <div style="display:flex;gap:8px">
-        <input class="fi" id="ai-summary-host" placeholder="Target Host (e.g. srv-db-01.corp)" style="flex:1"/>
-        <button class="btn btn-p btn-sm" onclick="generateIncidentSummary()">Generate Prose Narrative</button>
-        <button class="btn btn-g btn-sm" onclick="generateExecutiveBrief()">Generate Full AI Report</button>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input class="fi" id="ai-summary-host" placeholder="Target Host (e.g. srv-finance-db.corp)" style="flex:2;min-width:200px"/>
+        <input class="fi" id="ai-summary-cve" placeholder="Target CVE (e.g. CVE-2024-21413)" style="flex:1;min-width:140px"/>
+        <button class="btn btn-p btn-sm" onclick="runDeepAiInvestigation()">Deep AI Investigation</button>
+        <button class="btn btn-g btn-sm" onclick="synthesizeRemediationScript()">Synthesize Remediation Script</button>
+        <button class="btn btn-sm" onclick="generateExecutiveBrief()">Executive AI Brief</button>
       </div>
-      <div id="ai-narrative-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:12.5px;line-height:1.6;color:var(--text);white-space:pre-wrap;display:none"></div>
+      <div id="ai-narrative-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:12.5px;line-height:1.6;color:var(--text);white-space:pre-wrap;display:none;max-height:450px;overflow-y:auto"></div>
     </div>
   </div>
 </div>
@@ -5761,8 +5809,26 @@ async function viewTrend() {
 
 // ==================== CYBER AI CONTROLLERS ====================
 let currentAiModelId = null;
+let currentIForestId = null;
+
+function toggleLlmFields() {
+  const p = document.getElementById('llm-cfg-provider').value;
+  const kField = document.getElementById('llm-field-key');
+  const uField = document.getElementById('llm-field-url');
+  if (p === 'ollama') {
+    kField.style.display = 'none';
+    uField.style.display = 'block';
+  } else if (p === 'fallback') {
+    kField.style.display = 'none';
+    uField.style.display = 'none';
+  } else {
+    kField.style.display = 'block';
+    uField.style.display = 'none';
+  }
+}
 
 async function loadAiDashboard() {
+  await checkLlmStatus();
   if (!currentAiModelId) {
     try {
       const resp = await fetch('/api/ai/unsupervised/train', {
@@ -5770,10 +5836,10 @@ async function loadAiDashboard() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           data: [
-            {connections: 50, bytes: 1200, ports: 3},
-            {connections: 55, bytes: 1400, ports: 4},
-            {connections: 48, bytes: 1100, ports: 3},
-            {connections: 52, bytes: 1350, ports: 3}
+            {connections: 50, bytes: 1200, ports: 3, rate: 5.0, foreign_ratio: 0.1},
+            {connections: 55, bytes: 1400, ports: 4, rate: 5.5, foreign_ratio: 0.1},
+            {connections: 48, bytes: 1100, ports: 3, rate: 4.8, foreign_ratio: 0.05},
+            {connections: 52, bytes: 1350, ports: 3, rate: 5.1, foreign_ratio: 0.08}
           ]
         })
       });
@@ -5782,6 +5848,181 @@ async function loadAiDashboard() {
     } catch(e) {
       console.error('AI Init Error:', e);
     }
+  }
+}
+
+async function checkLlmStatus() {
+  try {
+    const resp = await fetch('/api/ai/llm/status');
+    const data = await resp.json();
+    const dot = document.getElementById('ai-status-dot');
+    const label = document.getElementById('ai-active-provider-label');
+    const msg = document.getElementById('llm-status-message');
+    if (data.available) {
+      dot.style.background = 'var(--success)';
+      label.innerText = `${data.provider} (${data.model})`;
+      msg.innerHTML = `<span>Active Provider: <strong style="color:var(--success)">${data.provider}</strong> | Model: <strong>${data.model}</strong></span>`;
+    } else {
+      dot.style.background = 'var(--warning)';
+      label.innerText = 'Fallback Engine';
+      msg.innerHTML = `<span>Active Provider: <strong style="color:var(--warning)">${data.provider}</strong> (Configure API key for live LLM)</span>`;
+    }
+  } catch(e) {
+    console.error('LLM status error:', e);
+  }
+}
+
+async function saveLlmConfig() {
+  const provider = document.getElementById('llm-cfg-provider').value;
+  const apiKey = document.getElementById('llm-cfg-key').value.trim() || null;
+  const baseUrl = document.getElementById('llm-cfg-url').value.trim() || null;
+  const modelName = document.getElementById('llm-cfg-model').value.trim() || null;
+  try {
+    const resp = await fetch('/api/ai/llm/config', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        provider: provider,
+        api_key: apiKey,
+        base_url: baseUrl,
+        model_name: modelName
+      })
+    });
+    const data = await resp.json();
+    toast(`AI Engine updated: ${data.provider}`, 'success');
+    await checkLlmStatus();
+  } catch(e) {
+    console.error(e);
+    toast('Failed to update LLM configuration', 'error');
+  }
+}
+
+async function runDeepAiInvestigation() {
+  const host = document.getElementById('ai-summary-host').value.trim() || 'db-primary.corp';
+  const cve = document.getElementById('ai-summary-cve').value.trim() || 'CVE-2024-21413';
+  toast('Cyber AI performing deep forensic investigation...', 'info');
+  try {
+    const resp = await fetch('/api/ai/llm/investigate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        incident: {
+          id: 'INC-' + Math.floor(1000 + Math.random() * 9000),
+          host: host,
+          severity: 'critical',
+          tactics: ['Credential Access', 'Lateral Movement'],
+          cves: [cve],
+          cvss_score: 9.8,
+          alert_count: 14,
+          status: 'active-containment'
+        }
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-narrative-result');
+    resDiv.style.display = 'block';
+    resDiv.innerText = data.investigation_markdown;
+    toast(`Investigation generated via ${data.provider}`, 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Deep AI investigation failed', 'error');
+  }
+}
+
+async function synthesizeRemediationScript() {
+  const host = document.getElementById('ai-summary-host').value.trim() || 'srv-finance-db.corp';
+  const cve = document.getElementById('ai-summary-cve').value.trim() || 'CVE-2024-21413';
+  toast('Synthesizing OS containment & patch scripts...', 'info');
+  try {
+    const resp = await fetch('/api/ai/llm/synthesize-remediation', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        finding: {
+          target: host,
+          cve: cve,
+          severity: 'critical',
+          vulnerability: 'Remote Code Execution and Lateral Movement'
+        }
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-narrative-result');
+    resDiv.style.display = 'block';
+    resDiv.innerText = data.remediation_markdown;
+    toast(`Remediation scripts synthesized via ${data.provider}`, 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Script synthesis failed', 'error');
+  }
+}
+
+async function fitIsolationForestML() {
+  toast('Fitting scikit-learn Isolation Forest ensemble...', 'info');
+  try {
+    const records = [];
+    for (let i = 0; i < 60; i++) {
+      records.push({
+        connections: 40 + i * 0.5,
+        bytes: 1000 + i * 20,
+        ports: 2 + (i % 4),
+        rate: 5.0 + i * 0.1,
+        foreign_ratio: 0.05 + (i % 5) * 0.01
+      });
+    }
+    const resp = await fetch('/api/ai/ml/isolation-forest/fit', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({data: records, n_estimators: 100, contamination: 0.05})
+    });
+    const data = await resp.json();
+    currentIForestId = data.model_id;
+    const resDiv = document.getElementById('ai-anomaly-result');
+    resDiv.innerHTML = `
+      <div style="font-weight:600;color:var(--success);margin-bottom:6px">&#10004; scikit-learn IsolationForest Trained</div>
+      <div style="font-size:12px;color:var(--text)">Model ID: <strong>${data.model_id}</strong> | Samples: <strong>${data.samples}</strong> | Ensemble: <strong>100 Trees</strong></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Ready to score multi-dimensional socket anomalies.</div>
+    `;
+    toast('Isolation Forest ML fitted', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to train Isolation Forest', 'error');
+  }
+}
+
+async function runSemanticSearch() {
+  const q = document.getElementById('ai-nl-query').value.trim();
+  if (!q) {
+    toast('Please enter search terms in query bar', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/ai/ml/semantic-search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: q, top_k: 4})
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-query-result');
+    resDiv.style.display = 'block';
+    
+    let html = `<div style="font-weight:600;color:var(--accent);margin-bottom:8px">&#128065; Vector Cosine Search Results (${data.count} matched):</div>`;
+    data.results.forEach(r => {
+      html += `
+        <div style="margin-bottom:8px;padding:8px;background:rgba(255,255,255,.04);border-radius:4px;border-left:3px solid var(--accent)">
+          <div style="display:flex;justify-content:space-between">
+            <strong>${r.id} - ${r.title}</strong>
+            <span style="color:var(--accent)">Similarity: ${(r.similarity_score * 100).toFixed(1)}%</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-dim);margin-top:4px">${r.description}</div>
+        </div>
+      `;
+    });
+    resDiv.firstElementChild.innerHTML = html;
+    toast('Vector semantic search completed', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Semantic search failed', 'error');
   }
 }
 
@@ -5881,31 +6122,27 @@ async function forecastVulnerabilities() {
 
 async function testLiveAnomaly() {
   await loadAiDashboard();
-  if (!currentAiModelId) {
-    toast('Anomaly model not ready yet', 'error');
-    return;
-  }
   try {
-    const resp = await fetch('/api/ai/unsupervised/detail', {
+    const resp = await fetch('/api/ai/ml/isolation-forest/score', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model_id: currentAiModelId,
-        sample: {connections: 450, bytes: 9500000, ports: 80}
+        model_id: currentIForestId || 'default',
+        sample: {connections: 45000, bytes: 95000000, ports: 8000, rate: 8500, foreign_ratio: 0.95}
       })
     });
     const data = await resp.json();
     const resDiv = document.getElementById('ai-anomaly-result');
     resDiv.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-weight:600;color:${data.anomalous ? 'var(--danger)' : 'var(--success)'}">
-          ${data.anomalous ? '&#9888; Anomaly Detected (> ' + data.threshold_z + '&sigma;)' : '&#10004; Normal Behavior'}
+        <span style="font-weight:600;color:${data.is_anomaly ? 'var(--danger)' : 'var(--success)'}">
+          ${data.is_anomaly ? '&#9888; Outlier Detected by Isolation Forest' : '&#10004; Normal Behavior'}
         </span>
-        <span style="font-size:11px;color:var(--text-dim)">Top Feature: ${data.top_feature || 'N/A'}</span>
+        <span style="font-size:11px;color:var(--text-dim)">Anomaly Prob: ${(data.anomaly_probability * 100).toFixed(1)}%</span>
       </div>
-      <div style="font-size:11px;color:var(--text-dim)">Z-Scores: ${JSON.stringify(data.z_scores)}</div>
+      <div style="font-size:11px;color:var(--text-dim)">Algorithm: <strong>${data.algorithm}</strong> | Decision Score: ${data.decision_score}</div>
     `;
-    toast('Deviation scored', 'success');
+    toast('ML Isolation Forest scored', 'success');
   } catch(e) {
     console.error(e);
     toast('Anomaly detection test failed', 'error');
@@ -5984,36 +6221,6 @@ async function sendRlFeedback(action, reward) {
     evaluateRlAction();
   } catch(e) {
     console.error(e);
-  }
-}
-
-async function generateIncidentSummary() {
-  const host = document.getElementById('ai-summary-host').value.trim() || 'db-primary.corp';
-  try {
-    const resp = await fetch('/api/ai/nlp/summarize', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        incident: {
-          id: 'INC-' + Math.floor(1000 + Math.random() * 9000),
-          host: host,
-          severity: 'critical',
-          tactics: ['Credential Access', 'Lateral Movement'],
-          cves: ['CVE-2024-21413'],
-          cvss_score: 9.8,
-          alert_count: 12,
-          status: 'investigating'
-        }
-      })
-    });
-    const data = await resp.json();
-    const resDiv = document.getElementById('ai-narrative-result');
-    resDiv.style.display = 'block';
-    resDiv.innerText = data.summary;
-    toast('Narrative generated', 'success');
-  } catch(e) {
-    console.error(e);
-    toast('Failed to generate summary', 'error');
   }
 }
 

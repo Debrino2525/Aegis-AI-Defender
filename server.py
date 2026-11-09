@@ -772,10 +772,6 @@ async def ws_monitor(websocket: WebSocket):
         while True:
             state = monitor.get_state()
             state["incidents"] = analyst.analyze(monitor.alerts)
-            # Strip internal fields before sending
-            for alert in state.get("alerts", []):
-                alert.pop("_timestamp", None)
-                alert.pop("_dedup_key", None)
             await websocket.send_json(state)
             await asyncio.sleep(2)
     except WebSocketDisconnect:

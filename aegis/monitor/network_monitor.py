@@ -765,12 +765,18 @@ class NetworkMonitor:
             else:
                 self.graph_nodes.pop(k, None)
 
+        # Shallow public copies. Stripping _dedup_key/_timestamp on the stored
+        # dicts disables suppression and re-pages the same condition every sample.
+        public_alerts = []
+        for alert in reversed(self.alerts[-100:]):
+            public_alerts.append({k: v for k, v in alert.items() if not str(k).startswith("_")})
+
         return {
             "running": self.running,
             "started_at": self.started_at,
             "uptime_seconds": self.stats["uptime_seconds"],
             "stats": self.stats,
-            "alerts": list(reversed(self.alerts[-100:])),
+            "alerts": public_alerts,
             "connections": self.current_connections[:200],
             "monitored_targets": list(self.watched_targets.values()),
             "graph": {

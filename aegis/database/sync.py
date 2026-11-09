@@ -362,6 +362,18 @@ class ThreatFeedSync:
         console.print(f"[green][+] ThreatFox sync stored {count} indicators.[/green]")
         return count
 
+    def clear_api_snapshots(self) -> None:
+        """Forget stored ThreatFox, AbuseIPDB, OTX, and VirusTotal counts."""
+        from aegis.intel.abuseipdb import clear_snapshot as clear_abuseipdb
+        from aegis.intel.otx import clear_snapshot as clear_otx
+        from aegis.intel.threatfox import clear_snapshot as clear_threatfox
+        from aegis.intel.virustotal import clear_snapshot as clear_virustotal
+
+        clear_threatfox(self.db)
+        clear_abuseipdb(self.db)
+        clear_otx(self.db)
+        clear_virustotal(self.db)
+
     async def sync_all(self) -> Dict[str, int]:
         """Runs multi-source feed synchronization."""
         kev_count = await self.sync_cisa_kev()

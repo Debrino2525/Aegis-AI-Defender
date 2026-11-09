@@ -53,8 +53,45 @@ def test_console_does_not_ship_known_fakes():
         "Drop Traffic",
         "Saturday Oct 24",
         "record_count||0",
+        "Lookups are not implemented",
+        "pre-populated with Darktrace",
+        'alt="Globitech Ghana"',
     ):
         assert needle not in html
+    assert 'alt="Globitech"' in html
+    assert "Not Wired" in html
+    sync_src = (ROOT / "aegis" / "database" / "sync.py").read_text(encoding="utf-8")
+    assert "1250" not in sync_src
+    assert '"record_count": 1250' not in sync_src
+
+
+def test_intel_tiles_use_real_counts_or_not_wired():
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    assert "unwired?'Not Wired'" in html.replace(" ", "") or "unwired?'Not Wired'" in html
+    assert "f.record_count==null? '0'" in html or "f.record_count==null?'0'" in html
+    assert "1250" not in html
+
+
+def test_reset_clears_stored_intel_counts(tmp_path, monkeypatch):
+    monkeypatch.setenv("THREATFOX_AUTH_KEY", "test-auth-key")
+    db = VulnerabilityDatabase(tmp_path / "vdb.sqlite3")
+    from aegis.intel.threatfox import replace_snapshot, snapshot
+
+    replace_snapshot(
+        db,
+        [{"id": "1", "ioc": "1.2.3.4", "ioc_type": "ip:port"}],
+        "ok",
+        1,
+    )
+    assert snapshot(db)["ioc_count"] == 1
+    syncer = ThreatFeedSync(db)
+    before = {item["id"]: item for item in syncer.get_feeds_status()}
+    assert before["threatfox"]["record_count"] == 1
+    syncer.clear_api_snapshots()
+    assert snapshot(db) is None
+    feeds = {item["id"]: item for item in syncer.get_feeds_status()}
+    assert feeds["threatfox"]["record_count"] is None
+    assert feeds["threatfox"]["status"] == "CONFIGURED"
 
 
 def test_simulated_alert_is_refused(client):

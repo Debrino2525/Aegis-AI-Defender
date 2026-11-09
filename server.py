@@ -205,11 +205,27 @@ from aegis.investigate.api import router as investigate_router, bind_sources as 
 from aegis.investigate.device import DeviceSources
 from aegis.response.api import router as response_router, bind_context as bind_response_context
 from aegis.response.engine import ResponseError, get_response_engine
+from aegis.integrations.api import router as integrations_router
+from aegis.ingest.api import router as telemetry_router
+from aegis.visibility.api import router as visibility_router
+from aegis.hunting.api import router as hunting_router
+from aegis.custom.api import router as custom_router
+from aegis.reporting.api import router as reporting_router
+from aegis.api.api import router as api_extensibility_router
+from aegis.ai.api import router as ai_router
 
 app.include_router(fleet_router)
 app.include_router(assets_router)
 app.include_router(investigate_router)
 app.include_router(response_router)
+app.include_router(integrations_router)
+app.include_router(telemetry_router)
+app.include_router(visibility_router)
+app.include_router(hunting_router)
+app.include_router(custom_router)
+app.include_router(reporting_router)
+app.include_router(api_extensibility_router)
+app.include_router(ai_router)
 install_peer_cert_hook()
 
 
@@ -540,16 +556,12 @@ async def delete_scan(scan_id: str):
 # ── REST: reset platform to pristine clean state ────────────────────────────
 @app.post("/api/reset")
 async def reset_platform():
-    """Resets all scan data, findings, monitor alerts, and watchlist to clean state."""
+    """Resets scans, monitor view, and API intel snapshots. Does not invent telemetry."""
     scans.clear()
-    monitor.alerts.clear()
-    monitor.seen_alert_keys.clear()
-    monitor.watched_targets.clear()
-    monitor.conn_history.clear()
-    monitor.scan_tracker.clear()
-    monitor.stats["alerts_generated"] = 0
+    monitor.reset_operator_view()
     analyst.clear()
     get_history_store().clear_operator_history()
+    ThreatFeedSync(VulnerabilityDatabase()).clear_api_snapshots()
     return {"ok": True, "message": "Platform reset to clean state"}
 
 

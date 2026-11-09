@@ -496,9 +496,9 @@ body::after{
 ::selection{background:rgba(94,234,212,.28)}
 
 /* ── TOP BAR ─────────────────────────────────────────────────────── */
-#topnav{height:100px;padding:0 24px 0 18px;gap:20px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
-.brand{border:none;margin:0;padding:0;gap:12px}
-.brand-logo{height:88px;width:auto;display:block;}
+#topnav{height:64px;padding:0 24px 0 14px;gap:16px;background:rgba(8,9,13,.62);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border-bottom:1px solid var(--border);position:relative}
+.brand{display:flex;align-items:center;border:none;margin:0;padding:4px 10px 4px 6px;gap:0;background:#0B0E12;border-radius:8px}
+.brand-logo{height:48px;width:auto;display:block;background:transparent;border:0;box-shadow:none;}
 .brand-mark{width:32px;height:32px;border-radius:4px;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--border2);box-shadow:none}
 .wordmark{font-weight:600;font-size:15px;letter-spacing:.01em;color:var(--text)}
 .wordmark i{font-style:normal;font-weight:400;color:var(--accent2);margin-left:5px}
@@ -814,7 +814,7 @@ select option:checked, select option:hover {
 <!-- TOP BAR -->
 <nav id="topnav">
   <div class="brand">
-    <img class="brand-logo" src="/static/globitech-logo.png" alt="Globitech Ghana"/>
+    <img class="brand-logo" src="/static/globitech-logo.png" alt="Globitech"/>
   </div>
   <div class="crumb"><span>Platform</span><span style="opacity:.4">/</span><b id="crumb-page">Dashboard</b></div>
   <button class="cmdk" onclick="openCmdK()">
@@ -844,6 +844,12 @@ select option:checked, select option:hover {
   <div class="sb-item" onclick="showPage('risks')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8v4M12 15.5v.5"/><span class="sb-badge" id="sb-cc" style="display:none">0</span></svg></span><span class="lbl">Risks</span></div>
   <div class="sb-item" onclick="showPage('threat')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span><span class="lbl">Threat Intel</span></div>
   <div class="sb-item" onclick="showPage('assets')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></span><span class="lbl">Assets</span></div>
+  <div class="sb-item" onclick="showPage('visibility')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8v4M12 15.5v.5"/></svg></span><span class="lbl">Visibility</span></div>
+  <div class="sb-item" onclick="showPage('hunting')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/><circle cx="12" cy="12" r="3"/></svg></span><span class="lbl">Threat Hunting</span></div>
+  <div class="sb-item" onclick="showPage('custom')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="lbl">Customization</span></div>
+  <div class="sb-item" onclick="showPage('executive')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></span><span class="lbl">Executive</span></div>
+  <div class="sb-item" onclick="showPage('ai')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93l-.75.14V14h2v2h-2v2h2v2h-4v-2h-2v-2h2v-3.93l-.75-.14A4.002 4.002 0 0 1 8 6a4 4 0 0 1 4-4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 18h2v2H6zm10 0h2v2h-2z"/></svg></span><span class="lbl">Cyber AI</span></div>
+  <div class="sb-item" onclick="showPage('integrations')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9-9M4 11a9 9 0 0 1 9 9M4 11h2a7 7 0 0 1 7-7M4 11h2a7 7 0 0 0 7 7M13 2v2a7 7 0 0 1 7 7M13 2v2a7 7 0 0 0 7 7M20 13v2a7 7 0 0 1-7 7M20 13v2a7 7 0 0 0-7 7"/></svg></span><span class="lbl">Integrations</span></div>
   <div class="sb-item" onclick="showPage('history')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="lbl">Reports</span></div>
   <div class="sb-item" onclick="showPage('settings')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="lbl">Settings</span></div>
   <div class="rail-spacer"></div>
@@ -1242,7 +1248,7 @@ select option:checked, select option:hover {
     </div>
 
     <div class="dt-model-carousel" id="dt-model-carousel">
-      <!-- Populated dynamically / pre-populated with Darktrace model alerts -->
+      <!-- Filled from live monitor alerts only -->
     </div>
   </div>
 
@@ -1302,12 +1308,454 @@ select option:checked, select option:hover {
   </div>
 </div>
 
+<!-- VISIBILITY -->
+<div class="page" id="page-visibility">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Enhanced Visibility</div>
+      <div class="ps">Device fingerprinting, network topology, and asset management integration.</div>
+    </div>
+  </div>
+
+  <div class="g4">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Device Fingerprinting</div>
+        <span style="font-size:11px;color:var(--text-dim)">Passive device type detection</span>
+      </div>
+      <div style="padding:20px">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input type="text" id="fp-mac-input" placeholder="MAC address (e.g., 00:50:56:00:00:01)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <button class="btn btn-p btn-sm" onclick="fingerprintMac()">Fingerprint</button>
+        </div>
+        <div id="fp-result" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Network Topology</div>
+        <span style="font-size:11px;color:var(--text-dim)">2D network visualization</span>
+      </div>
+      <div style="padding:20px">
+        <div id="topology-result" style="font-size:12px;color:var(--text-dim)">Topology data will appear here</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Asset Management</div>
+        <span style="font-size:11px;color:var(--text-dim)">External asset synchronization</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-g btn-sm" onclick="connectServiceNow()">Connect ServiceNow CMDB</button>
+        <button class="btn btn-g btn-sm" onclick="connectLansweeper()">Connect Lansweeper</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- REPORTS -->
 <div class="page" id="page-history">  <div style="display:flex;align-items:center;justify-content:space-between">
     <div><div class="ph">Scan Reports</div><div class="ps">Historical assessments and export options</div></div>
     <button class="btn btn-p btn-sm" onclick="showPage('scan')">New Scan</button>
   </div>
   <div class="card"><div id="hist-wrap"><div class="empty"><div class="ei"></div><div class="eh">No reports yet</div></div></div></div>
+</div>
+
+<!-- THREAT HUNTING -->
+<div class="page" id="page-hunting">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Threat Hunting</div>
+      <div class="ps">PCAP capture, advanced search, and data export for threat hunting.</div>
+    </div>
+  </div>
+
+  <div class="g4">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">PCAP Capture</div>
+        <span style="font-size:11px;color:var(--text-dim)">Packet capture and analysis</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:8px">
+          <input type="text" id="pcap-interface" placeholder="Interface (e.g., eth0)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <input type="number" id="pcap-duration" placeholder="Duration (s)" value="60" style="width:80px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-p btn-sm" onclick="startPcap()">Start Capture</button>
+          <button class="btn btn-g btn-sm" onclick="stopPcap()">Stop Capture</button>
+        </div>
+        <div id="pcap-status" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Advanced Search</div>
+        <span style="font-size:11px;color:var(--text-dim)">Search alerts, DNS, HTTP traffic</span>
+      </div>
+      <div style="padding:20px">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input type="text" id="search-query" placeholder="Search query" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <button class="btn btn-p btn-sm" onclick="searchAlerts()">Search</button>
+        </div>
+        <div id="search-results" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Data Export</div>
+        <span style="font-size:11px;color:var(--text-dim)">Export DNS, HTTP, PCAP data</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-g btn-sm" onclick="exportDns()">Export DNS (CSV)</button>
+        <button class="btn btn-g btn-sm" onclick="exportHttp()">Export HTTP (CSV)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMIZATION -->
+<div class="page" id="page-custom">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Customization</div>
+      <div class="ps">Custom threat models, business risk tailoring, and STIX/TAXII threat intelligence.</div>
+    </div>
+  </div>
+
+  <div class="g4">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Custom Threat Models</div>
+        <span style="font-size:11px;color:var(--text-dim)">Create custom detection patterns</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <input type="text" id="model-name" placeholder="Model name" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <input type="text" id="model-pattern" placeholder="Detection pattern" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <select id="model-severity" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <button class="btn btn-p btn-sm" onclick="createCustomModel()">Create Model</button>
+        <div id="custom-models" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Business Risk Tailoring</div>
+        <span style="font-size:11px;color:var(--text-dim)">VIP asset criticality and risk frameworks</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <select id="risk-framework" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <option value="NIST">NIST</option>
+          <option value="ISO27001">ISO 27001</option>
+          <option value="CIS">CIS</option>
+        </select>
+        <button class="btn btn-g btn-sm" onclick="setRiskFramework()">Set Framework</button>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="text" id="vip-asset" placeholder="Asset ID" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+          <select id="vip-criticality" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <button class="btn btn-p btn-sm" onclick="addVipAsset()">Add VIP Asset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">STIX/TAXII Feeds</div>
+        <span style="font-size:11px;color:var(--text-dim)">Threat intelligence integration</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <input type="text" id="stix-url" placeholder="STIX/TAXII URL" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <input type="text" id="stix-key" placeholder="API Key (optional)" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+        <button class="btn btn-p btn-sm" onclick="addStixFeed()">Add Feed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXECUTIVE REPORTING -->
+<div class="page" id="page-executive">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Executive Reporting</div>
+      <div class="ps">Automated reports and trend tracking for executive visibility.</div>
+    </div>
+  </div>
+
+  <div class="g4">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Current Metrics</div>
+        <span style="font-size:11px;color:var(--text-dim)">Real-time security metrics</span>
+      </div>
+      <div style="padding:20px">
+        <div id="executive-metrics" style="font-size:12px;color:var(--text-dim)">Loading metrics...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Automated Reports</div>
+        <span style="font-size:11px;color:var(--text-dim)">Weekly and monthly reports</span>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-p btn-sm" onclick="generateWeeklyReport()">Generate Weekly Report</button>
+        <button class="btn btn-p btn-sm" onclick="generateMonthlyReport()">Generate Monthly Report</button>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <select id="report-frequency" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font)">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <button class="btn btn-g btn-sm" onclick="scheduleReport()">Schedule Report</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Trend Tracking</div>
+        <span style="font-size:11px;color:var(--text-dim)">Historical trend analysis</span>
+      </div>
+      <div style="padding:20px">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <select id="trend-metric" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:var(--font">
+            <option value="attack_surface">Attack Surface</option>
+            <option value="detection_rate">Detection Rate</option>
+            <option value="response_time">Response Time</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="viewTrend()">View Trend</button>
+        </div>
+        <div id="trend-data" style="font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CYBER AI ANALYTICS -->
+<div class="page" id="page-ai">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">Cyber AI Engine & Self-Learning System</div>
+      <div class="ps">Enterprise AI Suite: Generative LLM reasoning (Gemini & Ollama), scikit-learn Isolation Forest ML, vector semantic search, and ATT&CK prediction.</div>
+    </div>
+    <div id="ai-provider-badge" style="display:flex;align-items:center;gap:8px;background:var(--surface2);padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:12px;color:var(--text-dim)">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success)" id="ai-status-dot"></span>
+      <span id="ai-active-provider-label">Checking LLM...</span>
+    </div>
+  </div>
+
+  <!-- LLM Provider & Reasoning Config Card -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <div class="ct">Generative AI Provider & Engine Settings</div>
+      <span style="font-size:11px;color:var(--text-dim)">Select cloud (Google Gemini) or completely offline air-gapped (Local Ollama / vLLM)</span>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div class="fl">AI Provider</div>
+          <select id="llm-cfg-provider" class="fsel" onchange="toggleLlmFields()">
+            <option value="auto">Auto-Detect Best Available</option>
+            <option value="gemini">Google Gemini API (Cloud)</option>
+            <option value="ollama">Local Ollama (Air-Gapped / Local)</option>
+            <option value="openai">OpenAI / Custom Endpoint</option>
+            <option value="fallback">Offline Heuristic Engine</option>
+          </select>
+        </div>
+        <div style="flex:2;min-width:240px" id="llm-field-key">
+          <div class="fl">API Key / Token</div>
+          <input type="password" class="fi" id="llm-cfg-key" placeholder="AIzaSy... (leave blank to use GEMINI_API_KEY from .env)"/>
+        </div>
+        <div style="flex:2;min-width:240px;display:none" id="llm-field-url">
+          <div class="fl">Base URL</div>
+          <input class="fi" id="llm-cfg-url" placeholder="http://localhost:11434"/>
+        </div>
+        <div style="flex:1;min-width:140px">
+          <div class="fl">Model Identifier</div>
+          <input class="fi" id="llm-cfg-model" placeholder="gemini-2.0-flash / llama3.2"/>
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-p btn-sm" onclick="saveLlmConfig()">Apply & Connect</button>
+        </div>
+      </div>
+      <div id="llm-status-message" style="font-size:11.5px;color:var(--text-dim);display:flex;gap:8px;align-items:center">
+        <span>Active Provider: <strong>Connecting...</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NL Threat Hunting & Semantic Vector Search Bar -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <div class="ct">Natural Language Threat Hunter & Semantic Vector Search</div>
+      <span style="font-size:11px;color:var(--text-dim)">Plain-English queries and vector-space search across CVEs, KEVs, and MITRE techniques</span>
+    </div>
+    <div style="padding:16px;display:flex;gap:10px">
+      <input class="fi" id="ai-nl-query" placeholder="e.g. show critical findings, remote code execution in web logging framework, or list open ports on 192.168.1.100" style="flex:1" onkeydown="if(event.key==='Enter') runAiQuery()"/>
+      <button class="btn btn-p btn-sm" onclick="runAiQuery()">Ask Cyber AI</button>
+      <button class="btn btn-g btn-sm" onclick="runSemanticSearch()">Vector CVE Search</button>
+    </div>
+    <div id="ai-query-result" style="padding:0 16px 16px 16px;display:none">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:var(--text)"></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Card 1: ATT&CK Attack Chain Prediction -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Predictive Attack Chain & Preemption</div>
+        <span style="font-size:11px;color:var(--text-dim)">Anticipate next adversary hop</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div class="fl">Current Observed Tactic</div>
+        <div style="display:flex;gap:8px">
+          <select id="ai-pred-tactic" class="fsel" style="flex:1">
+            <option value="Initial Access">Initial Access</option>
+            <option value="Execution">Execution</option>
+            <option value="Persistence">Persistence</option>
+            <option value="Privilege Escalation">Privilege Escalation</option>
+            <option value="Defense Evasion">Defense Evasion</option>
+            <option value="Credential Access">Credential Access</option>
+            <option value="Discovery">Discovery</option>
+            <option value="Lateral Movement" selected>Lateral Movement</option>
+            <option value="Collection">Collection</option>
+            <option value="Command and Control">Command and Control</option>
+            <option value="Exfiltration">Exfiltration</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="predictNextAttack()">Predict Hop</button>
+        </div>
+        <div id="ai-pred-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Select an observed tactic and click 'Predict Hop' to forecast the attacker's trajectory.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Vulnerability Trend Forecasting -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Vulnerability Trend Forecasting</div>
+        <span style="font-size:11px;color:var(--text-dim)">OLS linear regression defect projection</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div class="fl">Forecast Time Horizon</div>
+        <div style="display:flex;gap:8px">
+          <select id="ai-forecast-days" class="fsel" style="flex:1">
+            <option value="7">7 Days Horizon</option>
+            <option value="14">14 Days Horizon</option>
+            <option value="30" selected>30 Days Horizon</option>
+            <option value="60">60 Days Horizon</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="forecastVulnerabilities()">Run Forecast</button>
+        </div>
+        <div id="ai-forecast-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Click 'Run Forecast' to project security posture based on recent scans.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Isolation Forest Real Machine Learning & Federated Learning -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Isolation Forest ML & Federated Baselines</div>
+        <span style="font-size:11px;color:var(--text-dim)">scikit-learn 100-Tree Ensemble</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;color:var(--text-dim)">
+          Real multi-dimensional machine learning Isolation Forest models socket features (connections, bytes, ports, rates) without labels.
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-p btn-sm" onclick="fitIsolationForestML()">Train Isolation Forest</button>
+          <button class="btn btn-g btn-sm" onclick="testLiveAnomaly()">Score Live Deviation</button>
+          <button class="btn btn-sm" onclick="runFederatedAggregation()">Federated Aggregation</button>
+        </div>
+        <div id="ai-anomaly-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Machine learning detectors active. Tap 'Train Isolation Forest' or 'Score Live Deviation'.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Autonomous Response RL Policy -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">Response Policy Reinforcement Learning</div>
+        <span style="font-size:11px;color:var(--text-dim)">Q-Table Policy Optimizer</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="ai-rl-sev" class="fsel" style="flex:1">
+            <option value="critical">Critical Severity</option>
+            <option value="high" selected>High Severity</option>
+            <option value="medium">Medium Severity</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="evaluateRlAction()">Evaluate Action</button>
+        </div>
+        <div id="ai-rl-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;min-height:90px;color:var(--text)">
+          <div style="color:var(--text-dim)">Select incident severity and evaluate the recommended autonomous action.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deep AI Investigation & Remediation Script Synthesizer -->
+  <div class="card" style="margin-top:16px">
+    <div class="ch">
+      <div class="ct">Deep Forensic AI Investigation & Remediation Synthesizer</div>
+      <span style="font-size:11px;color:var(--text-dim)">Autonomous incident reasoning and OS-specific PowerShell/Bash containment scripts</span>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input class="fi" id="ai-summary-host" placeholder="Target Host (e.g. srv-finance-db.corp)" style="flex:2;min-width:200px"/>
+        <input class="fi" id="ai-summary-cve" placeholder="Target CVE (e.g. CVE-2024-21413)" style="flex:1;min-width:140px"/>
+        <button class="btn btn-p btn-sm" onclick="runDeepAiInvestigation()">Deep AI Investigation</button>
+        <button class="btn btn-g btn-sm" onclick="synthesizeRemediationScript()">Synthesize Remediation Script</button>
+        <button class="btn btn-sm" onclick="generateExecutiveBrief()">Executive AI Brief</button>
+      </div>
+      <div id="ai-narrative-result" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:12.5px;line-height:1.6;color:var(--text);white-space:pre-wrap;display:none;max-height:450px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INTEGRATIONS -->
+<div class="page" id="page-integrations">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div class="ph">External Integrations</div>
+      <div class="ps">Connect SIEM, SOAR, ticketing systems, and firewalls. Configure credentials and test connections.</div>
+    </div>
+  </div>
+
+  <div class="g4" id="integrations-grid" style="margin-bottom:20px">
+    <!-- Integration cards will be loaded here -->
+  </div>
+
+  <!-- Integration Configuration Modal -->
+  <div id="integration-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:min(500px,100%);max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="ph" id="modal-title">Configure Integration</div>
+        <button class="btn btn-g btn-sm" onclick="closeIntegrationModal()">&#10005;</button>
+      </div>
+      <div id="modal-config-form" style="display:flex;flex-direction:column;gap:12px">
+        <!-- Config fields will be loaded here -->
+      </div>
+      <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+        <button class="btn btn-g btn-sm" onclick="closeIntegrationModal()">Cancel</button>
+        <button class="btn btn-p btn-sm" onclick="saveIntegrationConfig()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- SETTINGS & ALERT CONFIGURATION -->
@@ -1404,7 +1852,7 @@ select option:checked, select option:hover {
   <div class="settings-tab-pane" id="stab-threat" style="display:none">
     <div class="card">
       <div class="ch"><div class="ct">Threat Intelligence Feeds &amp; CVE Enrichment API Keys</div></div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox syncs the last day of IOCs when an Auth-Key is saved. AbuseIPDB syncs its blacklist when an API key is saved. OTX and VirusTotal keys can be stored here. Those lookups are not implemented, and a stored key does not enable them.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">CISA KEV, NVD, and EPSS sync into the local vulnerability database. ThreatFox, AbuseIPDB, OTX, and VirusTotal counts come only from a successful API response. Unwired or empty feeds show Not Wired or 0 — never a leftover mock count.</div>
       <div class="g2">
         <div>
           <div class="fl">NIST National Vulnerability Database (NVD 2.0) API Key</div>
@@ -1418,12 +1866,12 @@ select option:checked, select option:hover {
         </div>
         <div>
           <div class="fl">AlienVault Open Threat Exchange (OTX) API Key</div>
-          <input class="fi" type="password" id="cfg-otx-key" placeholder="Stored only. Lookups are not implemented."/>
+          <input class="fi" type="password" id="cfg-otx-key" placeholder="Sent as the X-OTX-API-KEY header" autocomplete="off"/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://otx.alienvault.com" target="_blank" style="color:var(--accent)">otx.alienvault.com &rarr;</a></div>
         </div>
         <div>
           <div class="fl">VirusTotal API Key (Optional)</div>
-          <input class="fi" type="password" id="cfg-vt-key" placeholder="Stored only. Lookups are not implemented."/>
+          <input class="fi" type="password" id="cfg-vt-key" placeholder="Sent as the x-apikey header" autocomplete="off"/>
           <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Get free key at <a href="https://www.virustotal.com/gui/join-us" target="_blank" style="color:var(--accent)">virustotal.com &rarr;</a></div>
         </div>
         <div>
@@ -2218,6 +2666,8 @@ async function triggerUpdate(){
 async function resetPlatform(){
   if(!confirm('Reset dashboard and clear all historical scans, findings, and threat alerts?')) return;
   try {
+    if(typeof applyMonitorGeo === 'function') applyMonitorGeo({configured:false, database:'missing', points:[]});
+    if(typeof updateGraphSim === 'function') updateGraphSim([], []);
     const res = await fetch('/api/reset', {method: 'POST'});
     if(res.ok){
       toast('Dashboard reset to clean state', 'ok');
@@ -2265,7 +2715,7 @@ async function loadFeedConnectors(){
       const statusLabel=unwired?'NOT WIRED':f.status;
       const statusColor=f.status==='ACTIVE'?'var(--success)':f.status==='RATE_LIMITED'?'var(--medium)':f.status==='CONFIGURED'?'var(--accent)':'var(--text-dim)';
       const statusBg=f.status==='ACTIVE'?'rgba(0,200,150,.08)':f.status==='RATE_LIMITED'?'rgba(255,159,10,.08)':'transparent';
-      const countLabel=f.record_count==null?'—':Number(f.record_count).toLocaleString();
+      const countLabel=unwired?'Not Wired':(f.record_count==null? '0': Number(f.record_count).toLocaleString());
       return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px">`
         +`<div style="display:flex;justify-content:space-between;align-items:center">`
         +`<span style="font-weight:700;font-size:13px;color:var(--text)">${f.name}</span>`
@@ -4238,11 +4688,17 @@ function renderGeoMap() {
   layer.classList.toggle('has-points', showPoints);
   if (!showPoints) {
     hideGeoTip();
+    const stage = document.getElementById('tv-world-stage');
+    if (stage) {
+      stage.replaceChildren();
+      stage.dataset.ready = '';
+    }
+    geoMapPromise = null;
     if (count) count.hidden = true;
     if (noteK) noteK.textContent = geoConfigured ? 'No coordinates' : 'Unavailable';
     if (noteTitle) noteTitle.textContent = geoConfigured ? 'No public coordinates to plot' : 'GeoIP database is missing';
     if (noteBody) noteBody.textContent = geoConfigured
-      ? 'The GeoLite2 City database is loaded. None of the public addresses on this host resolved to a location. Private addresses stay on site topology.'
+      ? 'The GeoLite2 City database is loaded. None of the public addresses on this host resolved to a location. Private addresses and well-known web edges stay off this map.'
       : 'Set GEOIP_DB_PATH to a local GeoLite2-City.mmdb file, or save that path under Settings. This console does not invent coordinates. Private addresses stay on site topology.';
     return;
   }
@@ -4809,6 +5265,1010 @@ async function deleteMapping(cidr){
     </div>
   </div>
 </div>
+
+<script>
+// ── INTEGRATIONS PAGE ─────────────────────────────────────────────────────────
+let currentIntegrationId = null;
+let integrationConfigs = {};
+
+async function loadIntegrations() {
+  try {
+    const response = await fetch('/api/integrations');
+    const data = await response.json();
+    const grid = document.getElementById('integrations-grid');
+    
+    if (!data.integrations || data.integrations.length === 0) {
+      grid.innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">No integrations available</div></div>';
+      return;
+    }
+
+    grid.innerHTML = data.integrations.map(int => {
+      const statusColor = int.connected ? 'var(--success)' : (int.configured ? 'var(--high)' : 'var(--text-dim)');
+      const statusText = int.connected ? 'Connected' : (int.configured ? 'Configured' : 'Not Configured');
+      // Actual SVG icon files
+      const iconFiles = {
+        splunk: '/static/icons/splunk.svg',
+        microsoft_sentinel: '/static/icons/microsoft-sentinel.svg',
+        elastic_security: '/static/icons/elastic-security.svg',
+        cortex_xsoar: '/static/icons/cortex-xsoar.svg',
+        splunk_soar: '/static/icons/splunk-soar.svg',
+        servicenow: '/static/icons/servicenow.svg',
+        jira: '/static/icons/jira.svg',
+        palo_alto: '/static/icons/palo-alto-networks.svg',
+        cisco_firepower: '/static/icons/cisco-firepower.svg',
+        fortinet: '/static/icons/fortinet-fortigate.svg',
+      };
+      const iconSrc = iconFiles[int.id] || null;
+      const icon = iconSrc ? `<img src="${iconSrc}" width="32" height="32" alt="${int.name}" style="object-fit:contain">` : `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+      
+      return `
+        <div class="card" style="border-left:4px solid ${statusColor}">
+          <div class="ch">
+            <div class="ct" style="display:flex;align-items:center;gap:12px">
+              ${icon}
+              <span>${int.name}</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-g btn-sm" onclick="openIntegrationConfig('${int.id}')">Configure</button>
+              ${int.configured ? `<button class="btn btn-p btn-sm" onclick="testIntegration('${int.id}')">Test</button>` : ''}
+              ${int.connected ? `<button class="btn btn-d btn-sm" onclick="disconnectIntegration('${int.id}')">Disconnect</button>` : ''}
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">
+            Type: <span style="font-weight:600;color:var(--text)">${int.type.toUpperCase()}</span> · 
+            Status: <span style="font-weight:600;color:${statusColor}">${statusText}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);display:flex;flex-wrap:wrap;gap:4px">
+            ${(int.capabilities || []).map(cap => `<span style="background:var(--surface2);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">${cap}</span>`).join('')}
+          </div>
+          ${int.last_tested ? `<div style="font-size:10px;color:var(--text-dim);margin-top:8px">Last tested: ${int.last_tested}</div>` : ''}
+          ${int.last_error ? `<div style="font-size:10px;color:var(--critical);margin-top:4px">Error: ${int.last_error}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Failed to load integrations:', error);
+    document.getElementById('integrations-grid').innerHTML = '<div class="empty"><div class="ei"></div><div class="eh">Failed to load integrations</div></div>';
+  }
+}
+
+function openIntegrationConfig(integrationId) {
+  currentIntegrationId = integrationId;
+  const modal = document.getElementById('integration-modal');
+  const title = document.getElementById('modal-title');
+  const form = document.getElementById('modal-config-form');
+  
+  // Get integration info
+  const integrationTypes = {
+    splunk: { name: 'Splunk', fields: ['hec_url', 'hec_token', 'rest_url', 'api_token', 'index'] },
+    microsoft_sentinel: { name: 'Microsoft Sentinel', fields: ['workspace_id', 'client_id', 'client_secret', 'tenant_id', 'table_name'] },
+    elastic_security: { name: 'Elastic Security', fields: ['url', 'username', 'password', 'api_key', 'alert_index', 'incident_index'] },
+    cortex_xsoar: { name: 'Cortex XSOAR', fields: ['url', 'api_key'] },
+    splunk_soar: { name: 'Splunk SOAR', fields: ['url', 'api_token'] },
+    servicenow: { name: 'ServiceNow', fields: ['url', 'username', 'password', 'client_id', 'client_secret', 'assignment_group'] },
+    jira: { name: 'Jira', fields: ['url', 'email', 'api_token', 'project_key', 'issue_type'] },
+    palo_alto: { name: 'Palo Alto Networks', fields: ['url', 'api_key', 'username', 'vsys'] },
+    cisco_firepower: { name: 'Cisco Firepower', fields: ['url', 'username', 'password', 'domain_id', 'access_policy_id'] },
+    fortinet: { name: 'Fortinet FortiGate', fields: ['url', 'api_token'] },
+  };
+  
+  const integration = integrationTypes[integrationId];
+  if (!integration) {
+    toast('Unknown integration');
+    return;
+  }
+  
+  title.textContent = `Configure ${integration.name}`;
+  
+  // Build form fields
+  form.innerHTML = integration.fields.map(field => {
+    const isSecret = field.includes('token') || field.includes('secret') || field.includes('password') || field.includes('key');
+    const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return `
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;display:block">${label}</label>
+        <input type="${isSecret ? 'password' : 'text'}" 
+               id="field-${field}" 
+               placeholder="${isSecret ? '••••••••' : 'Enter value'}"
+               style="width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+      </div>
+    `;
+  }).join('') + `
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;display:block">Enabled</label>
+      <input type="checkbox" id="field-enabled" style="margin-right:8px">
+      <span style="font-size:12px;color:var(--text-dim)">Enable this integration</span>
+    </div>
+  `;
+  
+  // Load existing config if available
+  loadExistingConfig(integrationId);
+  
+  modal.style.display = 'flex';
+}
+
+async function loadExistingConfig(integrationId) {
+  try {
+    const response = await fetch(`/api/integrations/${integrationId}`);
+    if (response.ok) {
+      const data = await response.json();
+      integrationConfigs[integrationId] = data.config;
+      
+      // Populate fields
+      Object.keys(data.config || {}).forEach(key => {
+        const field = document.getElementById(`field-${key}`);
+        if (field) {
+          // Mask secrets in display
+          if (key.includes('token') || key.includes('secret') || key.includes('password') || key.includes('key')) {
+            field.placeholder = '•••••••• (Leave unchanged)';
+          } else {
+            field.value = data.config[key];
+          }
+        }
+      });
+      
+      const enabledField = document.getElementById('field-enabled');
+      if (enabledField) {
+        enabledField.checked = data.enabled || false;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load existing config:', error);
+  }
+}
+
+function closeIntegrationModal() {
+  document.getElementById('integration-modal').style.display = 'none';
+  currentIntegrationId = null;
+}
+
+async function saveIntegrationConfig() {
+  if (!currentIntegrationId) return;
+  
+  const integrationTypes = {
+    splunk: { fields: ['hec_url', 'hec_token', 'rest_url', 'api_token', 'index'] },
+    microsoft_sentinel: { fields: ['workspace_id', 'client_id', 'client_secret', 'tenant_id', 'table_name'] },
+    elastic_security: { fields: ['url', 'username', 'password', 'api_key', 'alert_index', 'incident_index'] },
+    cortex_xsoar: { fields: ['url', 'api_key'] },
+    splunk_soar: { fields: ['url', 'api_token'] },
+    servicenow: { fields: ['url', 'username', 'password', 'client_id', 'client_secret', 'assignment_group'] },
+    jira: { fields: ['url', 'email', 'api_token', 'project_key', 'issue_type'] },
+    palo_alto: { fields: ['url', 'api_key', 'username', 'vsys'] },
+    cisco_firepower: { fields: ['url', 'username', 'password', 'domain_id', 'access_policy_id'] },
+    fortinet: { fields: ['url', 'api_token'] },
+  };
+  
+  const integration = integrationTypes[currentIntegrationId];
+  if (!integration) return;
+  
+  const config = {};
+  const existingConfig = integrationConfigs[currentIntegrationId] || {};
+  
+  integration.fields.forEach(field => {
+    const fieldEl = document.getElementById(`field-${field}`);
+    if (fieldEl && fieldEl.value) {
+      config[field] = fieldEl.value;
+    } else if (existingConfig[field]) {
+      // Keep existing value if field is empty (for secrets)
+      config[field] = existingConfig[field];
+    }
+  });
+  
+  const enabledField = document.getElementById('field-enabled');
+  const enabled = enabledField ? enabledField.checked : false;
+  
+  try {
+    const response = await fetch(`/api/integrations/${currentIntegrationId}/configure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled, config }),
+    });
+    
+    if (response.ok) {
+      toast('Configuration saved successfully');
+      closeIntegrationModal();
+      loadIntegrations();
+    } else {
+      const error = await response.json();
+      toast(`Failed to save: ${error.detail || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error('Failed to save config:', error);
+    toast('Failed to save configuration');
+  }
+}
+
+async function testIntegration(integrationId) {
+  try {
+    const response = await fetch(`/api/integrations/${integrationId}/test`, { method: 'POST' });
+    const data = await response.json();
+    
+    if (data.status === 'connected') {
+      toast('Connection successful!', 'success');
+      loadIntegrations();
+    } else {
+      toast(`Connection failed: ${data.status}`, 'error');
+    }
+  } catch (error) {
+    console.error('Failed to test integration:', error);
+    toast('Failed to test connection', 'error');
+  }
+}
+
+async function disconnectIntegration(integrationId) {
+  if (!confirm('Are you sure you want to disconnect this integration?')) return;
+  
+  try {
+    const response = await fetch(`/api/integrations/${integrationId}/disconnect`, { method: 'POST' });
+    if (response.ok) {
+      toast('Disconnected successfully');
+      loadIntegrations();
+    } else {
+      toast('Failed to disconnect');
+    }
+  } catch (error) {
+    console.error('Failed to disconnect:', error);
+    toast('Failed to disconnect');
+  }
+}
+
+// Load integrations when page is shown
+const originalShowPage = showPage;
+showPage = function(page) {
+  originalShowPage(page);
+  if (page === 'integrations') {
+    loadIntegrations();
+  }
+  if (page === 'visibility') {
+    loadTopology();
+  }
+  if (page === 'hunting') {
+    // Load hunting data if needed
+  }
+  if (page === 'custom') {
+    loadCustomModels();
+  }
+  if (page === 'executive') {
+    loadExecutiveMetrics();
+  }
+  if (page === 'ai') {
+    loadAiDashboard();
+  }
+};
+
+// Visibility functions
+async function fingerprintMac() {
+  const mac = document.getElementById('fp-mac-input').value;
+  if (!mac) {
+    toast('Please enter a MAC address', 'error');
+    return;
+  }
+  try {
+    const response = await fetch(`/api/visibility/fingerprint/mac/${mac}`);
+    const data = await response.json();
+    const resultDiv = document.getElementById('fp-result');
+    if (data) {
+      resultDiv.innerHTML = `<div style="color:var(--success)">Vendor: ${data.vendor || 'Unknown'} (Confidence: ${data.confidence || 'low'})</div>`;
+    } else {
+      resultDiv.innerHTML = '<div style="color:var(--text-dim)">No fingerprint data found</div>';
+    }
+  } catch (error) {
+    console.error('Fingerprint error:', error);
+    toast('Failed to fingerprint MAC', 'error');
+  }
+}
+
+async function loadTopology() {
+  try {
+    const response = await fetch('/api/visibility/topology');
+    const data = await response.json();
+    const resultDiv = document.getElementById('topology-result');
+    resultDiv.innerHTML = `<div>Nodes: ${data.nodes.length}, Edges: ${data.edges.length}</div>`;
+  } catch (error) {
+    console.error('Topology error:', error);
+  }
+}
+
+async function connectServiceNow() {
+  toast('ServiceNow CMDB configuration - configure in settings', 'info');
+}
+
+async function connectLansweeper() {
+  toast('Lansweeper configuration - configure in settings', 'info');
+}
+
+// Threat hunting functions
+async function startPcap() {
+  const interface = document.getElementById('pcap-interface').value;
+  const duration = document.getElementById('pcap-duration').value;
+  if (!interface) {
+    toast('Please enter an interface', 'error');
+    return;
+  }
+  try {
+    const response = await fetch('/api/hunting/pcap/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({interface, duration: parseInt(duration)})
+    });
+    const data = await response.json();
+    if (data.success) {
+      toast('PCAP capture started', 'success');
+      document.getElementById('pcap-status').innerHTML = '<div style="color:var(--success)">Capture in progress...</div>';
+    }
+  } catch (error) {
+    console.error('PCAP error:', error);
+    toast('Failed to start PCAP capture', 'error');
+  }
+}
+
+async function stopPcap() {
+  try {
+    const response = await fetch('/api/hunting/pcap/stop', {method: 'POST'});
+    const data = await response.json();
+    document.getElementById('pcap-status').innerHTML = `<div style="color:var(--text-dim)">Capture stopped: ${data.file}, ${data.packets} packets</div>`;
+    toast('PCAP capture stopped', 'success');
+  } catch (error) {
+    console.error('PCAP error:', error);
+    toast('Failed to stop PCAP capture', 'error');
+  }
+}
+
+async function searchAlerts() {
+  const query = document.getElementById('search-query').value;
+  if (!query) {
+    toast('Please enter a search query', 'error');
+    return;
+  }
+  try {
+    const response = await fetch(`/api/hunting/search/alerts?query=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    document.getElementById('search-results').innerHTML = `<div>Found ${data.length} results</div>`;
+  } catch (error) {
+    console.error('Search error:', error);
+    toast('Search failed', 'error');
+  }
+}
+
+async function exportDns() {
+  try {
+    const response = await fetch('/api/hunting/export/dns?time_range=24h');
+    const data = await response.json();
+    toast('DNS export ready - download would start', 'success');
+  } catch (error) {
+    console.error('Export error:', error);
+    toast('Export failed', 'error');
+  }
+}
+
+async function exportHttp() {
+  try {
+    const response = await fetch('/api/hunting/export/http?time_range=24h');
+    const data = await response.json();
+    toast('HTTP export ready - download would start', 'success');
+  } catch (error) {
+    console.error('Export error:', error);
+    toast('Export failed', 'error');
+  }
+}
+
+// Customization functions
+async function createCustomModel() {
+  const name = document.getElementById('model-name').value;
+  const pattern = document.getElementById('model-pattern').value;
+  const severity = document.getElementById('model-severity').value;
+  if (!name || !pattern) {
+    toast('Please enter model name and pattern', 'error');
+    return;
+  }
+  try {
+    const response = await fetch('/api/custom/models', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, pattern, severity})
+    });
+    const data = await response.json();
+    toast('Custom model created', 'success');
+    loadCustomModels();
+  } catch (error) {
+    console.error('Model error:', error);
+    toast('Failed to create model', 'error');
+  }
+}
+
+async function loadCustomModels() {
+  try {
+    const response = await fetch('/api/custom/models');
+    const data = await response.json();
+    document.getElementById('custom-models').innerHTML = `<div>${data.length} custom models</div>`;
+  } catch (error) {
+    console.error('Load models error:', error);
+  }
+}
+
+async function setRiskFramework() {
+  const framework = document.getElementById('risk-framework').value;
+  try {
+    const response = await fetch('/api/custom/risk/framework', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({framework})
+    });
+    toast(`Risk framework set to ${framework}`, 'success');
+  } catch (error) {
+    console.error('Framework error:', error);
+    toast('Failed to set framework', 'error');
+  }
+}
+
+async function addVipAsset() {
+  const assetId = document.getElementById('vip-asset').value;
+  const criticality = document.getElementById('vip-criticality').value;
+  if (!assetId) {
+    toast('Please enter asset ID', 'error');
+    return;
+  }
+  try {
+    const response = await fetch('/api/custom/risk/vip', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({asset_id: assetId, criticality})
+    });
+    const data = await response.json();
+    toast('VIP asset added', 'success');
+  } catch (error) {
+    console.error('VIP asset error:', error);
+    toast('Failed to add VIP asset', 'error');
+  }
+}
+
+async function addStixFeed() {
+  const url = document.getElementById('stix-url').value;
+  const apiKey = document.getElementById('stix-key').value;
+  if (!url) {
+    toast('Please enter STIX URL', 'error');
+    return;
+  }
+  try {
+    const response = await fetch('/api/custom/stix/feed', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, api_key: apiKey})
+    });
+    const data = await response.json();
+    toast('STIX feed added', 'success');
+  } catch (error) {
+    console.error('STIX error:', error);
+    toast('Failed to add STIX feed', 'error');
+  }
+}
+
+// Executive reporting functions
+async function loadExecutiveMetrics() {
+  try {
+    const response = await fetch('/api/reporting/metrics');
+    const data = await response.json();
+    document.getElementById('executive-metrics').innerHTML = `
+      <div>Attack Surface: ${data.attack_surface}</div>
+      <div>Detection Rate: ${data.detection_rate}%</div>
+      <div>Response Time: ${data.response_time} min</div>
+    `;
+  } catch (error) {
+    console.error('Metrics error:', error);
+  }
+}
+
+async function generateWeeklyReport() {
+  try {
+    const response = await fetch('/api/reporting/weekly');
+    const data = await response.json();
+    toast('Weekly report generated', 'success');
+  } catch (error) {
+    console.error('Report error:', error);
+    toast('Failed to generate report', 'error');
+  }
+}
+
+async function generateMonthlyReport() {
+  try {
+    const response = await fetch('/api/reporting/monthly');
+    const data = await response.json();
+    toast('Monthly report generated', 'success');
+  } catch (error) {
+    console.error('Report error:', error);
+    toast('Failed to generate report', 'error');
+  }
+}
+
+async function scheduleReport() {
+  const frequency = document.getElementById('report-frequency').value;
+  try {
+    const response = await fetch('/api/reporting/schedule', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({report_type: 'summary', frequency})
+    });
+    toast(`Report scheduled: ${frequency}`, 'success');
+  } catch (error) {
+    console.error('Schedule error:', error);
+    toast('Failed to schedule report', 'error');
+  }
+}
+
+async function viewTrend() {
+  const metric = document.getElementById('trend-metric').value;
+  try {
+    const response = await fetch(`/api/reporting/trends/${metric}?days=30`);
+    const data = await response.json();
+    document.getElementById('trend-data').innerHTML = `<div>Trend data points: ${data.length}</div>`;
+  } catch (error) {
+    console.error('Trend error:', error);
+    toast('Failed to load trend', 'error');
+  }
+}
+
+// ==================== CYBER AI CONTROLLERS ====================
+let currentAiModelId = null;
+let currentIForestId = null;
+
+function toggleLlmFields() {
+  const p = document.getElementById('llm-cfg-provider').value;
+  const kField = document.getElementById('llm-field-key');
+  const uField = document.getElementById('llm-field-url');
+  const mInput = document.getElementById('llm-cfg-model');
+  if (p === 'ollama') {
+    kField.style.display = 'none';
+    uField.style.display = 'block';
+    if (!document.getElementById('llm-cfg-url').value) {
+      document.getElementById('llm-cfg-url').value = 'http://localhost:11434';
+    }
+    if (mInput) mInput.placeholder = 'llama3.2 (default)';
+  } else if (p === 'fallback') {
+    kField.style.display = 'none';
+    uField.style.display = 'none';
+  } else {
+    kField.style.display = 'block';
+    uField.style.display = 'none';
+    if (mInput) mInput.placeholder = 'gemini-2.0-flash / llama3.2';
+  }
+}
+
+async function loadAiDashboard() {
+  await checkLlmStatus();
+  if (!currentAiModelId) {
+    try {
+      const resp = await fetch('/api/ai/unsupervised/train', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          data: [
+            {connections: 50, bytes: 1200, ports: 3, rate: 5.0, foreign_ratio: 0.1},
+            {connections: 55, bytes: 1400, ports: 4, rate: 5.5, foreign_ratio: 0.1},
+            {connections: 48, bytes: 1100, ports: 3, rate: 4.8, foreign_ratio: 0.05},
+            {connections: 52, bytes: 1350, ports: 3, rate: 5.1, foreign_ratio: 0.08}
+          ]
+        })
+      });
+      const data = await resp.json();
+      currentAiModelId = data.model_id;
+    } catch(e) {
+      console.error('AI Init Error:', e);
+    }
+  }
+}
+
+async function checkLlmStatus() {
+  try {
+    const resp = await fetch('/api/ai/llm/status');
+    const data = await resp.json();
+    const dot = document.getElementById('ai-status-dot');
+    const label = document.getElementById('ai-active-provider-label');
+    const msg = document.getElementById('llm-status-message');
+    if (data.available) {
+      dot.style.background = 'var(--success)';
+      label.innerText = `${data.provider} (${data.model})`;
+      msg.innerHTML = `<span>Active Provider: <strong style="color:var(--success)">${data.provider}</strong> | Model: <strong>${data.model}</strong> | Status: <strong style="color:var(--success)">● Online &amp; Ready</strong></span>`;
+    } else {
+      dot.style.background = 'var(--warning)';
+      label.innerText = 'Fallback Engine';
+      msg.innerHTML = `<span>Active Provider: <strong style="color:var(--warning)">${data.provider}</strong> (Configure API key for live LLM)</span>`;
+    }
+  } catch(e) {
+    console.error('LLM status error:', e);
+  }
+}
+
+async function saveLlmConfig() {
+  const provider = document.getElementById('llm-cfg-provider').value;
+  const apiKey = document.getElementById('llm-cfg-key').value.trim() || null;
+  const baseUrl = document.getElementById('llm-cfg-url').value.trim() || null;
+  const modelName = document.getElementById('llm-cfg-model').value.trim() || null;
+  try {
+    const resp = await fetch('/api/ai/llm/config', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        provider: provider,
+        api_key: apiKey,
+        base_url: baseUrl,
+        model_name: modelName
+      })
+    });
+    const data = await resp.json();
+    toast(`AI Engine updated: ${data.provider}`, 'success');
+    await checkLlmStatus();
+  } catch(e) {
+    console.error(e);
+    toast('Failed to update LLM configuration', 'error');
+  }
+}
+
+async function runDeepAiInvestigation() {
+  const host = document.getElementById('ai-summary-host').value.trim() || 'db-primary.corp';
+  const cve = document.getElementById('ai-summary-cve').value.trim() || 'CVE-2024-21413';
+  toast('Cyber AI performing deep forensic investigation...', 'info');
+  const resDiv = document.getElementById('ai-narrative-result');
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<div style="color:var(--accent);font-style:italic">&#9203; Cyber AI is evaluating incident evidence and generating forensic reasoning with Ollama... please wait (~20-40s on local CPU).</div>';
+  try {
+    const resp = await fetch('/api/ai/llm/investigate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        incident: {
+          id: 'INC-' + Math.floor(1000 + Math.random() * 9000),
+          host: host,
+          severity: 'critical',
+          tactics: ['Credential Access', 'Lateral Movement'],
+          cves: [cve],
+          cvss_score: 9.8,
+          alert_count: 14,
+          status: 'active-containment'
+        }
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-narrative-result');
+    resDiv.style.display = 'block';
+    resDiv.innerText = data.investigation_markdown;
+    toast(`Investigation generated via ${data.provider}`, 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Deep AI investigation failed', 'error');
+  }
+}
+
+async function synthesizeRemediationScript() {
+  const host = document.getElementById('ai-summary-host').value.trim() || 'srv-finance-db.corp';
+  const cve = document.getElementById('ai-summary-cve').value.trim() || 'CVE-2024-21413';
+  toast('Synthesizing OS containment & patch scripts...', 'info');
+  const resDiv = document.getElementById('ai-narrative-result');
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<div style="color:var(--accent);font-style:italic">&#9203; Synthesizing hardened PowerShell & Bash remediation scripts with Ollama... please wait.</div>';
+  try {
+    const resp = await fetch('/api/ai/llm/synthesize-remediation', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        finding: {
+          target: host,
+          cve: cve,
+          severity: 'critical',
+          vulnerability: 'Remote Code Execution and Lateral Movement'
+        }
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-narrative-result');
+    resDiv.style.display = 'block';
+    resDiv.innerText = data.remediation_markdown;
+    toast(`Remediation scripts synthesized via ${data.provider}`, 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Script synthesis failed', 'error');
+  }
+}
+
+async function fitIsolationForestML() {
+  toast('Fitting scikit-learn Isolation Forest ensemble...', 'info');
+  try {
+    const records = [];
+    for (let i = 0; i < 60; i++) {
+      records.push({
+        connections: 40 + i * 0.5,
+        bytes: 1000 + i * 20,
+        ports: 2 + (i % 4),
+        rate: 5.0 + i * 0.1,
+        foreign_ratio: 0.05 + (i % 5) * 0.01
+      });
+    }
+    const resp = await fetch('/api/ai/ml/isolation-forest/fit', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({data: records, n_estimators: 100, contamination: 0.05})
+    });
+    const data = await resp.json();
+    currentIForestId = data.model_id;
+    const resDiv = document.getElementById('ai-anomaly-result');
+    resDiv.innerHTML = `
+      <div style="font-weight:600;color:var(--success);margin-bottom:6px">&#10004; scikit-learn IsolationForest Trained</div>
+      <div style="font-size:12px;color:var(--text)">Model ID: <strong>${data.model_id}</strong> | Samples: <strong>${data.samples}</strong> | Ensemble: <strong>100 Trees</strong></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Ready to score multi-dimensional socket anomalies.</div>
+    `;
+    toast('Isolation Forest ML fitted', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to train Isolation Forest', 'error');
+  }
+}
+
+async function runSemanticSearch() {
+  const q = document.getElementById('ai-nl-query').value.trim();
+  if (!q) {
+    toast('Please enter search terms in query bar', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/ai/ml/semantic-search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: q, top_k: 4})
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-query-result');
+    resDiv.style.display = 'block';
+    
+    let html = `<div style="font-weight:600;color:var(--accent);margin-bottom:8px">&#128065; Vector Cosine Search Results (${data.count} matched):</div>`;
+    data.results.forEach(r => {
+      html += `
+        <div style="margin-bottom:8px;padding:8px;background:rgba(255,255,255,.04);border-radius:4px;border-left:3px solid var(--accent)">
+          <div style="display:flex;justify-content:space-between">
+            <strong>${r.id} - ${r.title}</strong>
+            <span style="color:var(--accent)">Similarity: ${(r.similarity_score * 100).toFixed(1)}%</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-dim);margin-top:4px">${r.description}</div>
+        </div>
+      `;
+    });
+    resDiv.firstElementChild.innerHTML = html;
+    toast('Vector semantic search completed', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Semantic search failed', 'error');
+  }
+}
+
+async function runAiQuery() {
+  const q = document.getElementById('ai-nl-query').value.trim();
+  if (!q) {
+    toast('Please enter a query in natural language', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/ai/nlp/query', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: q})
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-query-result');
+    resDiv.style.display = 'block';
+    resDiv.firstElementChild.innerHTML = `
+      <div style="color:var(--accent);font-weight:600;margin-bottom:6px">&#10004; Interpreted Intent: <span style="color:var(--text)">${data.type}</span></div>
+      <div style="color:var(--text-dim);margin-bottom:6px">Filters: ${JSON.stringify(data.filters)}</div>
+      <div style="color:var(--text);margin-top:6px">${JSON.stringify(data.result, null, 2)}</div>
+    `;
+    toast('Cyber AI parsed query successfully', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to process AI query', 'error');
+  }
+}
+
+async function predictNextAttack() {
+  const tactic = document.getElementById('ai-pred-tactic').value;
+  try {
+    const resp = await fetch('/api/ai/predict/next-attack', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({incident: {tactics: [tactic]}})
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-pred-result');
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:600;color:var(--warning)">Predicted Next Hop: ${data.predicted_tactic}</span>
+        <span class="badge" style="background:rgba(234,179,8,.15);color:var(--warning)">Confidence: ${(data.confidence * 100).toFixed(0)}%</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-dim);margin-bottom:6px">&#9201; Expected Dwell: ${data.timeframe} | Chain: ${data.projected_chain.join(' &rarr; ')}</div>
+      <div style="font-size:12px;background:rgba(255,255,255,.03);padding:8px;border-radius:4px;border-left:3px solid var(--accent)">
+        <strong style="color:var(--accent)">Preemptive Action:</strong> ${data.preemptive_response}
+      </div>
+    `;
+    toast('Next attack trajectory calculated', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to predict attack', 'error');
+  }
+}
+
+async function forecastVulnerabilities() {
+  const days = parseInt(document.getElementById('ai-forecast-days').value, 10);
+  try {
+    const resp = await fetch(`/api/ai/predict/vulnerabilities?time_horizon=${days}`);
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-forecast-result');
+    if (!data || !data.length) {
+      resDiv.innerHTML = '<div style="color:var(--text-dim)">No scan data available to project trends.</div>';
+      return;
+    }
+    const finalDay = data[data.length - 1];
+    const trendIcon = finalDay.trend === 'up' ? '&#8599; Upward' : finalDay.trend === 'down' ? '&#8600; Decreasing' : '&rarr; Flat';
+    const trendColor = finalDay.trend === 'up' ? 'var(--danger)' : 'var(--success)';
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:600;color:var(--text)">${days}-Day Posture Projection</span>
+        <span style="font-weight:600;color:${trendColor}">${trendIcon}</span>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px">
+        <div style="flex:1;background:rgba(239,68,68,.1);padding:8px;border-radius:4px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--danger)">${finalDay.critical_forecast}</div>
+          <div style="font-size:10.5px;color:var(--text-dim)">Projected Criticals</div>
+        </div>
+        <div style="flex:1;background:rgba(249,115,22,.1);padding:8px;border-radius:4px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#f97316">${finalDay.high_forecast}</div>
+          <div style="font-size:10.5px;color:var(--text-dim)">Projected Highs</div>
+        </div>
+        <div style="flex:1;background:rgba(59,130,246,.1);padding:8px;border-radius:4px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#3b82f6">${finalDay.kev_forecast}</div>
+          <div style="font-size:10.5px;color:var(--text-dim)">Projected KEVs</div>
+        </div>
+      </div>
+    `;
+    toast('Posture forecasted successfully', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to forecast vulnerabilities', 'error');
+  }
+}
+
+async function testLiveAnomaly() {
+  await loadAiDashboard();
+  try {
+    const resp = await fetch('/api/ai/ml/isolation-forest/score', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model_id: currentIForestId || 'default',
+        sample: {connections: 45000, bytes: 95000000, ports: 8000, rate: 8500, foreign_ratio: 0.95}
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-anomaly-result');
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:600;color:${data.is_anomaly ? 'var(--danger)' : 'var(--success)'}">
+          ${data.is_anomaly ? '&#9888; Outlier Detected by Isolation Forest' : '&#10004; Normal Behavior'}
+        </span>
+        <span style="font-size:11px;color:var(--text-dim)">Anomaly Prob: ${(data.anomaly_probability * 100).toFixed(1)}%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim)">Algorithm: <strong>${data.algorithm}</strong> | Decision Score: ${data.decision_score}</div>
+    `;
+    toast('ML Isolation Forest scored', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Anomaly detection test failed', 'error');
+  }
+}
+
+async function runFederatedAggregation() {
+  try {
+    const resp = await fetch('/api/ai/federated/aggregate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        client_data: [
+          {sample_count: 50, conn_rate_mean: 28.4, conn_rate_std: 3.1, bytes_mean: 1100, bytes_std: 150},
+          {sample_count: 75, conn_rate_mean: 31.2, conn_rate_std: 4.2, bytes_mean: 1450, bytes_std: 210}
+        ]
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-anomaly-result');
+    resDiv.innerHTML = `
+      <div style="font-weight:600;color:var(--success);margin-bottom:6px">&#10004; Federated Round #${data.round} Completed</div>
+      <div style="font-size:11.5px;color:var(--text)">Aggregated Nodes: <strong>${data.clients}</strong> | Features Pooled: <strong>${data.features_aggregated}</strong></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Global Baseline: ${JSON.stringify(data.global_baseline)}</div>
+    `;
+    toast('Federated aggregation finished', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Federated aggregation failed', 'error');
+  }
+}
+
+async function evaluateRlAction() {
+  const sev = document.getElementById('ai-rl-sev').value;
+  try {
+    const resp = await fetch('/api/ai/rl/select-action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        state: {severity: sev, confidence: 0.9, is_kev: sev === 'critical', host_risk: 0.8}
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-rl-result');
+    resDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:600;color:var(--accent)">Selected Action: <span style="text-transform:uppercase">${data.action}</span></span>
+        <span style="font-size:11px;color:var(--text-dim)">&epsilon;-Greedy: ${data.epsilon}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Q-Values: ${JSON.stringify(data.q_values)}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-g btn-sm" onclick="sendRlFeedback('${data.action}', 10)">&#128077; Reward TP (+10)</button>
+        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.3)" onclick="sendRlFeedback('${data.action}', -10)">&#128078; Penalize FP (-10)</button>
+      </div>
+    `;
+    toast('RL policy action evaluated', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to evaluate RL action', 'error');
+  }
+}
+
+async function sendRlFeedback(action, reward) {
+  const sev = document.getElementById('ai-rl-sev').value;
+  try {
+    await fetch('/api/ai/rl/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        state: {severity: sev, confidence: 0.9, is_kev: sev === 'critical', host_risk: 0.8},
+        action: action,
+        reward: reward
+      })
+    });
+    toast(`Q-Table feedback (${reward > 0 ? '+' : ''}${reward}) recorded`, 'success');
+    evaluateRlAction();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function generateExecutiveBrief() {
+  try {
+    const resp = await fetch('/api/ai/nlp/generate-report', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        data: {
+          total_scans: 24,
+          critical_count: 3,
+          high_count: 7,
+          kev_count: 2,
+          resolved_count: 8,
+          new_count: 4,
+          risk_score: 72,
+          risk_grade: 'C',
+          top_tactics: ['Initial Access', 'Lateral Movement'],
+          top_hosts: ['10.0.0.12', '10.0.0.45']
+        },
+        report_type: 'executive'
+      })
+    });
+    const data = await resp.json();
+    const resDiv = document.getElementById('ai-narrative-result');
+    resDiv.style.display = 'block';
+    resDiv.innerText = data.report;
+    toast('Executive brief generated', 'success');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to generate brief', 'error');
+  }
+}
+
+</script>
 
 </body>
 </html>

@@ -25,7 +25,7 @@ class LLMConfig(BaseModel):
     model_name: Optional[str] = Field(default=None, description="Model identifier")
     base_url: Optional[str] = Field(default=None, description="Base URL for Ollama or custom endpoint")
     temperature: float = Field(default=0.2, ge=0.0, le=2.0)
-    timeout_seconds: float = Field(default=30.0, ge=5.0, le=120.0)
+    timeout_seconds: float = Field(default=180.0, ge=5.0, le=600.0)
 
 
 class BaseLLM(ABC):
@@ -63,7 +63,7 @@ class GeminiLLM(BaseLLM):
 
     DEFAULT_MODEL = "gemini-2.0-flash"
 
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None, timeout: float = 30.0):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None, timeout: float = 60.0):
         self._api_key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip()
         self._model = (model or os.getenv("GEMINI_MODEL", self.DEFAULT_MODEL)).strip()
         self._timeout = timeout
@@ -129,14 +129,14 @@ class OllamaLLM(BaseLLM):
     DEFAULT_BASE_URL = "http://localhost:11434"
     DEFAULT_MODEL = "llama3.2"
 
-    def __init__(self, base_url: Optional[str] = None, model: Optional[str] = None, timeout: float = 60.0):
+    def __init__(self, base_url: Optional[str] = None, model: Optional[str] = None, timeout: float = 180.0):
         self._base_url = (base_url or os.getenv("OLLAMA_BASE_URL", self.DEFAULT_BASE_URL)).rstrip("/")
         self._model = (model or os.getenv("OLLAMA_MODEL", self.DEFAULT_MODEL)).strip()
         self._timeout = timeout
 
     @property
     def provider_name(self) -> str:
-        return "Local Ollama (Offline)"
+        return "Local Ollama (Connected / Air-Gapped)"
 
     @property
     def model_name(self) -> str:
@@ -144,7 +144,7 @@ class OllamaLLM(BaseLLM):
 
     def is_available(self) -> bool:
         try:
-            with httpx.Client(timeout=2.0) as client:
+            with httpx.Client(timeout=3.0) as client:
                 r = client.get(f"{self._base_url}/api/tags")
                 return r.status_code == 200
         except Exception:
@@ -156,6 +156,7 @@ class OllamaLLM(BaseLLM):
             "prompt": prompt,
             "system": system_prompt or "",
             "stream": False,
+            "options": {"num_predict": 768, "temperature": 0.2},
         }
         with httpx.Client(timeout=self._timeout) as client:
             resp = client.post(f"{self._base_url}/api/generate", json=payload)
@@ -168,6 +169,7 @@ class OllamaLLM(BaseLLM):
             "prompt": prompt,
             "system": system_prompt or "",
             "stream": False,
+            "options": {"num_predict": 768, "temperature": 0.2},
         }
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             resp = await client.post(f"{self._base_url}/api/generate", json=payload)
@@ -182,7 +184,7 @@ class OllamaLLM(BaseLLM):
 class OpenAICompatibleLLM(BaseLLM):
     """OpenAI / vLLM / LocalAI Compatible Provider."""
 
-    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, model: Optional[str] = None, timeout: float = 30.0):
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, model: Optional[str] = None, timeout: float = 60.0):
         self._api_key = (api_key or os.getenv("OPENAI_API_KEY", "")).strip()
         self._base_url = (base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")).rstrip("/")
         self._model = (model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")).strip()
@@ -271,12 +273,14 @@ def configure_llm(config: LLMConfig) -> BaseLLM:
     _CURRENT_CONFIG = config
     prov = config.provider.lower()
 
+    timeout = max(config.timeout_seconds, 120.0) if prov == "ollama" else config.timeout_seconds
+
     if prov == "gemini":
-        _CURRENT_PROVIDER = GeminiLLM(api_key=config.api_key, model=config.model_name, timeout=config.timeout_seconds)
+        _CURRENT_PROVIDER = GeminiLLM(api_key=config.api_key, model=config.model_name, timeout=timeout)
     elif prov == "ollama":
-        _CURRENT_PROVIDER = OllamaLLM(base_url=config.base_url, model=config.model_name, timeout=config.timeout_seconds)
+        _CURRENT_PROVIDER = OllamaLLM(base_url=config.base_url, model=config.model_name, timeout=timeout)
     elif prov == "openai":
-        _CURRENT_PROVIDER = OpenAICompatibleLLM(api_key=config.api_key, base_url=config.base_url, model=config.model_name, timeout=config.timeout_seconds)
+        _CURRENT_PROVIDER = OpenAICompatibleLLM(api_key=config.api_key, base_url=config.base_url, model=config.model_name, timeout=timeout)
     elif prov == "auto":
         _CURRENT_PROVIDER = auto_select_provider(config)
     else:
@@ -287,16 +291,21 @@ def configure_llm(config: LLMConfig) -> BaseLLM:
 
 def auto_select_provider(config: Optional[LLMConfig] = None) -> BaseLLM:
     """Automatically detect the best available LLM provider."""
+    # 1. Check local Ollama first if running
+    ollama = OllamaLLM(
+        base_url=config.base_url if config else None,
+        model=config.model_name if config else None,
+        timeout=180.0,
+    )
+    if ollama.is_available():
+        return ollama
+
+    # 2. Check Gemini API
     api_key = (config.api_key if config else None) or os.getenv("GEMINI_API_KEY")
     if api_key:
         return GeminiLLM(api_key=api_key, model=config.model_name if config else None)
 
-    # Check local Ollama
-    ollama = OllamaLLM(base_url=config.base_url if config else None, model=config.model_name if config else None)
-    if ollama.is_available():
-        return ollama
-
-    # Check OpenAI
+    # 3. Check OpenAI
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
         return OpenAICompatibleLLM(api_key=openai_key)

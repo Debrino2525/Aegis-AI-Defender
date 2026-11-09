@@ -1568,7 +1568,7 @@ select option:checked, select option:hover {
           <select id="llm-cfg-provider" class="fsel" onchange="toggleLlmFields()">
             <option value="auto">Auto-Detect Best Available</option>
             <option value="gemini">Google Gemini API (Cloud)</option>
-            <option value="ollama">Local Ollama (Air-Gapped / Offline)</option>
+            <option value="ollama">Local Ollama (Air-Gapped / Local)</option>
             <option value="openai">OpenAI / Custom Endpoint</option>
             <option value="fallback">Offline Heuristic Engine</option>
           </select>
@@ -5815,15 +5815,21 @@ function toggleLlmFields() {
   const p = document.getElementById('llm-cfg-provider').value;
   const kField = document.getElementById('llm-field-key');
   const uField = document.getElementById('llm-field-url');
+  const mInput = document.getElementById('llm-cfg-model');
   if (p === 'ollama') {
     kField.style.display = 'none';
     uField.style.display = 'block';
+    if (!document.getElementById('llm-cfg-url').value) {
+      document.getElementById('llm-cfg-url').value = 'http://localhost:11434';
+    }
+    if (mInput) mInput.placeholder = 'llama3.2 (default)';
   } else if (p === 'fallback') {
     kField.style.display = 'none';
     uField.style.display = 'none';
   } else {
     kField.style.display = 'block';
     uField.style.display = 'none';
+    if (mInput) mInput.placeholder = 'gemini-2.0-flash / llama3.2';
   }
 }
 
@@ -5861,7 +5867,7 @@ async function checkLlmStatus() {
     if (data.available) {
       dot.style.background = 'var(--success)';
       label.innerText = `${data.provider} (${data.model})`;
-      msg.innerHTML = `<span>Active Provider: <strong style="color:var(--success)">${data.provider}</strong> | Model: <strong>${data.model}</strong></span>`;
+      msg.innerHTML = `<span>Active Provider: <strong style="color:var(--success)">${data.provider}</strong> | Model: <strong>${data.model}</strong> | Status: <strong style="color:var(--success)">● Online &amp; Ready</strong></span>`;
     } else {
       dot.style.background = 'var(--warning)';
       label.innerText = 'Fallback Engine';
@@ -5901,6 +5907,9 @@ async function runDeepAiInvestigation() {
   const host = document.getElementById('ai-summary-host').value.trim() || 'db-primary.corp';
   const cve = document.getElementById('ai-summary-cve').value.trim() || 'CVE-2024-21413';
   toast('Cyber AI performing deep forensic investigation...', 'info');
+  const resDiv = document.getElementById('ai-narrative-result');
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<div style="color:var(--accent);font-style:italic">&#9203; Cyber AI is evaluating incident evidence and generating forensic reasoning with Ollama... please wait (~20-40s on local CPU).</div>';
   try {
     const resp = await fetch('/api/ai/llm/investigate', {
       method: 'POST',
@@ -5933,6 +5942,9 @@ async function synthesizeRemediationScript() {
   const host = document.getElementById('ai-summary-host').value.trim() || 'srv-finance-db.corp';
   const cve = document.getElementById('ai-summary-cve').value.trim() || 'CVE-2024-21413';
   toast('Synthesizing OS containment & patch scripts...', 'info');
+  const resDiv = document.getElementById('ai-narrative-result');
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<div style="color:var(--accent);font-style:italic">&#9203; Synthesizing hardened PowerShell & Bash remediation scripts with Ollama... please wait.</div>';
   try {
     const resp = await fetch('/api/ai/llm/synthesize-remediation', {
       method: 'POST',

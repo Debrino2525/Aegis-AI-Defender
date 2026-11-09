@@ -24,8 +24,13 @@ Guidelines:
    - ## Attacker Capabilities & CVE Exploitation Proof
    - ## Blast Radius & At-Risk Assets
    - ## Immediate Containment & Hardening Playbook (Numbered)
-5. Be concise, authoritative, and technically precise.
+5. Be concise, authoritative, and technically precise. Keep the full analysis within 450 words.
 """
+
+
+def _format_error(exc: Exception) -> str:
+    msg = str(exc).strip()
+    return f"{type(exc).__name__}: {msg}" if msg else f"{type(exc).__name__} (Network timeout or connection interrupted)"
 
 
 class AIInvestigator:
@@ -41,13 +46,13 @@ class AIInvestigator:
         """Perform a synchronous deep investigation of an incident."""
         provider = self._get_provider()
         prompt = self._build_investigation_prompt(incident)
-        
+
         try:
             verdict_text = provider.generate(prompt, system_prompt=INVESTIGATOR_SYSTEM_PROMPT)
         except Exception as exc:
             verdict_text = (
                 f"### AI Investigation Failed\n"
-                f"Provider `{provider.provider_name}` encountered error: `{exc}`.\n"
+                f"Provider `{provider.provider_name}` encountered error: `{_format_error(exc)}`.\n"
                 f"Falling back to local heuristic analysis."
             )
 
@@ -75,7 +80,7 @@ class AIInvestigator:
         except Exception as exc:
             verdict_text = (
                 f"### AI Investigation Failed\n"
-                f"Provider `{provider.provider_name}` encountered error: `{exc}`.\n"
+                f"Provider `{provider.provider_name}` encountered error: `{_format_error(exc)}`.\n"
                 f"Falling back to local heuristic analysis."
             )
 
@@ -95,7 +100,7 @@ class AIInvestigator:
 
     def _build_investigation_prompt(self, inc: Dict[str, Any]) -> str:
         return (
-            f"Analyze the following enterprise security incident:\n\n"
+            f"Analyze the following enterprise security incident concisely:\n\n"
             f"```json\n"
             f"{json.dumps(inc, indent=2, default=str)}\n"
             f"```\n\n"

@@ -20,9 +20,14 @@ Requirements:
    - For Windows: Production PowerShell (`.ps1`) script (e.g., stopping malicious process, firewall isolation via `New-NetFirewallRule`, disabling vulnerable service, rotating passwords).
    - For Linux: Production Bash (`.sh`) script (e.g., `iptables`/`nftables` isolation, `systemctl stop`, unprivileged permission lockdowns).
    - For Network Firewalls: CLI commands for Palo Alto or Fortinet when applicable.
-3. Include clear inline safety comments and dry-run switches where possible.
+3. Include clear inline safety comments. Keep scripts concise and focused directly on containment.
 4. Output format: Clean markdown with fenced code blocks (```powershell and ```bash).
 """
+
+
+def _format_error(exc: Exception) -> str:
+    msg = str(exc).strip()
+    return f"{type(exc).__name__}: {msg}" if msg else f"{type(exc).__name__} (Network timeout or connection interrupted)"
 
 
 class RemediationSynthesizer:
@@ -49,7 +54,7 @@ class RemediationSynthesizer:
             script_markdown = provider.generate(prompt, system_prompt=SYNTHESIZER_SYSTEM_PROMPT)
         except Exception as exc:
             script_markdown = (
-                f"# Remediation Generation Failed via {provider.provider_name}: {exc}\n"
+                f"# Remediation Generation Failed via {provider.provider_name}: {_format_error(exc)}\n"
                 f"# Fallback: Isolate host at network boundary immediately."
             )
 
@@ -75,7 +80,7 @@ class RemediationSynthesizer:
             script_markdown = await provider.agenerate(prompt, system_prompt=SYNTHESIZER_SYSTEM_PROMPT)
         except Exception as exc:
             script_markdown = (
-                f"# Remediation Generation Failed via {provider.provider_name}: {exc}\n"
+                f"# Remediation Generation Failed via {provider.provider_name}: {_format_error(exc)}\n"
                 f"# Fallback: Isolate host at network boundary immediately."
             )
 

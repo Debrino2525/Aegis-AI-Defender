@@ -262,6 +262,7 @@ class AIAnalyst:
         self._incidents_by_id: Dict[str, Incident] = {}
         self._src_to_incident: Dict[str, str] = {}
         self._inc_counter = 0
+        self._seen_alert_ids: Set[str] = set()
 
     @property
     def incidents(self) -> Dict[str, Incident]:
@@ -271,6 +272,19 @@ class AIAnalyst:
         self._incidents_by_id.clear()
         self._src_to_incident.clear()
         self._inc_counter = 0
+        self._seen_alert_ids.clear()
+
+    @staticmethod
+    def _alert_key(alert: Dict) -> str:
+        alert_id = alert.get("id")
+        if alert_id:
+            return str(alert_id)
+        return "|".join([
+            str(alert.get("source_ip") or ""),
+            str(alert.get("pattern_id") or ""),
+            str(alert.get("title") or ""),
+            str(alert.get("_timestamp") or ""),
+        ])
 
     def _new_id(self) -> str:
         self._inc_counter += 1
@@ -305,21 +319,40 @@ class AIAnalyst:
                 if not cluster:
                     continue
 
-                # Check if we already have an incident for this source
+                fresh = []
+                seen_in_cluster: Set[str] = set()
+                for a in cluster:
+                    key = self._alert_key(a)
+                    if key in self._seen_alert_ids or key in seen_in_cluster:
+                        continue
+                    seen_in_cluster.add(key)
+                    fresh.append(a)
+                if not fresh:
+                    continue
+
                 existing_id = self._src_to_incident.get(src_ip)
-                if existing_id and existing_id in self._incidents_by_id:
-                    inc = self._incidents_by_id[existing_id]
-                    # Update alerts if new ones arrived
-                    existing_alert_ids = {a.get("id") for a in inc.alerts}
-                    for a in cluster:
-                        if a.get("id") not in existing_alert_ids:
-                            inc.add_alert(a)
-                    # Re-score confidence
+                inc = self._incidents_by_id.get(existing_id) if existing_id else None
+                fresh_start = fresh[0].get("_timestamp", 0)
+                # A resolved ticket must not absorb later activity, and a gap
+                # larger than the correlation window is a separate incident.
+                can_attach = (
+                    inc is not None
+                    and inc.status != "RESOLVED"
+                    and fresh_start - inc.last_seen <= self.CORRELATION_WINDOW
+                )
+                if can_attach:
+                    for a in fresh:
+                        inc.add_alert(a)
+                        self._seen_alert_ids.add(self._alert_key(a))
+                    if inc.status == "CONTAINED":
+                        inc.status = "ACTIVE"
                     self._update_scores(inc, src_ip)
                 else:
-                    inc = self._build_incident(src_ip, cluster)
+                    inc = self._build_incident(src_ip, fresh)
                     self._incidents_by_id[inc.id] = inc
                     self._src_to_incident[src_ip] = inc.id
+                    for a in fresh:
+                        self._seen_alert_ids.add(self._alert_key(a))
 
         # Sort by status (ACTIVE first), urgency, confidence
         status_order = {"ACTIVE": 2, "CONTAINED": 1, "RESOLVED": 0}

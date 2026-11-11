@@ -13,6 +13,23 @@ from aegis.core.models import ServiceInfo
 from aegis.core.config import ScanConfig
 
 
+def parse_proftpd_version(banner: str) -> Optional[str]:
+    """Extract a ProFTPD version without dropping the patch suffix.
+
+    CVE-2015-3306 is exactly 1.3.5 and is fixed in 1.3.5a. A digits-and-dots
+    capture turns the patched banner into 1.3.5 and reports the KEV on hosts
+    that already have the fix.
+    """
+    if not banner:
+        return None
+    match = re.search(
+        r"ProFTPD\s+([0-9]+(?:\.[0-9]+)*(?:[a-zA-Z][0-9A-Za-z]*)?)",
+        banner,
+        re.I,
+    )
+    return match.group(1) if match else None
+
+
 class ServiceFingerprinter:
     """Probes open ports with multiple protocols to extract detailed service metadata."""
 
@@ -155,11 +172,10 @@ class ServiceFingerprinter:
                     "metadata": {"syst_response": syst_str}
                 }
             elif "proftpd" in banner_str.lower():
-                match = re.search(r"ProFTPD\s+([0-9.]+)", banner_str, re.I)
                 return {
                     "service_name": "ftp",
                     "product": "proftpd",
-                    "version": match.group(1) if match else None,
+                    "version": parse_proftpd_version(banner_str),
                     "banner": banner_str,
                     "metadata": {"syst_response": syst_str}
                 }

@@ -16,9 +16,9 @@ import psutil
 import httpx
 from urllib.parse import urlparse
 
-from aegis.monitor.behavioral_engine import BehavioralEngine
+from aegis.monitor.behavioral_engine import BehavioralEngine, RollingStats
 from aegis.monitor.threat_patterns import (
-    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, THREAT_PATTERNS
+    MALICIOUS_PORTS, HIGH_RISK_REMOTE_PORTS, PATTERN_BY_ID
 )
 
 
@@ -76,6 +76,8 @@ class NetworkMonitor:
         # Network I/O snapshots for delta calculation
         self._last_io: Dict[str, Any] = {}
         self._last_io_time: float = 0
+        # Learned system-wide egress rate (bytes/s). Exfil alerts compare against this.
+        self._egress_baseline = RollingStats(window=30)
 
         # Current connections snapshot
         self.current_connections: List[Dict] = []
@@ -454,23 +456,51 @@ class NetworkMonitor:
                     )
 
     def _check_exfiltration(self, sent_rate: float, recv_rate: float):
-        """Flags unusually high outbound data rates."""
+        """Flags outbound rates that exceed the learned baseline.
+
+        AEGIS-BEH-003 is defined as bytes_sent_stddev_multiplier (3.0) over the
+        established baseline. A fixed 10 MB/s cut pages on-call for a backup or
+        cloud sync that is already in progress when monitoring starts.
+        """
         MB = 1024 * 1024
-        if sent_rate > 10 * MB:  # >10 MB/s outbound
+        absolute_floor = 10 * MB
+        baseline = self._egress_baseline
+        try:
+            if sent_rate < 0 or baseline.count < 6 or sent_rate <= absolute_floor:
+                return
+
+            multiplier = PATTERN_BY_ID["AEGIS-BEH-003"]["threshold"]["bytes_sent_stddev_multiplier"]
+            band = baseline.mean + (multiplier * baseline.stddev)
+            # Identical samples make the 3-sigma band collapse onto the mean, so
+            # jitter just above a steady transfer would page. Require a full
+            # extra 10 MB/s above a flat baseline before treating it as exfil.
+            if baseline.stddev < MB:
+                band = max(band, baseline.mean + absolute_floor)
+            if sent_rate <= band:
+                return
+
             self._emit_alert(
                 pattern_id="AEGIS-BEH-003",
                 severity="CRITICAL",
                 title=f"Data Exfiltration Alert — {sent_rate/MB:.1f} MB/s Outbound",
                 description=f"System-wide outbound data rate of {sent_rate/MB:.1f} MB/s detected — "
-                            f"significantly above normal baseline. Potential data exfiltration in progress.",
+                            f"significantly above the learned baseline of {baseline.mean/MB:.1f} MB/s. "
+                            f"Potential data exfiltration in progress.",
                 source_ip="localhost",
                 dest_ip="external",
                 dest_port=0,
                 process="",
-                evidence=f"Outbound rate: {sent_rate/MB:.2f} MB/s | Inbound rate: {recv_rate/MB:.2f} MB/s",
+                evidence=(
+                    f"Outbound rate: {sent_rate/MB:.2f} MB/s | "
+                    f"Baseline: {baseline.mean/MB:.2f} MB/s | "
+                    f"Inbound rate: {recv_rate/MB:.2f} MB/s"
+                ),
                 tactic="Exfiltration",
                 technique="T1048",
             )
+        finally:
+            if sent_rate >= 0:
+                baseline.add(sent_rate)
 
     # ── Alert emission ──────────────────────────────────────────────────────
     def _emit_alert(self, pattern_id: str, severity: str, title: str,

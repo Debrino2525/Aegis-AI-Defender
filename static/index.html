@@ -2188,7 +2188,7 @@ function renderMonitoredTargets(targets){
               <td>${drift}</td>
               <td style="font-size:10.5px;color:var(--text-dim)">${last}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-p btn-sm" style="padding:3px 8px;font-size:11px;margin-right:4px" onclick="quickScanFromMonitor('${esc(t.host)}')">Scan</button>
+                <button class="btn btn-p btn-sm" style="padding:3px 8px;font-size:11px;margin-right:4px" data-host="${esc(t.host)}" onclick="quickScanFromMonitor(this.dataset.host)">Scan</button>
                 <button class="btn btn-d btn-sm" style="padding:3px 8px;font-size:11px" onclick="removeMonitoredTarget('${t.id}', event)">&#10005;</button>
               </td>
             </tr>
@@ -4024,7 +4024,7 @@ async function loadContactsList(){
       <td style="font-size:11px;color:var(--text-dim)">${esc(c.telegram_chat_id || '—')}</td>
       <td style="font-size:11px;color:var(--text-dim)">${esc(c.email || '—')}</td>
       <td><span class="badge ${c.is_active ? 'badge-done' : 'badge-queued'}">${c.is_active ? 'ACTIVE' : 'OFFLINE'}</span></td>
-      <td style="text-align:right"><button class="btn btn-d btn-sm" onclick="deleteContact('${c.contact_id}')">&#10005;</button></td>
+      <td style="text-align:right"><button class="btn btn-d btn-sm" data-id="${esc(c.contact_id)}" onclick="deleteContact(this.dataset.id)">&#10005;</button></td>
     </tr>`).join('');
     wrap.innerHTML = `<table class="ft"><thead><tr><th>Name</th><th>Role</th><th>Primary Phone</th><th>WhatsApp</th><th>Telegram</th><th>Email</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>${rows}</tbody></table>`;
     populateMappingDropdowns();
@@ -4085,7 +4085,7 @@ function populateMappingDropdowns(){
   const pSel = document.getElementById('new-m-primary');
   const lSel = document.getElementById('new-m-lead');
   if(!pSel || !lSel) return;
-  const opts = _oncallContacts.map(c => `<option value="${c.contact_id}">${esc(c.name)} (${c.role} - ${c.phone})</option>`).join('');
+  const opts = _oncallContacts.map(c => `<option value="${esc(c.contact_id)}">${esc(c.name)} (${esc(c.role)} - ${esc(c.phone)})</option>`).join('');
   pSel.innerHTML = opts;
   lSel.innerHTML = opts;
   if(lSel.options.length > 1) lSel.selectedIndex = 1;
@@ -4110,7 +4110,7 @@ async function loadMappingsList(){
       <td style="font-size:11px">${esc(contactMap[m.primary_contact_id] || m.primary_contact_id)}</td>
       <td style="font-size:11px">${esc(contactMap[m.escalation_contact_id] || m.escalation_contact_id)}</td>
       <td style="font-family:var(--mono);font-size:11px">${m.escalation_timeout_mins} mins</td>
-      <td style="text-align:right"><button class="btn btn-d btn-sm" onclick="deleteMapping('${m.cidr_or_host}')">&#10005;</button></td>
+      <td style="text-align:right"><button class="btn btn-d btn-sm" data-cidr="${esc(m.cidr_or_host)}" onclick="deleteMapping(this.dataset.cidr)">&#10005;</button></td>
     </tr>`).join('');
     wrap.innerHTML = `<table class="ft"><thead><tr><th>Subnet / CIDR</th><th>Zone / Environment</th><th>Owner Team</th><th>Primary On-Call</th><th>Escalation Lead</th><th>Timeout</th><th style="text-align:right">Action</th></tr></thead><tbody>${rows}</tbody></table>`;
   } catch(e) {

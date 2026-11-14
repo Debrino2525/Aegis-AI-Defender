@@ -18,6 +18,19 @@ import httpx
 class FindingVerifier:
     """Verifies specific vulnerability findings on demand (manually or automated)."""
 
+    @staticmethod
+    def _is_anonymous_ftp_check(finding_id: str, title: str) -> bool:
+        """Anonymous-login probes apply only to the anonymous FTP finding.
+
+        Product names such as ProFTPD and vsftpd contain the substring "ftp",
+        and other findings are reported on port 21. Those must not be cleared
+        just because USER anonymous is rejected.
+        """
+        if finding_id == "AEGIS-TMPL-004":
+            return True
+        title_l = (title or "").lower()
+        return "anonymous" in title_l and "ftp" in title_l
+
     def get_instructions(self, finding_id: str, title: str, target: str, port: Optional[int] = None) -> Dict[str, Any]:
         """Generates CLI reproduction commands and verification guidelines for a finding."""
         port = port or 80
@@ -107,8 +120,8 @@ class FindingVerifier:
                 "expected_remediated": "Server rejects TLS < 1.2 with handshake failure, and serves a valid CA-signed certificate.",
             }
 
-                # ── FTP Services ──────────────────────────────────────────────────
-        if "ftp" in title.lower() or finding_id == "AEGIS-TMPL-004" or port == 21:
+        # ── Anonymous FTP only. Do not treat every port-21 CVE as this check.
+        if self._is_anonymous_ftp_check(finding_id, title):
             return {
                 "method": "FTP Anonymous Authentication Audit (RFC 959)",
                 "curl_command": f"curl -v --user anonymous:anonymous@ ftp://{target}:{port}/",
@@ -188,8 +201,9 @@ class FindingVerifier:
         if finding_id.startswith("AEGIS-TLS-") or "TLS" in title.upper():
             return await self._verify_tls_finding(finding_id, target, port, t0, timestamp)
 
-        # 4. FTP Anonymous Login Verification
-        if "ftp" in title.lower() or finding_id == "AEGIS-TMPL-004" or port == 21:
+        # 4. Anonymous FTP login only. A ProFTPD/vsftpd CVE on port 21 is not
+        # remediated by a 530 response to USER anonymous.
+        if self._is_anonymous_ftp_check(finding_id, title):
             return await self._verify_ftp_finding(target, port or 21, t0, timestamp)
 
         # 5. Template Engine Checks (Redis, Docker, MongoDB, etc.)
